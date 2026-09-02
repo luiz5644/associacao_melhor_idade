@@ -1,7 +1,7 @@
 {
-  "name": "site-melhor-idade",
+  "name": "associacao-melhor-idade",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
