@@ -1,41 +1,71 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { siteData } from '../data/mockData';
+import { useData } from '../context/DataContext';
 
-export default function CalendarPage({ dynamicEvents = [] }) {
+const MONTHS = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+];
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function getStartDayOffset(year, month) {
+  // 0=Dom, 1=Seg, ..., 6=Sáb
+  return new Date(year, month, 1).getDay();
+}
+
+export default function CalendarPage() {
   const { calendar } = siteData;
+  const { calendarEvents, calendarHighlights } = useData();
+
+  const today = new Date();
   const [selectedCategory, setSelectedCategory] = useState('Todas');
-  const [selectedDay, setSelectedDay] = useState(1);
-  const [currentMonthIndex, setCurrentMonthIndex] = useState(9); // 9 = Outubro (0-indexed)
-  const currentYear = 2026;
-
-  const months = [
-    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-  ];
-
-  // Combina eventos mock com eventos adicionados pelo admin
-  const allEvents = [...calendar.eventsOctober2026, ...dynamicEvents];
-
-  // Filtra por categoria
-  const filteredEvents = selectedCategory === 'Todas' 
-    ? allEvents 
-    : allEvents.filter(e => e.category === selectedCategory);
-
-  // Calendário de Outubro 2026: 1 de Outubro de 2026 é Quinta-feira (4 dias em branco: Dom, Seg, Ter, Qua)
-  // Dom=0, Seg=1, Ter=2, Qua=3, Qui=4, Sex=5, Sáb=6
-  const startDayOffset = 4; // Quinta-feira
-  const totalDays = 31;
+  const [selectedDay, setSelectedDay] = useState(today.getDate());
+  const [currentYear, setCurrentYear] = useState(2026);
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(9); // Outubro
 
   const handlePrevMonth = () => {
-    setCurrentMonthIndex(prev => (prev > 0 ? prev - 1 : 11));
+    if (currentMonthIndex === 0) {
+      setCurrentMonthIndex(11);
+      setCurrentYear(y => y - 1);
+    } else {
+      setCurrentMonthIndex(m => m - 1);
+    }
+    setSelectedDay(1);
   };
 
   const handleNextMonth = () => {
-    setCurrentMonthIndex(prev => (prev < 11 ? prev + 1 : 0));
+    if (currentMonthIndex === 11) {
+      setCurrentMonthIndex(0);
+      setCurrentYear(y => y + 1);
+    } else {
+      setCurrentMonthIndex(m => m + 1);
+    }
+    setSelectedDay(1);
   };
 
+  // Filtra eventos pelo mês/ano/categoria atual
+  const allCategories = [
+    { id: 'Todas', label: 'Todas' },
+    ...Array.from(new Set(calendarEvents.map(e => e.category))).map(c => ({ id: c, label: c }))
+  ];
+
+  const filteredEvents = calendarEvents.filter(ev => {
+    const matchMonth = ev.year === currentYear && ev.month === currentMonthIndex;
+    const matchCat = selectedCategory === 'Todas' || ev.category === selectedCategory;
+    return matchMonth && matchCat;
+  });
+
   const eventsForSelectedDay = filteredEvents.filter(e => e.day === selectedDay);
+
+  const startDayOffset = getStartDayOffset(currentYear, currentMonthIndex);
+  const totalDays = getDaysInMonth(currentYear, currentMonthIndex);
+
+  // Destaques dinâmicos: máx. 3 mostrados
+  const highlights = calendarHighlights.slice(0, 3);
 
   return (
     <div className="calendar-page">
@@ -61,7 +91,7 @@ export default function CalendarPage({ dynamicEvents = [] }) {
               </button>
 
               <h2 className="calendar-month-title">
-                {months[currentMonthIndex]} {currentYear}
+                {MONTHS[currentMonthIndex]} {currentYear}
               </h2>
 
               <button 
@@ -75,23 +105,16 @@ export default function CalendarPage({ dynamicEvents = [] }) {
 
             {/* Dias da Semana */}
             <div className="cal-weekdays">
-              <span>Dom</span>
-              <span>Seg</span>
-              <span>Ter</span>
-              <span>Qua</span>
-              <span>Qui</span>
-              <span>Sex</span>
-              <span>Sáb</span>
+              <span>Dom</span><span>Seg</span><span>Ter</span>
+              <span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
             </div>
 
             {/* Grid de Dias */}
             <div className="cal-grid">
-              {/* Células vazias antes do dia 1 */}
               {Array.from({ length: startDayOffset }).map((_, i) => (
                 <div key={`empty-${i}`} className="cal-day-cell empty" />
               ))}
 
-              {/* Dias do Mês */}
               {Array.from({ length: totalDays }, (_, i) => {
                 const dayNum = i + 1;
                 const hasEvent = filteredEvents.some(e => e.day === dayNum);
@@ -102,7 +125,7 @@ export default function CalendarPage({ dynamicEvents = [] }) {
                     key={dayNum}
                     className={`cal-day-cell ${hasEvent ? 'has-event' : ''} ${isSelected ? 'selected' : ''}`}
                     onClick={() => setSelectedDay(dayNum)}
-                    aria-label={`Dia ${dayNum} de Outubro de 2026`}
+                    aria-label={`Dia ${dayNum} de ${MONTHS[currentMonthIndex]} de ${currentYear}`}
                   >
                     <span>{dayNum}</span>
                   </button>
@@ -114,7 +137,7 @@ export default function CalendarPage({ dynamicEvents = [] }) {
             <div className="selected-day-events">
               <h3 className="selected-day-title">
                 <CalendarIcon size={18} color="#2A5C66" />
-                <span>Atividades no Dia {selectedDay} de {months[currentMonthIndex]}</span>
+                <span>Atividades no Dia {selectedDay} de {MONTHS[currentMonthIndex]}</span>
               </h3>
 
               {eventsForSelectedDay.length > 0 ? (
@@ -123,10 +146,13 @@ export default function CalendarPage({ dynamicEvents = [] }) {
                     <div key={idx} className="day-event-item">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                         <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#2A5C66' }}>
-                          {ev.time} • Categoria: {ev.category}
+                          {ev.time} • {ev.category}
                         </span>
                       </div>
                       <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1B2527', marginBottom: '4px' }}>{ev.title}</h4>
+                      {ev.location && (
+                        <p style={{ fontSize: '0.78rem', color: '#6E6E6E', marginBottom: '4px' }}>📍 {ev.location}</p>
+                      )}
                       <p style={{ fontSize: '0.88rem', color: '#4D4D4D' }}>{ev.desc}</p>
                     </div>
                   ))}
@@ -139,13 +165,13 @@ export default function CalendarPage({ dynamicEvents = [] }) {
             </div>
           </div>
 
-          {/* Right Sidebar: Filtros & Destaques */}
+          {/* Right Sidebar */}
           <div className="calendar-sidebar">
             {/* Box: Filtrar por Categoria */}
             <div className="sidebar-box">
               <h3 className="sidebar-heading">Filtrar por Categoria</h3>
               <div className="filter-pills-row">
-                {calendar.categories.map((cat) => (
+                {allCategories.map((cat) => (
                   <button
                     key={cat.id}
                     className={`filter-pill ${selectedCategory === cat.id ? 'active' : ''}`}
@@ -160,17 +186,23 @@ export default function CalendarPage({ dynamicEvents = [] }) {
             {/* Box: Destaques do Mês */}
             <div className="sidebar-box">
               <h3 className="sidebar-heading">Destaques do Mês</h3>
-              <div className="highlight-list">
-                {calendar.highlights.map((item, idx) => (
-                  <div key={idx} className="highlight-item">
-                    <div className="highlight-date" style={{ color: item.color || '#2A5C66' }}>
-                      {item.dateLabel}
+              {highlights.length > 0 ? (
+                <div className="highlight-list">
+                  {highlights.map((item, idx) => (
+                    <div key={idx} className="highlight-item">
+                      <div className="highlight-date" style={{ color: item.color || '#2A5C66' }}>
+                        {item.dateLabel}
+                      </div>
+                      <h4 className="highlight-title">{item.title}</h4>
+                      <p className="highlight-desc">{item.description}</p>
                     </div>
-                    <h4 className="highlight-title">{item.title}</h4>
-                    <p className="highlight-desc">{item.description}</p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize:'0.85rem', color:'var(--text-subtle)', fontStyle:'italic' }}>
+                  Nenhum destaque cadastrado ainda.
+                </p>
+              )}
             </div>
           </div>
         </div>

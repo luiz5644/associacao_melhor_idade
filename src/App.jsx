@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { DataProvider } from './context/DataContext';
 import AccessibilityBar from './components/AccessibilityBar';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -7,25 +8,21 @@ import HistoryPage from './pages/HistoryPage';
 import ActivitiesPage from './pages/ActivitiesPage';
 import CalendarPage from './pages/CalendarPage';
 import GalleryPage from './pages/GalleryPage';
+import AdminPage from './pages/AdminPage';
 import DonationModal from './components/DonationModal';
 import ScheduleModal from './components/ScheduleModal';
-import AdminModal from './components/AdminModal';
 import ImageLightbox from './components/ImageLightbox';
 import { siteData } from './data/mockData';
 
-export default function App() {
+function AppContent() {
   const [activePage, setActivePage] = useState('home');
   const [fontSizeLevel, setFontSizeLevel] = useState('normal');
   const [highContrast, setHighContrast] = useState(false);
 
   // Modals state
   const [isDonationOpen, setIsDonationOpen] = useState(false);
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
-
-  // Eventos adicionados dinamicamente via painel admin
-  const [dynamicEvents, setDynamicEvents] = useState([]);
 
   // Aplica classes de acessibilidade ao body
   useEffect(() => {
@@ -35,16 +32,27 @@ export default function App() {
     if (highContrast) document.body.classList.add('high-contrast');
   }, [fontSizeLevel, highContrast]);
 
-  const handleAddAdminEvent = (newEvent) => {
-    setDynamicEvents(prev => [...prev, newEvent]);
-  };
-
   const handleSelectActivityFromFooter = (actId) => {
     const act = siteData.activities.items.find(item => item.id === actId);
     if (act) {
       setSelectedActivity(act);
     }
   };
+
+  // Página de Admin ocupa a tela inteira sem header/footer
+  if (activePage === 'admin') {
+    return (
+      <>
+        <AccessibilityBar
+          fontSizeLevel={fontSizeLevel}
+          setFontSizeLevel={setFontSizeLevel}
+          highContrast={highContrast}
+          setHighContrast={setHighContrast}
+        />
+        <AdminPage onClose={() => setActivePage('home')} />
+      </>
+    );
+  }
 
   return (
     <div className="app-container">
@@ -60,7 +68,7 @@ export default function App() {
       <Header 
         activePage={activePage}
         setActivePage={setActivePage}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenAdmin={() => setActivePage('admin')}
       />
 
       {/* 3. Renderização Dinâmica das Páginas */}
@@ -86,9 +94,7 @@ export default function App() {
         )}
 
         {activePage === 'calendar' && (
-          <CalendarPage 
-            dynamicEvents={dynamicEvents}
-          />
+          <CalendarPage />
         )}
 
         {activePage === 'gallery' && (
@@ -115,12 +121,6 @@ export default function App() {
         onClose={() => setSelectedActivity(null)}
       />
 
-      <AdminModal 
-        isOpen={isAdminOpen}
-        onClose={() => setIsAdminOpen(false)}
-        onAddEvent={handleAddAdminEvent}
-      />
-
       <ImageLightbox 
         photo={selectedPhoto}
         photosList={siteData.gallery.items}
@@ -128,5 +128,13 @@ export default function App() {
         onSelectPhoto={setSelectedPhoto}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <DataProvider>
+      <AppContent />
+    </DataProvider>
   );
 }
