@@ -8,11 +8,6 @@ Aplicação web oficial da **Associação Comunitária Melhor Idade**, desenvolv
 
 O portal foi projetado com base em princípios modernos de experiência do usuário, design afetivo e acessibilidade inclusiva, conectando associados, familiares, diretoria e empresas apoiadoras da comunidade.
 
----
-
-## 🌟 Sobre a Associação
-
-Fundada em 2005 a partir do sonho de vizinhas que se reuniam em uma modesta garagem para compartilhar conversas, café e costura, a **Associação Melhor Idade** transformou-se em um lar comunitário de referência. Hoje, sediada em uma acolhedora chácara restaurada com jardim, ateliê e amplo salão, a instituição atende centenas de associados com oficinas culturais, práticas corporais, assistência preventiva, refeições saudáveis e momentos de pura celebração.
 
 ---
 
