@@ -1,20 +1,47 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Shield, LogOut, LayoutDashboard, Images, CalendarDays, Settings,
   Plus, Pencil, Trash2, X, CheckCircle, Users, CalendarCheck,
   HeartHandshake, Camera, Upload, Link, Clock, MapPin, Star,
-  ChevronRight, Search, AlertTriangle, RotateCcw, ChevronDown
+  ChevronRight, Search, AlertTriangle, RotateCcw, ChevronDown,
+  Building2, ExternalLink, Globe
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { siteData } from '../data/mockData';
 
 const CATEGORIES_GALLERY = ['Celebracoes', 'Forro', 'Coral', 'Viagens', 'Artes'];
 const CATEGORIES_CALENDAR = ['Música', 'Coral', 'Lazer', 'Artes', 'Saúde', 'Dança', 'Festas'];
+const CATEGORIES_SPONSOR = [
+  'Patrocinador Ouro',
+  'Patrocinador Prata',
+  'Patrocinador Bronze',
+  'Parceiro Saúde',
+  'Apoiador Comunitário',
+  'Apoiador Local'
+];
 const CAT_LABEL = {
   Celebracoes: 'Celebrações', Forro: 'Forró', Coral: 'Coral',
   Viagens: 'Viagens e Passeios', Artes: 'Artes e Trabalhos Manuais'
 };
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+function SponsorCategoryBadge({ category }) {
+  const colors = {
+    'Patrocinador Ouro': { bg: '#FEF9C3', text: '#854D0E', border: '#FDE047' },
+    'Patrocinador Prata': { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1' },
+    'Patrocinador Bronze': { bg: '#FFEDD5', text: '#9A3412', border: '#FDBA74' },
+    'Parceiro Saúde': { bg: '#EDFAF3', text: '#2D7A50', border: '#C8EDD8' },
+    'Apoiador Comunitário': { bg: '#EAF4F6', text: '#2A5C66', border: '#D2ECF0' },
+    'Apoiador Local': { bg: '#F5F0FB', text: '#7B5EA7', border: '#E2D4F5' },
+  };
+  const c = colors[category] || { bg: '#F5F9F8', text: '#4D4D4D', border: '#DCE7E5' };
+  return (
+    <span style={{ display:'inline-flex', alignItems:'center', fontSize:'0.72rem', fontWeight:700, letterSpacing:'0.04em',
+      background: c.bg, color: c.text, border: `1px solid ${c.border}`, borderRadius: 999, padding: '2px 10px' }}>
+      {category}
+    </span>
+  );
+}
 
 // ── Componente auxiliar: Badge de categoria ──────────────────────────────────
 function CategoryBadge({ category }) {
@@ -438,14 +465,272 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
   );
 }
 
+// ── Formulário de Patrocinador (Modal) ──────────────────────────────────────
+function SponsorFormModal({ isOpen, item, onSave, onClose }) {
+  const fileRef = useRef(null);
+  const [form, setForm] = useState({
+    name: '',
+    logo: '',
+    category: 'Patrocinador Ouro',
+    websiteUrl: '',
+    description: '',
+    active: true
+  });
+  const [uploadMode, setUploadMode] = useState('file');
+  const [urlInput, setUrlInput] = useState('');
+
+  useEffect(() => {
+    if (item) {
+      setForm({
+        name: item.name || '',
+        logo: item.logo || '',
+        category: item.category || 'Patrocinador Ouro',
+        websiteUrl: item.websiteUrl || '',
+        description: item.description || '',
+        active: item.active !== undefined ? item.active : true
+      });
+      setUrlInput(item.logo || '');
+    } else {
+      setForm({
+        name: '',
+        logo: '',
+        category: 'Patrocinador Ouro',
+        websiteUrl: '',
+        description: '',
+        active: true
+      });
+      setUrlInput('');
+    }
+  }, [item, isOpen]);
+
+  if (!isOpen) return null;
+
+  const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setField('logo', ev.target.result);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleApplyUrl = () => {
+    if (urlInput.trim()) {
+      setField('logo', urlInput.trim());
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.name.trim()) return;
+    onSave({
+      ...form,
+      logo: form.logo.trim() || 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop'
+    });
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="modal-card" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:38, height:38, background:'#FDF6F0', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <Building2 size={20} color="#B8621A" />
+            </div>
+            <div>
+              <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.25rem' }}>
+                {item ? 'Editar Patrocinador' : 'Novo Patrocinador'}
+              </h3>
+              <p style={{ fontSize:'0.82rem', color:'var(--text-subtle)' }}>
+                Empresa parceira com logo no carrossel da página inicial
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-subtle)' }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Nome da Empresa ou Comércio *</label>
+            <input 
+              className="form-input" 
+              type="text" 
+              required 
+              placeholder="Ex: Farmácia São Lucas, Padaria Central..."
+              value={form.name} 
+              onChange={e => setField('name', e.target.value)} 
+            />
+          </div>
+
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <div className="form-group">
+              <label className="form-label">Tipo / Categoria de Apoio</label>
+              <select className="form-select" value={form.category} onChange={e => setField('category', e.target.value)}>
+                {CATEGORIES_SPONSOR.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">
+                <Globe size={13} style={{ verticalAlign:'middle', marginRight:4 }} />
+                Website ou Rede Social
+              </label>
+              <input 
+                className="form-input" 
+                type="text" 
+                placeholder="Ex: https://instagram.com/empresa"
+                value={form.websiteUrl} 
+                onChange={e => setField('websiteUrl', e.target.value)} 
+              />
+            </div>
+          </div>
+
+          {/* Seletor de Logo */}
+          <div className="form-group">
+            <label className="form-label">
+              <Camera size={14} style={{ verticalAlign:'middle', marginRight:5 }} />
+              Logo da Empresa / Patrocinador
+            </label>
+
+            {/* Alternar modo Arquivo / URL */}
+            <div style={{ display:'flex', gap:8, marginBottom:10 }}>
+              <button 
+                type="button"
+                className={`btn btn-pill ${uploadMode === 'file' ? 'active' : ''}`}
+                style={{ fontSize:'0.8rem', padding:'5px 12px' }}
+                onClick={() => setUploadMode('file')}
+              >
+                <Upload size={13} /> Enviar do Computador
+              </button>
+              <button 
+                type="button"
+                className={`btn btn-pill ${uploadMode === 'url' ? 'active' : ''}`}
+                style={{ fontSize:'0.8rem', padding:'5px 12px' }}
+                onClick={() => setUploadMode('url')}
+              >
+                <Link size={13} /> Inserir Link (URL)
+              </button>
+            </div>
+
+            {uploadMode === 'file' ? (
+              <div>
+                <input 
+                  type="file" 
+                  ref={fileRef} 
+                  accept="image/*" 
+                  style={{ display:'none' }}
+                  onChange={handleFileUpload} 
+                />
+                <button 
+                  type="button" 
+                  className="btn"
+                  style={{ width:'100%', background:'#F5F9F8', border:'2px dashed #BED8D3', color:'#2A5C66', padding:'14px', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', gap:8, cursor:'pointer' }}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <Upload size={18} />
+                  <span>Escolher arquivo de imagem do computador</span>
+                </button>
+              </div>
+            ) : (
+              <div style={{ display:'flex', gap:8 }}>
+                <input 
+                  className="form-input" 
+                  type="url" 
+                  placeholder="https://exemplo.com/logo.png"
+                  value={urlInput} 
+                  onChange={e => setUrlInput(e.target.value)} 
+                />
+                <button 
+                  type="button" 
+                  className="btn btn-pill" 
+                  style={{ whiteSpace:'nowrap' }} 
+                  onClick={handleApplyUrl}
+                >
+                  Aplicar
+                </button>
+              </div>
+            )}
+
+            {/* Preview do Logo */}
+            {form.logo && (
+              <div style={{ marginTop:12, padding:14, background:'#FAF7F5', border:'1px solid #DCE7E5', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
+                <div style={{ width:70, height:70, background:'#fff', borderRadius:8, border:'1px solid #E5E7EB', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', padding:6 }}>
+                  <img 
+                    src={form.logo} 
+                    alt="Pré-visualização do logo" 
+                    style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain' }}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop';
+                    }}
+                  />
+                </div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-main)' }}>Prévia do Logo</div>
+                  <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)' }}>Esta imagem será exibida no carrossel da página inicial.</div>
+                  <button 
+                    type="button" 
+                    onClick={() => setField('logo', '')}
+                    style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.75rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}
+                  >
+                    Remover logo
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Breve Descrição ou Contrapartida (Opcional)</label>
+            <textarea 
+              className="form-input" 
+              rows={2} 
+              placeholder="Ex: Apoia nossos cafés comunitários e festividades do forró..."
+              value={form.description} 
+              onChange={e => setField('description', e.target.value)}
+              style={{ resize:'vertical', lineHeight:1.5 }} 
+            />
+          </div>
+
+          <div 
+            style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'10px 14px', background:'#F5F9F8', borderRadius:10, border:'1px solid #DCE7E5', cursor:'pointer' }}
+            onClick={() => setField('active', !form.active)}
+          >
+            <div style={{ width:20, height:20, borderRadius:4, border:`2px solid ${form.active ? '#2A5C66' : '#B0BEB8'}`,
+              background: form.active ? '#2A5C66' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}>
+              {form.active && <CheckCircle size={13} color="#fff" />}
+            </div>
+            <span style={{ fontSize:'0.88rem', fontWeight:600, color: form.active ? '#1B2527' : '#6E6E6E' }}>
+              Ativo (visível no carrossel da página inicial)
+            </span>
+          </div>
+
+          <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
+            <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn btn-primary">
+              <CheckCircle size={15} /> {item ? 'Salvar Alterações' : 'Cadastrar Patrocinador'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── PAINEL: VISÃO GERAL ──────────────────────────────────────────────────────
 function TabOverview({ setActiveTab }) {
-  const { galleryItems, calendarEvents } = useData();
+  const { galleryItems, calendarEvents, sponsors } = useData();
   const stats = [
     { icon: <Users size={22} color="#2A5C66" />, value: 248, label: 'Associados Ativos', bg: '#EAF4F6', border: '#D2ECF0' },
     { icon: <CalendarCheck size={22} color="#3D6058" />, value: calendarEvents.length, label: 'Atividades Agendadas', bg: '#F0F9F5', border: '#CBE8DF' },
     { icon: <Images size={22} color="#7B5EA7" />, value: galleryItems.length, label: 'Lembranças no Álbum', bg: '#F5F0FB', border: '#E2D4F5' },
-    { icon: <HeartHandshake size={22} color="#E8A87C" />, value: 34, label: 'Voluntários', bg: '#FDF6F0', border: '#F8DFC2' }
+    { icon: <Building2 size={22} color="#B8621A" />, value: (sponsors || []).length, label: 'Patrocinadores & Parceiros', bg: '#FDF6F0', border: '#F8DFC2' }
   ];
 
   const upcomingEvents = [...calendarEvents]
@@ -469,7 +754,7 @@ function TabOverview({ setActiveTab }) {
       </div>
 
       {/* Atalhos rápidos */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:32 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(260px, 1fr))', gap:20, marginBottom:32 }}>
         <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
             <div style={{ width:38, height:38, background:'#F5F0FB', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -497,6 +782,21 @@ function TabOverview({ setActiveTab }) {
           </p>
           <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px' }} onClick={() => setActiveTab('calendar')}>
             <Plus size={14} /> Agendar Atividade
+          </button>
+        </div>
+
+        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+            <div style={{ width:38, height:38, background:'#FDF6F0', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <Building2 size={20} color="#B8621A" />
+            </div>
+            <h3 style={{ fontSize:'1rem', fontWeight:700 }}>Patrocinadores & Apoio</h3>
+          </div>
+          <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
+            {(sponsors || []).length} empresas parceiras cadastradas no carrossel.
+          </p>
+          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px' }} onClick={() => setActiveTab('sponsors')}>
+            <Plus size={14} /> Gerenciar Patrocinadores
           </button>
         </div>
       </div>
@@ -762,6 +1062,216 @@ function TabCalendar() {
   );
 }
 
+// ── PAINEL: PATROCINADORES & PARCEIROS ───────────────────────────────────────
+function TabSponsors() {
+  const { sponsors, addSponsor, updateSponsor, deleteSponsor } = useData();
+  const [search, setSearch] = useState('');
+  const [filterCat, setFilterCat] = useState('Todas');
+  const [showForm, setShowForm] = useState(false);
+  const [editingSponsor, setEditingSponsor] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const sponsorList = sponsors || [];
+
+  const filtered = sponsorList.filter(sp => {
+    const matchCat = filterCat === 'Todas' || sp.category === filterCat;
+    const matchSearch = !search || sp.name?.toLowerCase().includes(search.toLowerCase()) || sp.description?.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
+
+  const handleSave = (data) => {
+    if (editingSponsor) {
+      updateSponsor(editingSponsor.id, data);
+    } else {
+      addSponsor(data);
+    }
+    setShowForm(false);
+    setEditingSponsor(null);
+  };
+
+  return (
+    <div>
+      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:16 }}>
+        <div>
+          <h2 className="admin-section-title">Patrocinadores & Parceiros</h2>
+          <p style={{ color:'var(--text-subtle)', fontSize:'0.95rem' }}>
+            Cadastre as empresas que apoiam a Associação. Os logos e nomes aparecerão no carrossel da página inicial.
+          </p>
+        </div>
+        <button 
+          className="btn btn-primary" 
+          onClick={() => { setEditingSponsor(null); setShowForm(true); }}
+          style={{ display:'flex', alignItems:'center', gap:8 }}
+        >
+          <Plus size={16} /> Novo Patrocinador
+        </button>
+      </div>
+
+      {/* Filtros e Busca */}
+      <div style={{ display:'flex', gap:12, marginBottom:24, flexWrap:'wrap', alignItems:'center' }}>
+        <div style={{ position:'relative', flex:1, minWidth:220 }}>
+          <Search size={16} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'var(--text-subtle)' }} />
+          <input 
+            className="form-input" 
+            type="text" 
+            placeholder="Buscar por nome da empresa ou descrição..."
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+            style={{ paddingLeft:38 }} 
+          />
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <span style={{ fontSize:'0.82rem', color:'var(--text-subtle)', fontWeight:600 }}>Categoria:</span>
+          <select className="form-select" style={{ width:'auto' }} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
+            <option value="Todas">Todas as Categorias</option>
+            {CATEGORIES_SPONSOR.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Grid de Patrocinadores */}
+      {filtered.length === 0 ? (
+        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:48, textAlign:'center' }}>
+          <Building2 size={40} style={{ opacity:0.25, display:'block', margin:'0 auto 12px' }} />
+          <h3 style={{ fontSize:'1.1rem', marginBottom:6 }}>Nenhum patrocinador encontrado</h3>
+          <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:20 }}>
+            {search || filterCat !== 'Todas' ? 'Tente alterar os termos da busca ou filtros.' : 'Cadastre sua primeira empresa parceira.'}
+          </p>
+          <button className="btn btn-primary" onClick={() => { setEditingSponsor(null); setShowForm(true); }}>
+            <Plus size={15} /> Cadastrar Patrocinador
+          </button>
+        </div>
+      ) : (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20 }}>
+          {filtered.map(sponsor => (
+            <div 
+              key={sponsor.id} 
+              style={{
+                background: '#fff',
+                border: '1px solid #DCE7E5',
+                borderRadius: 16,
+                padding: 20,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <div>
+                {/* Header com Badge e Status */}
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+                  <SponsorCategoryBadge category={sponsor.category} />
+                  <span style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: 99,
+                    background: sponsor.active !== false ? '#EDFAF3' : '#FEF2F2',
+                    color: sponsor.active !== false ? '#2D7A50' : '#DC2626',
+                    border: `1px solid ${sponsor.active !== false ? '#C8EDD8' : '#FCA5A5'}`
+                  }}>
+                    {sponsor.active !== false ? 'No Carrossel' : 'Oculto'}
+                  </span>
+                </div>
+
+                {/* Logo Frame */}
+                <div style={{
+                  height: 100,
+                  background: '#FAF7F5',
+                  borderRadius: 10,
+                  border: '1px solid #EAE5E1',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 12,
+                  marginBottom: 16
+                }}>
+                  <img 
+                    src={sponsor.logo} 
+                    alt={sponsor.name}
+                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop';
+                    }}
+                  />
+                </div>
+
+                {/* Nome e Dados */}
+                <h4 style={{ fontFamily:'var(--font-serif)', fontSize:'1.15rem', marginBottom:6, color:'var(--text-main)' }}>
+                  {sponsor.name}
+                </h4>
+
+                {sponsor.description && (
+                  <p style={{ fontSize:'0.83rem', color:'var(--text-subtle)', lineHeight:1.5, marginBottom:10 }}>
+                    {sponsor.description}
+                  </p>
+                )}
+
+                {sponsor.websiteUrl && (
+                  <a 
+                    href={sponsor.websiteUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      fontSize: '0.78rem',
+                      color: 'var(--primary)',
+                      fontWeight: 600,
+                      marginBottom: 14,
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <span>Visitar site</span>
+                    <ExternalLink size={12} />
+                  </a>
+                )}
+              </div>
+
+              {/* Ações */}
+              <div style={{ display:'flex', gap:8, borderTop:'1px solid #F0ECE8', paddingTop:14, marginTop:8, justifyContent:'flex-end' }}>
+                <button 
+                  className="btn btn-pill" 
+                  style={{ padding:'6px 14px', fontSize:'0.8rem' }}
+                  onClick={() => { setEditingSponsor(sponsor); setShowForm(true); }}
+                >
+                  <Pencil size={12} /> Editar
+                </button>
+                <button 
+                  className="btn" 
+                  style={{ padding:'6px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }}
+                  onClick={() => setDeleteTarget(sponsor)}
+                >
+                  <Trash2 size={12} /> Excluir
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modais */}
+      <SponsorFormModal 
+        isOpen={showForm} 
+        item={editingSponsor}
+        onSave={handleSave} 
+        onClose={() => { setShowForm(false); setEditingSponsor(null); }} 
+      />
+
+      <ConfirmDeleteModal 
+        isOpen={!!deleteTarget}
+        title={deleteTarget?.name}
+        subtitle="Esta empresa parceira será removida e deixará de aparecer no carrossel da página inicial."
+        onConfirm={() => { deleteSponsor(deleteTarget.id); setDeleteTarget(null); }}
+        onCancel={() => setDeleteTarget(null)} 
+      />
+    </div>
+  );
+}
+
 // ── PAINEL: CONFIGURAÇÕES ─────────────────────────────────────────────────────
 function TabSettings() {
   const { brandInfo, updateBrandInfo, resetToDefaultData } = useData();
@@ -857,6 +1367,7 @@ export default function AdminPage({ onClose }) {
     { id: 'overview',  label: 'Visão Geral',            icon: <LayoutDashboard size={17} /> },
     { id: 'gallery',   label: 'Álbum de Lembranças',    icon: <Images size={17} /> },
     { id: 'calendar',  label: 'Calendário & Atividades', icon: <CalendarDays size={17} /> },
+    { id: 'sponsors',  label: 'Patrocinadores & Apoio', icon: <Building2 size={17} /> },
     { id: 'settings',  label: 'Configurações',           icon: <Settings size={17} /> },
   ];
 
@@ -970,6 +1481,7 @@ export default function AdminPage({ onClose }) {
           {activeTab === 'overview' && <TabOverview setActiveTab={setActiveTab} />}
           {activeTab === 'gallery' && <TabGallery />}
           {activeTab === 'calendar' && <TabCalendar />}
+          {activeTab === 'sponsors' && <TabSponsors />}
           {activeTab === 'settings' && <TabSettings />}
         </main>
       </div>

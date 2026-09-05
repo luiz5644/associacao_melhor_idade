@@ -331,5 +331,50 @@ export const siteData = {
         description: "Exposição final das peças produzidas no semestre: vasos pintados à mão, esculturas em argila e toalhas bordadas."
       }
     ]
-  }
+  },
+
+  // 6. PATROCINADORES & PARCEIROS
+  sponsors: [
+    {
+      id: "sp-1",
+      name: "Farmácia São Lucas",
+      category: "Patrocinador Ouro",
+      websiteUrl: "https://farmaciasaolucas.com.br",
+      logo: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=400&auto=format&fit=crop",
+      description: "Apoio com aferição de pressão e medicamentos essenciais para nossos encontros semanais."
+    },
+    {
+      id: "sp-2",
+      name: "Clínica Longevidade Ativa",
+      category: "Parceiro Saúde",
+      websiteUrl: "https://clinicalongevidade.med.br",
+      logo: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=400&auto=format&fit=crop",
+      description: "Oferece palestras preventivas sobre mobilidade, fisioterapia e saúde mental."
+    },
+    {
+      id: "sp-3",
+      name: "Supermercado Central das Flores",
+      category: "Patrocinador Prata",
+      websiteUrl: "https://centraldasflores.com.br",
+      logo: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?q=80&w=400&auto=format&fit=crop",
+      description: "Doação semanal de frutas frescas e insumos para o nosso café da tarde comunitário."
+    },
+    {
+      id: "sp-4",
+      name: "Padaria Pão & Afeto",
+      category: "Apoiador Comunitário",
+      websiteUrl: "https://paoeafeto.com.br",
+      logo: "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop",
+      description: "Fornecedora dos quitutes, pães artesanais e bolos das nossas festividades e forrós."
+    },
+    {
+      id: "sp-5",
+      name: "Ótica & Saúde Visual",
+      category: "Apoiador Local",
+      websiteUrl: "https://oticavisaoreal.com.br",
+      logo: "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?q=80&w=400&auto=format&fit=crop",
+      description: "Parceria em exames visuais periódicos e condições especiais para nossos associados."
+    }
+  ]
 };
+

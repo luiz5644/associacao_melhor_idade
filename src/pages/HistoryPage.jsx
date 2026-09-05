@@ -1,8 +1,8 @@
 import React from 'react';
 import { siteData } from '../data/mockData';
 
-export default function HistoryPage({ onSelectPhoto }) {
-  const { history } = siteData;
+export default function HistoryPage({ onSelectPhoto, onOpenDonation }) {
+  const { history, home } = siteData;
 
   return (
     <div className="history-page">
@@ -15,8 +15,8 @@ export default function HistoryPage({ onSelectPhoto }) {
         </div>
 
         {/* Timeline Items */}
-        <div className="timeline-wrap">
-          {history.timeline.map((item, idx) => (
+        <div className="timeline-wrap" style={{ paddingBottom: '36px' }}>
+          {history.timeline.map((item) => (
             <div 
               key={item.year} 
               className={`timeline-item ${item.imagePosition === 'left' ? 'reverse' : ''}`}
@@ -48,6 +48,21 @@ export default function HistoryPage({ onSelectPhoto }) {
           ))}
         </div>
       </div>
+
+      {/* CTA BANNER / DOAÇÃO VIA PIX (Faixa de largura total antes do rodapé) */}
+      <section className="cta-banner">
+        <div className="container">
+          <div className="cta-grid">
+            <div className="cta-content">
+              <h2 className="cta-title">{home.cta.title}</h2>
+              <p className="cta-desc">{home.cta.description}</p>
+            </div>
+            <button className="cta-btn" onClick={onOpenDonation}>
+              {home.cta.buttonText}
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

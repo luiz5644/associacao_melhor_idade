@@ -5,6 +5,7 @@ const STORAGE_KEY_GALLERY = 'ami_gallery_items_v1';
 const STORAGE_KEY_CALENDAR = 'ami_calendar_events_v1';
 const STORAGE_KEY_HIGHLIGHTS = 'ami_calendar_highlights_v1';
 const STORAGE_KEY_BRAND = 'ami_brand_info_v1';
+const STORAGE_KEY_SPONSORS = 'ami_sponsors_v1';
 
 const DataContext = createContext(null);
 
@@ -56,6 +57,14 @@ export function DataProvider({ children }) {
     return siteData.brand;
   });
 
+  const [sponsors, setSponsors] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_SPONSORS);
+      if (saved) return JSON.parse(saved);
+    } catch (_) {}
+    return siteData.sponsors || [];
+  });
+
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => {
@@ -78,6 +87,10 @@ export function DataProvider({ children }) {
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY_BRAND, JSON.stringify(brandInfo)); } catch (_) {}
   }, [brandInfo]);
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(sponsors)); } catch (_) {}
+  }, [sponsors]);
 
   // ── CRUD: Álbum de Lembranças ──────────────────────────────────────
   const addGalleryItem = (itemData) => {
@@ -178,26 +191,65 @@ export function DataProvider({ children }) {
     showToast('Atividade removida do calendário.', 'warning');
   };
 
+  // ── CRUD: Patrocinadores & Parceiros ─────────────────────────────
+  const addSponsor = (sponsorData) => {
+    const newSponsor = {
+      id: `sp-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      name: sponsorData.name.trim(),
+      logo: sponsorData.logo || 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop',
+      category: sponsorData.category || 'Apoiador Comunitário',
+      websiteUrl: sponsorData.websiteUrl ? (sponsorData.websiteUrl.startsWith('http') ? sponsorData.websiteUrl : `https://${sponsorData.websiteUrl}`) : '',
+      description: sponsorData.description ? sponsorData.description.trim() : '',
+      active: sponsorData.active !== undefined ? Boolean(sponsorData.active) : true
+    };
+    setSponsors(prev => [newSponsor, ...prev]);
+    showToast(`Patrocinador "${newSponsor.name}" cadastrado com sucesso!`, 'success');
+    return newSponsor;
+  };
+
+  const updateSponsor = (id, updatedData) => {
+    setSponsors(prev => prev.map(sp => {
+      if (sp.id !== id) return sp;
+      return {
+        ...sp,
+        ...updatedData,
+        name: updatedData.name ? updatedData.name.trim() : sp.name,
+        websiteUrl: updatedData.websiteUrl ? (updatedData.websiteUrl.startsWith('http') ? updatedData.websiteUrl : `https://${updatedData.websiteUrl}`) : '',
+        description: updatedData.description !== undefined ? updatedData.description.trim() : sp.description,
+        updatedAt: new Date().toISOString()
+      };
+    }));
+    showToast('Dados do patrocinador atualizados com sucesso!', 'info');
+  };
+
+  const deleteSponsor = (id) => {
+    setSponsors(prev => prev.filter(sp => sp.id !== id));
+    showToast('Patrocinador removido com sucesso.', 'warning');
+  };
+
   const updateBrandInfo = (newInfo) => {
     setBrandInfo(prev => ({ ...prev, ...newInfo }));
     showToast('Informações da Associação salvas com sucesso!', 'success');
   };
 
   const resetToDefaultData = () => {
-    [STORAGE_KEY_GALLERY, STORAGE_KEY_CALENDAR, STORAGE_KEY_HIGHLIGHTS, STORAGE_KEY_BRAND]
+    [STORAGE_KEY_GALLERY, STORAGE_KEY_CALENDAR, STORAGE_KEY_HIGHLIGHTS, STORAGE_KEY_BRAND, STORAGE_KEY_SPONSORS]
       .forEach(k => localStorage.removeItem(k));
     setGalleryItems(siteData.gallery.items);
     setCalendarEvents(seedCalendarEvents());
     setCalendarHighlights(siteData.calendar.highlights);
     setBrandInfo(siteData.brand);
+    setSponsors(siteData.sponsors || []);
     showToast('Dados restaurados para o padrão original!', 'info');
   };
 
   return (
     <DataContext.Provider value={{
-      galleryItems, calendarEvents, calendarHighlights, brandInfo, toast,
+      galleryItems, calendarEvents, calendarHighlights, brandInfo, sponsors, toast,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
       addCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
+      addSponsor, updateSponsor, deleteSponsor,
       updateBrandInfo, resetToDefaultData, showToast
     }}>
       {children}

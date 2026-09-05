@@ -1,8 +1,9 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { siteData } from '../data/mockData';
+import SponsorsCarousel from '../components/SponsorsCarousel';
 
-export default function HomePage({ onNavigate, onOpenDonation, onSelectPhoto }) {
+export default function HomePage({ onNavigate, onOpenDonation, onOpenSponsorModal, onSelectPhoto }) {
   const { home } = siteData;
 
   return (
@@ -113,20 +114,10 @@ export default function HomePage({ onNavigate, onOpenDonation, onSelectPhoto }) 
         </div>
       </section>
 
-      {/* 5. CTA BANNER / DOAÇÃO */}
-      <section className="cta-banner">
-        <div className="container">
-          <div className="cta-grid">
-            <div className="cta-content">
-              <h2 className="cta-title">{home.cta.title}</h2>
-              <p className="cta-desc">{home.cta.description}</p>
-            </div>
-            <button className="cta-btn" onClick={onOpenDonation}>
-              {home.cta.buttonText}
-            </button>
-          </div>
-        </div>
-      </section>
+      {/* 5. CARROSSEL DE PATROCINADORES & PARCEIROS (Antes do rodapé) */}
+      <SponsorsCarousel onOpenSponsorModal={onOpenSponsorModal} onOpenDonation={onOpenDonation} />
     </div>
   );
 }
+
+

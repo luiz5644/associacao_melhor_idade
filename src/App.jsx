@@ -20,9 +20,13 @@ function AppContent() {
   const [highContrast, setHighContrast] = useState(false);
 
   // Modals state
-  const [isDonationOpen, setIsDonationOpen] = useState(false);
+  const [donationModal, setDonationModal] = useState({ isOpen: false, mode: 'pix' });
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+
+  const handleOpenPixDonation = () => setDonationModal({ isOpen: true, mode: 'pix' });
+  const handleOpenSponsorModal = () => setDonationModal({ isOpen: true, mode: 'sponsor' });
+  const handleCloseDonationModal = () => setDonationModal(prev => ({ ...prev, isOpen: false }));
 
   // Aplica classes de acessibilidade ao body
   useEffect(() => {
@@ -76,7 +80,8 @@ function AppContent() {
         {activePage === 'home' && (
           <HomePage 
             onNavigate={setActivePage}
-            onOpenDonation={() => setIsDonationOpen(true)}
+            onOpenDonation={handleOpenPixDonation}
+            onOpenSponsorModal={handleOpenSponsorModal}
             onSelectPhoto={setSelectedPhoto}
           />
         )}
@@ -84,6 +89,7 @@ function AppContent() {
         {activePage === 'history' && (
           <HistoryPage 
             onSelectPhoto={setSelectedPhoto}
+            onOpenDonation={handleOpenPixDonation}
           />
         )}
 
@@ -112,8 +118,9 @@ function AppContent() {
 
       {/* 5. Modais Globais */}
       <DonationModal 
-        isOpen={isDonationOpen}
-        onClose={() => setIsDonationOpen(false)}
+        isOpen={donationModal.isOpen}
+        mode={donationModal.mode}
+        onClose={handleCloseDonationModal}
       />
 
       <ScheduleModal 
