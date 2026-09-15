@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { DataProvider } from './context/DataContext';
-import AccessibilityBar from './components/AccessibilityBar';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -16,8 +15,6 @@ import { siteData } from './data/mockData';
 
 function AppContent() {
   const [activePage, setActivePage] = useState('home');
-  const [fontSizeLevel, setFontSizeLevel] = useState('normal');
-  const [highContrast, setHighContrast] = useState(false);
 
   // Modals state
   const [donationModal, setDonationModal] = useState({ isOpen: false, mode: 'pix' });
@@ -27,14 +24,6 @@ function AppContent() {
   const handleOpenPixDonation = () => setDonationModal({ isOpen: true, mode: 'pix' });
   const handleOpenSponsorModal = () => setDonationModal({ isOpen: true, mode: 'sponsor' });
   const handleCloseDonationModal = () => setDonationModal(prev => ({ ...prev, isOpen: false }));
-
-  // Aplica classes de acessibilidade ao body
-  useEffect(() => {
-    document.body.classList.remove('font-lg', 'font-xl', 'high-contrast');
-    if (fontSizeLevel === 'lg') document.body.classList.add('font-lg');
-    if (fontSizeLevel === 'xl') document.body.classList.add('font-xl');
-    if (highContrast) document.body.classList.add('high-contrast');
-  }, [fontSizeLevel, highContrast]);
 
   const handleSelectActivityFromFooter = (actId) => {
     const act = siteData.activities.items.find(item => item.id === actId);
@@ -46,27 +35,13 @@ function AppContent() {
   // Página de Admin ocupa a tela inteira sem header/footer
   if (activePage === 'admin') {
     return (
-      <>
-        <AccessibilityBar
-          fontSizeLevel={fontSizeLevel}
-          setFontSizeLevel={setFontSizeLevel}
-          highContrast={highContrast}
-          setHighContrast={setHighContrast}
-        />
-        <AdminPage onClose={() => setActivePage('home')} />
-      </>
+      <AdminPage onClose={() => setActivePage('home')} />
     );
   }
 
   return (
     <div className="app-container">
-      {/* 1. Barra de Acessibilidade */}
-      <AccessibilityBar 
-        fontSizeLevel={fontSizeLevel}
-        setFontSizeLevel={setFontSizeLevel}
-        highContrast={highContrast}
-        setHighContrast={setHighContrast}
-      />
+
 
       {/* 2. Header de Navegação */}
       <Header 

@@ -174,15 +174,7 @@ function MemoryDetailModal({ memory, onClose }) {
 export default function GalleryPage({ onSelectPhoto }) {
   const { gallery } = siteData;
   const { galleryItems } = useData();
-  const [activeCategory, setActiveCategory] = useState('Todos');
   const [selectedMemory, setSelectedMemory] = useState(null);
-
-  const filteredPhotos = activeCategory === 'Todos'
-    ? galleryItems
-    : galleryItems.filter(item => item.category === activeCategory);
-
-  // Monta categorias únicas a partir dos itens reais
-  const allCategories = ['Todos', ...new Set(galleryItems.map(item => item.category))];
 
   return (
     <div className="gallery-page">
@@ -194,35 +186,20 @@ export default function GalleryPage({ onSelectPhoto }) {
           <p className="page-subtitle">{gallery.subtitle}</p>
         </div>
 
-        {/* Filter Pills Bar */}
-        <div className="gallery-filter-bar">
-          <div className="filter-pills-row">
-            {allCategories.map((catId) => (
-              <button
-                key={catId}
-                className={`filter-pill ${activeCategory === catId ? 'active' : ''}`}
-                onClick={() => setActiveCategory(catId)}
-              >
-                {CAT_LABEL[catId] || catId}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Contador */}
         <p style={{ fontSize: '0.85rem', color: 'var(--text-subtle)', marginBottom: 20 }}>
-          {filteredPhotos.length} {filteredPhotos.length === 1 ? 'lembrança' : 'lembranças'}
+          {galleryItems.length} {galleryItems.length === 1 ? 'lembrança' : 'lembranças'}
         </p>
 
         {/* Photos Grid */}
-        {filteredPhotos.length === 0 ? (
+        {galleryItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-subtle)' }}>
-            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Nenhuma lembrança nesta categoria ainda.</p>
+            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Nenhuma lembrança cadastrada ainda.</p>
             <p style={{ fontSize: '0.9rem', marginTop: 8 }}>O administrador pode adicionar fotos no painel de gestão.</p>
           </div>
         ) : (
           <div className="gallery-grid">
-            {filteredPhotos.map((photo) => {
+            {galleryItems.map((photo) => {
               const photoCount = photo.photos?.length || (photo.image ? 1 : 0);
               return (
                 <div

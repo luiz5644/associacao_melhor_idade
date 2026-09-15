@@ -61,7 +61,7 @@ export default function ScheduleModal({ activity, onClose }) {
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
           <button className="btn btn-primary" onClick={onClose} style={{ width: '100%' }}>
-            Entendido, quero participar!
+            Entendido!
           </button>
         </div>
       </div>

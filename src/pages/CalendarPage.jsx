@@ -22,7 +22,6 @@ export default function CalendarPage() {
   const { calendarEvents, calendarHighlights } = useData();
 
   const today = new Date();
-  const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [selectedDay, setSelectedDay] = useState(today.getDate());
   const [currentYear, setCurrentYear] = useState(2026);
   const [currentMonthIndex, setCurrentMonthIndex] = useState(9); // Outubro
@@ -47,16 +46,9 @@ export default function CalendarPage() {
     setSelectedDay(1);
   };
 
-  // Filtra eventos pelo mês/ano/categoria atual
-  const allCategories = [
-    { id: 'Todas', label: 'Todas' },
-    ...Array.from(new Set(calendarEvents.map(e => e.category))).map(c => ({ id: c, label: c }))
-  ];
-
+  // Eventos do mês/ano atual
   const filteredEvents = calendarEvents.filter(ev => {
-    const matchMonth = ev.year === currentYear && ev.month === currentMonthIndex;
-    const matchCat = selectedCategory === 'Todas' || ev.category === selectedCategory;
-    return matchMonth && matchCat;
+    return ev.year === currentYear && ev.month === currentMonthIndex;
   });
 
   const eventsForSelectedDay = filteredEvents.filter(e => e.day === selectedDay);
@@ -167,21 +159,7 @@ export default function CalendarPage() {
 
           {/* Right Sidebar */}
           <div className="calendar-sidebar">
-            {/* Box: Filtrar por Categoria */}
-            <div className="sidebar-box">
-              <h3 className="sidebar-heading">Filtrar por Categoria</h3>
-              <div className="filter-pills-row">
-                {allCategories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    className={`filter-pill ${selectedCategory === cat.id ? 'active' : ''}`}
-                    onClick={() => setSelectedCategory(cat.id)}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+
 
             {/* Box: Destaques do Mês */}
             <div className="sidebar-box">
