@@ -2189,3 +2189,245 @@ h1, h2, h3, h4, .font-serif {
   }
 }
 
+
+/* =========================================================
+   AJUSTES FINOS MOBILE — TAMANHOS DE ELEMENTOS E TEXTO
+   (Correções adicionais além da responsividade já existente)
+   ========================================================= */
+
+/* Reduz levemente a escala base em telas bem pequenas,
+   ajustando de forma proporcional tudo que usa rem */
+@media (max-width: 380px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+/* Container com menos respiro lateral no celular */
+@media (max-width: 480px) {
+  .container {
+    padding: 0 16px;
+  }
+}
+
+/* Header mais compacto no mobile */
+@media (max-width: 640px) {
+  .site-header .container {
+    height: 64px;
+  }
+
+  .brand-badge {
+    width: 38px;
+    height: 38px;
+    font-size: 1.15rem;
+  }
+
+  .brand-title {
+    font-size: 1.05rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.58rem;
+  }
+
+  .admin-link-btn {
+    font-size: 0.75rem;
+    padding: 7px 14px;
+  }
+}
+
+/* Títulos grandes ficam desproporcionais em telas pequenas */
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 1.9rem;
+  }
+
+  .hero-desc {
+    font-size: 1rem;
+  }
+
+  .hero-image {
+    height: 240px;
+  }
+
+  .page-title {
+    font-size: 1.6rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.92rem;
+  }
+
+  .history-teaser-title {
+    font-size: 1.5rem;
+  }
+
+  .history-teaser-text {
+    font-size: 0.95rem;
+  }
+
+  .history-teaser-img {
+    height: 220px;
+  }
+
+  .timeline-year {
+    font-size: 2.4rem;
+    margin-bottom: 6px;
+  }
+
+  .timeline-title {
+    font-size: 1.25rem;
+  }
+
+  .timeline-text {
+    font-size: 0.95rem;
+  }
+
+  .timeline-image {
+    height: 220px;
+  }
+
+  .cta-title {
+    font-size: 1.35rem;
+  }
+
+  .cta-desc {
+    font-size: 0.92rem;
+  }
+}
+
+/* Botões proporcionais ao mobile */
+@media (max-width: 480px) {
+  .btn {
+    font-size: 0.88rem;
+    padding: 9px 18px;
+  }
+
+  .cta-btn {
+    font-size: 0.92rem;
+    padding: 12px 20px;
+    width: 100%;
+  }
+
+  .activity-btn {
+    font-size: 0.85rem;
+    padding: 8px 16px;
+  }
+}
+
+/* Modais mais compactos no celular */
+@media (max-width: 640px) {
+  .modal-card {
+    padding: 22px 18px;
+    border-radius: 16px;
+  }
+
+  .modal-title {
+    font-size: 1.4rem;
+  }
+
+  .modal-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .form-label {
+    font-size: 0.82rem;
+  }
+
+  .form-input,
+  .form-textarea,
+  .form-select {
+    font-size: 0.9rem;
+    padding: 9px 12px;
+  }
+
+  .pix-key-display {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .modal-close-btn {
+    top: 14px;
+    right: 14px;
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* Calendário: células e navegação menores em telas estreitas */
+@media (max-width: 420px) {
+  .calendar-main-box {
+    padding: 20px 14px;
+  }
+
+  .calendar-month-title {
+    font-size: 1.35rem;
+  }
+
+  .cal-nav-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .cal-grid {
+    gap: 5px;
+  }
+
+  .cal-day-cell {
+    min-height: 38px;
+    font-size: 0.8rem;
+  }
+
+  .cal-weekdays {
+    font-size: 0.75rem;
+  }
+}
+
+/* Cards de patrocinadores um pouco menores no mobile */
+@media (max-width: 480px) {
+  .sponsor-card {
+    flex: 0 0 220px;
+  }
+
+  .sponsor-logo-container {
+    height: 90px;
+  }
+
+  .sponsor-name {
+    font-size: 1.05rem;
+  }
+}
+
+/* Cards gerais (atividades, momentos, galeria) com texto ajustado */
+@media (max-width: 480px) {
+  .upcoming-title,
+  .activity-title,
+  .gallery-title {
+    font-size: 1.1rem;
+  }
+
+  .moment-title {
+    font-size: 1.05rem;
+  }
+
+  .upcoming-card,
+  .activity-body,
+  .moment-info,
+  .gallery-info {
+    padding: 16px;
+  }
+}
+
+/* Lightbox de fotos ocupando melhor a tela pequena */
+@media (max-width: 480px) {
+  .lightbox-img {
+    max-height: 65vh;
+  }
+
+  .lightbox-caption {
+    font-size: 0.85rem;
+    padding: 10px 14px;
+  }
+}
