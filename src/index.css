@@ -1384,7 +1384,9 @@ h1, h2, h3, h4, .font-serif {
 .mobile-nav-drawer {
   position: fixed;
   inset: 0;
-  background-color: #FFFFFF;
+  /* Escurece a página atrás, dando destaque ao menu */
+  background-color: rgba(20, 39, 43, 0.55);
+  backdrop-filter: blur(2px);
   z-index: 200;
   display: flex;
   justify-content: flex-end;
@@ -1392,14 +1394,29 @@ h1, h2, h3, h4, .font-serif {
 
 .mobile-nav-content {
   background-color: #FFFFFF;
-  width: 80%;
-  max-width: 320px;
+  width: 75%;
+  max-width: 300px;
   height: 100%;
-  padding: 30px 24px;
+  padding: 22px 18px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  /* box-shadow: -4px 0 20px rgba(0,0,0,0.1); */
+  gap: 10px;
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.18);
+  overflow-y: auto;
+  animation: drawerIn 0.25s ease;
+}
+
+/* Entrada suave do menu pela direita */
+@keyframes drawerIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+/* Respeita usuários que preferem menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-nav-content {
+    animation: none;
+  }
 }
 
 /* =========================================================

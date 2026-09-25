@@ -20,6 +20,7 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
   };
 
   return (
+    <>
     <header className="site-header">
       <div className="container">
         {/* Brand / Logo */}
@@ -69,48 +70,51 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
           {mobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
         </button>
       </div>
+    </header>
 
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="mobile-nav-drawer" onClick={() => setMobileMenuOpen(false)}>
-          <div className="mobile-nav-content" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div className="brand-link">
-                <div className="brand-badge" style={{ width: '36px', height: '36px', fontSize: '1.2rem' }}>M</div>
-                <span className="brand-title" style={{ fontSize: '1.1rem' }}>{siteData.brand.name}</span>
-              </div>
-              <button 
-                onClick={() => setMobileMenuOpen(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                <X size={24} />
-              </button>
+    {/* Mobile Drawer — fora do header, para o position: fixed
+        cobrir a tela inteira (header tem backdrop-filter, que
+        "trava" elementos fixed dentro dele) */}
+    {mobileMenuOpen && (
+      <div className="mobile-nav-drawer" onClick={() => setMobileMenuOpen(false)}>
+        <div className="mobile-nav-content" onClick={(e) => e.stopPropagation()}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div className="brand-link">
+              <div className="brand-badge" style={{ width: '36px', height: '36px', fontSize: '1.2rem' }}>M</div>
+              <span className="brand-title" style={{ fontSize: '1.1rem' }}>{siteData.brand.name}</span>
             </div>
-
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                className={`nav-pill-btn ${activePage === item.id ? 'active' : ''}`}
-                style={{ textAlign: 'left', width: '100%', padding: '12px 18px', fontSize: '1rem' }}
-                onClick={() => handleNavClick(item.id)}
-              >
-                {item.label}
-              </button>
-            ))}
-
-            <hr style={{ border: 'none', borderTop: '1px solid #EBE1D8', margin: '8px 0' }} />
-
             <button 
-              className="admin-link-btn"
-              style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
-              onClick={() => { setMobileMenuOpen(false); onOpenAdmin(); }}
+              onClick={() => setMobileMenuOpen(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
             >
-              <Shield size={16} />
-              <span>área do administrador</span>
+              <X size={24} />
             </button>
           </div>
+
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              className={`nav-pill-btn ${activePage === item.id ? 'active' : ''}`}
+              style={{ textAlign: 'left', width: '100%', padding: '10px 16px', fontSize: '0.92rem' }}
+              onClick={() => handleNavClick(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+
+          <hr style={{ border: 'none', borderTop: '1px solid #EBE1D8', margin: '6px 0' }} />
+
+          <button 
+            className="admin-link-btn"
+            style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
+            onClick={() => { setMobileMenuOpen(false); onOpenAdmin(); }}
+          >
+            <Shield size={16} />
+            <span>área do administrador</span>
+          </button>
         </div>
-      )}
-    </header>
+      </div>
+    )}
+    </>
   );
 }
