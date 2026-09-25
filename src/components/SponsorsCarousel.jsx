@@ -1,13 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, HeartHandshake, Building2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, HeartHandshake } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
 export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation }) {
   const { sponsors } = useData();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
+
+  // Ref do contêiner de rolagem nativa
+  const scrollRef = useRef(null);
+  // Guarda: true enquanto uma rolagem programática (auto-play/setas/dots)
+  // está em andamento, para não brigar com o swipe do usuário
+  const isProgrammatic = useRef(false);
+  const releaseTimer = useRef(null);
+  const settleTimer = useRef(null);
 
   const handleOpenSponsor = (e) => {
     if (e) e.stopPropagation();
@@ -21,6 +27,72 @@ export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation })
   // Filtrar apenas patrocinadores ativos (ou todos se active não for false)
   const activeSponsors = (sponsors || []).filter(s => s.active !== false);
 
+  // Rola o contêiner até o card indicado (baseado em posição visual,
+  // funciona em qualquer largura de tela/card)
+  const scrollToCard = (index, instant = false) => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const card = container.children[index];
+    if (!card) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    const paddingLeft = parseFloat(getComputedStyle(container).paddingLeft) || 0;
+
+    // Posição de rolagem em que a borda esquerda do card encosta
+    // na borda esquerda do contêiner (respeitando o padding)
+    const delta = cardRect.left - containerRect.left - paddingLeft + container.scrollLeft;
+    if (Math.abs(delta - container.scrollLeft) < 1) return; // já está no lugar
+
+    isProgrammatic.current = true;
+    container.scrollTo({ left: delta, behavior: instant ? 'auto' : 'smooth' });
+
+    // Libera a guarda após a animação terminar
+    clearTimeout(releaseTimer.current);
+    releaseTimer.current = setTimeout(() => {
+      isProgrammatic.current = false;
+    }, 700);
+  };
+
+  // Sincroniza currentIndex quando o usuário rola manualmente (swipe/trackpad),
+  // mas só depois que a rolagem assenta, para não interferir no snap
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const syncFromScroll = () => {
+      const cards = container.children;
+      const containerRect = container.getBoundingClientRect();
+      const paddingLeft = parseFloat(getComputedStyle(container).paddingLeft) || 0;
+      const targetX = containerRect.left + paddingLeft;
+
+      // Card cuja borda esquerda está mais próxima do início do contêiner
+      let best = 0;
+      let bestDist = Infinity;
+      for (let i = 0; i < cards.length; i++) {
+        const r = cards[i].getBoundingClientRect();
+        const d = Math.abs(r.left - targetX);
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
+      }
+      setCurrentIndex(prev => (prev === best ? prev : best));
+    };
+
+    const onScroll = () => {
+      if (isProgrammatic.current) return; // rolagem nossa, não sincroniza
+      clearTimeout(settleTimer.current);
+      settleTimer.current = setTimeout(syncFromScroll, 120);
+    };
+
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      container.removeEventListener('scroll', onScroll);
+      clearTimeout(settleTimer.current);
+    };
+  }, [activeSponsors.length]);
+
   // Auto-avanço a cada 3.5 segundos quando não pausado pelo mouse
   useEffect(() => {
     if (activeSponsors.length <= 1 || isPaused) return;
@@ -31,6 +103,18 @@ export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation })
 
     return () => clearInterval(timer);
   }, [activeSponsors.length, isPaused]);
+
+  // Quando currentIndex muda (auto-play, dots ou setas), rola até o card
+  useEffect(() => {
+    scrollToCard(currentIndex);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentIndex]);
+
+  // Usuário tocando retoma o controle imediato da rolagem
+  const handleUserGrab = () => {
+    isProgrammatic.current = false;
+    clearTimeout(releaseTimer.current);
+  };
 
   if (!activeSponsors || activeSponsors.length === 0) {
     return null;
@@ -44,28 +128,6 @@ export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation })
     setCurrentIndex(prev => (prev + 1) % activeSponsors.length);
   };
 
-  // Suporte a swipe em telas touch
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    const diff = touchStartX.current - touchEndX.current;
-    if (Math.abs(diff) > 40) {
-      if (diff > 0) {
-        handleNext();
-      } else {
-        handlePrev();
-      }
-    }
-  };
-
-  // Calcular itens visíveis para renderização circular suave
-  // Mostramos uma vitrine em carrossel e também a fila contínua
   return (
     <section 
       className="sponsors-section" 
@@ -108,79 +170,62 @@ export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation })
           </div>
         </div>
 
-        {/* Trilho do Carrossel */}
+        {/* Trilho do Carrossel — rolagem nativa com snap */}
         <div 
           className="sponsors-carousel-wrapper"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          ref={scrollRef}
+          onPointerDown={handleUserGrab}
+          onTouchStart={handleUserGrab}
         >
-          <div 
-            className="sponsors-track"
-            style={{
-              transform: `translateX(calc(-${currentIndex} * (280px + 20px)))`,
-              transition: 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)'
-            }}
-          >
-            {activeSponsors.map((sponsor, index) => (
-              <div 
-                key={sponsor.id || index}
-                className={`sponsor-card ${index === currentIndex ? 'sponsor-card-focused' : ''}`}
-              >
-                <div className="sponsor-logo-container">
-                  <img 
-                    src={sponsor.logo} 
-                    alt={`Logo da empresa ${sponsor.name}`} 
-                    className="sponsor-logo-img"
-                    loading="lazy"
-                    onError={(e) => {
-                      // Fallback elegante caso a imagem expire ou não carregue
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop';
-                    }}
-                  />
-                  {sponsor.category && (
-                    <span className="sponsor-badge">{sponsor.category}</span>
-                  )}
-                </div>
-
-                <div className="sponsor-body">
-                  <h3 className="sponsor-name">{sponsor.name}</h3>
-                  {sponsor.description && (
-                    <p className="sponsor-desc">{sponsor.description}</p>
-                  )}
-                  {sponsor.websiteUrl && (
-                    <a 
-                      href={sponsor.websiteUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="sponsor-link"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <span>Conhecer Empresa</span>
-                      <ExternalLink size={13} />
-                    </a>
-                  )}
-                </div>
+          {activeSponsors.map((sponsor, index) => (
+            <div 
+              key={sponsor.id || index}
+              className={`sponsor-card ${index === currentIndex ? 'sponsor-card-focused' : ''}`}
+            >
+              <div className="sponsor-logo-container">
+                <img 
+                  src={sponsor.logo} 
+                  alt={`Logo da empresa ${sponsor.name}`} 
+                  className="sponsor-logo-img"
+                  loading="lazy"
+                  onError={(e) => {
+                    // Fallback elegante caso a imagem expire ou não carregue
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop';
+                  }}
+                />
+                {sponsor.category && (
+                  <span className="sponsor-badge">{sponsor.category}</span>
+                )}
               </div>
-            ))}
 
-            {/* Card Convite para Novas Empresas */}
-            <div className="sponsor-card sponsor-card-invite" onClick={handleOpenSponsor}>
-              <div className="sponsor-invite-content">
-                <div className="sponsor-invite-icon">
-                  <Building2 size={28} />
-                </div>
-                <h3 className="sponsor-invite-title">Sua Empresa Aqui</h3>
-                <p className="sponsor-invite-desc">
-                  Seja uma marca parceira e apoie nossos projetos sociais.
-                </p>
-                <button className="btn btn-primary sponsor-invite-btn" onClick={handleOpenSponsor}>
-                  Quero Patrocinar
-                </button>
+              <div className="sponsor-body">
+                <h3 className="sponsor-name">{sponsor.name}</h3>
+                {sponsor.description && (
+                  <p className="sponsor-desc">{sponsor.description}</p>
+                )}
+                {sponsor.websiteUrl && (
+                  <a 
+                    href={sponsor.websiteUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="sponsor-link"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span>Conhecer Empresa</span>
+                    <ExternalLink size={13} />
+                  </a>
+                )}
               </div>
             </div>
-          </div>
+          ))}
+        </div>
+
+        {/* CTA fora do carrossel */}
+        <div className="sponsors-cta">
+          <button className="btn btn-primary sponsors-cta-btn" onClick={handleOpenSponsor}>
+            Quero Patrocinar
+          </button>
         </div>
 
         {/* Indicadores / Pontos de Navegação */}
