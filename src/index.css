@@ -1355,6 +1355,12 @@ h1, h2, h3, h4, .font-serif {
   .mobile-menu-btn {
     display: block;
   }
+
+  /* Botão do administrador some no header mobile —
+     já existe dentro do menu lateral */
+  .header-actions {
+    display: none;
+  }
 }
 
 @media (max-width: 640px) {
