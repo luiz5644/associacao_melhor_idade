@@ -16,7 +16,7 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
   const handleNavClick = (pageId) => {
     setActivePage(pageId);
     setMobileMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
   };
 
   return (

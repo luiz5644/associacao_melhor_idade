@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import { DataProvider } from './context/DataContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -15,6 +15,11 @@ import { siteData } from './data/mockData';
 
 function AppContent() {
   const [activePage, setActivePage] = useState('home');
+
+  // Toda troca de página começa no topo, instantâneo (sem animação)
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activePage]);
 
   // Modals state
   const [donationModal, setDonationModal] = useState({ isOpen: false, mode: 'pix' });
