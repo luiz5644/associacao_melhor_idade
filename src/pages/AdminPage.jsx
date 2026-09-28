@@ -3,7 +3,7 @@ import {
   Shield, LogOut, LayoutDashboard, Images, CalendarDays, Settings,
   Plus, Pencil, Trash2, X, CheckCircle, Users, CalendarCheck,
   HeartHandshake, Camera, Upload, Link, Clock, MapPin, Star,
-  ChevronRight, Search, AlertTriangle, RotateCcw, ChevronDown,
+  ChevronRight, Search, AlertTriangle, ChevronDown,
   Building2, ExternalLink, Globe
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
@@ -743,77 +743,77 @@ function TabOverview({ setActiveTab }) {
       <p style={{ color:'var(--text-subtle)', marginBottom:28, fontSize:'0.95rem' }}>Resumo da atividade da Associação Melhor Idade.</p>
 
       {/* Stats */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:32 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:32, width:'100%' }}>
         {stats.map((s, i) => (
-          <div key={i} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius:14, padding:'20px 18px' }}>
+          <div key={i} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius:14, padding:'20px 18px', minWidth:0 }}>
             <div style={{ marginBottom:10 }}>{s.icon}</div>
-            <div style={{ fontSize:'2rem', fontWeight:800, color:'var(--text-main)', lineHeight:1 }}>{s.value}</div>
-            <div style={{ fontSize:'0.8rem', color:'var(--text-subtle)', marginTop:6, fontWeight:600 }}>{s.label}</div>
+            <div style={{ fontSize:'2rem', fontWeight:800, color:'var(--text-main)', lineHeight:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.value}</div>
+            <div style={{ fontSize:'0.8rem', color:'var(--text-subtle)', marginTop:6, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Atalhos rápidos */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(260px, 1fr))', gap:20, marginBottom:32 }}>
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(260px, 1fr))', gap:20, marginBottom:32, width:'100%' }}>
+        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:38, height:38, background:'#F5F0FB', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <div style={{ width:38, height:38, background:'#F5F0FB', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               <Images size={20} color="#7B5EA7" />
             </div>
-            <h3 style={{ fontSize:'1rem', fontWeight:700 }}>Álbum de Lembranças</h3>
+            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Álbum de Lembranças</h3>
           </div>
           <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
             {galleryItems.length} lembranças cadastradas no álbum público.
           </p>
-          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px' }} onClick={() => setActiveTab('gallery')}>
+          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px', width:'100%' }} onClick={() => setActiveTab('gallery')}>
             <Plus size={14} /> Adicionar Lembrança
           </button>
         </div>
 
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-                    <div style={{ width:38, height:38, background:'#EAF4F6', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                      <CalendarDays size={20} color="#2A5C66" />
-                    </div>
-                    <h3 style={{ fontSize:'1rem', fontWeight:700 }}>Calendário de Ações</h3>
-                  </div>
-                  <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
-                    {calendarEvents.length} ações agendadas no calendário.
-                  </p>
-                  <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px' }} onClick={() => setActiveTab('calendar')}>
-                    <Plus size={14} /> Agendar Ação
-                  </button>
-                </div>
-
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24 }}>
+        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:38, height:38, background:'#FDF6F0', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <div style={{ width:38, height:38, background:'#EAF4F6', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <CalendarDays size={20} color="#2A5C66" />
+            </div>
+            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Calendário de Ações</h3>
+          </div>
+          <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
+            {calendarEvents.length} ações agendadas no calendário.
+          </p>
+          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px', width:'100%' }} onClick={() => setActiveTab('calendar')}>
+            <Plus size={14} /> Agendar Ação
+          </button>
+        </div>
+
+        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24, minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+            <div style={{ width:38, height:38, background:'#FDF6F0', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               <Building2 size={20} color="#B8621A" />
             </div>
-            <h3 style={{ fontSize:'1rem', fontWeight:700 }}>Patrocinadores & Apoio</h3>
+            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Patrocinadores & Apoio</h3>
           </div>
           <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
             {(sponsors || []).length} empresas parceiras cadastradas no carrossel.
           </p>
-          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px' }} onClick={() => setActiveTab('sponsors')}>
+          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px', width:'100%' }} onClick={() => setActiveTab('sponsors')}>
             <Plus size={14} /> Gerenciar Patrocinadores
           </button>
         </div>
       </div>
 
-      {/* Próximas atividades */}
+      {/* Próximas ações */}
       {upcomingEvents.length > 0 && (
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24 }}>
+        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24, width:'100%' }}>
           <h3 style={{ fontFamily:'var(--font-sans)', fontSize:'1.1rem', marginBottom:16 }}>Próximas Ações Cadastradas</h3>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {upcomingEvents.map(ev => (
-              <div key={ev.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'10px 14px', background:'#F5F9F8', borderRadius:10 }}>
-                <div style={{ textAlign:'center', minWidth:44, background:'#2A5C66', borderRadius:8, padding:'6px 4px', color:'#fff' }}>
+              <div key={ev.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'10px 14px', background:'#F5F9F8', borderRadius:10, flexWrap:'wrap' }}>
+                <div style={{ textAlign:'center', minWidth:44, background:'#2A5C66', borderRadius:8, padding:'6px 4px', color:'#fff', flexShrink:0 }}>
                   <div style={{ fontSize:'1.1rem', fontWeight:800, lineHeight:1 }}>{ev.day}</div>
                   <div style={{ fontSize:'0.65rem', textTransform:'uppercase', letterSpacing:'0.05em' }}>{MONTHS[ev.month]?.slice(0,3)}</div>
                 </div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:700, fontSize:'0.92rem' }}>{ev.title}</div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:700, fontSize:'0.92rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{ev.title}</div>
                   <div style={{ fontSize:'0.78rem', color:'var(--text-subtle)' }}>{ev.time} • {ev.location}</div>
                 </div>
                 <CategoryBadge category={ev.category} />
@@ -1483,83 +1483,39 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
 
 // ── PAINEL: CONFIGURAÇÕES ─────────────────────────────────────────────────────
 function TabSettings() {
-  const { brandInfo, updateBrandInfo, resetToDefaultData } = useData();
+  const { brandInfo, updateBrandInfo } = useData();
   const [form, setForm] = useState({ ...brandInfo });
-  const [confirmReset, setConfirmReset] = useState(false);
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
   return (
     <div>
       <h2 className="admin-section-title">Configurações</h2>
-      <p style={{ color:'var(--text-subtle)', marginBottom:28, fontSize:'0.95rem' }}>Informações da Associação e dados do sistema.</p>
+      <p style={{ color:'var(--text-subtle)', marginBottom:28, fontSize:'0.95rem' }}>Informações da Associação.</p>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1.5fr 1fr', gap:24 }}>
-        {/* Informações da Associação */}
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:28 }}>
-          <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.1rem', marginBottom:20, display:'flex', alignItems:'center', gap:8 }}>
-            <Settings size={18} color="#2A5C66" /> Informações da Associação
-          </h3>
-          <div className="form-group">
-            <label className="form-label">E-mail de Contato</label>
-            <input className="form-input" type="email" value={form.email || ''} onChange={e => setField('email', e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Telefone</label>
-            <input className="form-input" type="tel" value={form.phone || ''} onChange={e => setField('phone', e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Endereço</label>
-            <input className="form-input" type="text" value={form.address || ''} onChange={e => setField('address', e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Chave PIX para Doações</label>
-            <input className="form-input" type="text" value={form.pixKey || ''} onChange={e => setField('pixKey', e.target.value)} />
-          </div>
-          <button className="btn btn-primary" onClick={() => updateBrandInfo(form)}>
-            <CheckCircle size={15} /> Salvar Informações
-          </button>
+      <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:28, maxWidth: 640 }}>
+        <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.1rem', marginBottom:20, display:'flex', alignItems:'center', gap:8 }}>
+          <Settings size={18} color="#2A5C66" /> Informações da Associação
+        </h3>
+        <div className="form-group">
+          <label className="form-label">E-mail de Contato</label>
+          <input className="form-input" type="email" value={form.email || ''} onChange={e => setField('email', e.target.value)} />
         </div>
-
-        {/* Info de Backend & Backup */}
-        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-          <div style={{ background:'#EAF4F6', border:'1px solid #D2ECF0', borderRadius:16, padding:22 }}>
-            <h4 style={{ fontSize:'0.95rem', fontWeight:700, marginBottom:10, display:'flex', alignItems:'center', gap:8 }}>
-              <Shield size={16} color="#2A5C66" /> Preparado para Backend
-            </h4>
-            <p style={{ fontSize:'0.82rem', color:'#3A6570', lineHeight:1.65 }}>
-              Os dados estão salvos no <strong>LocalStorage</strong> do navegador e serão mantidos entre sessões.
-              Quando o backend estiver pronto, as funções <code>addCalendarEvent</code>, <code>addGalleryItem</code> e demais CRUD precisarão apenas substituir o <code>localStorage</code> por chamadas <code>fetch('/api/...')</code>.
-            </p>
-            <div style={{ marginTop:12, background:'rgba(42,92,102,0.08)', borderRadius:8, padding:'10px 12px', fontFamily:'monospace', fontSize:'0.75rem', color:'#2A5C66', lineHeight:1.8 }}>
-              POST /api/memories → addGalleryItem()<br/>
-              PUT /api/memories/:id → updateGalleryItem()<br/>
-              DELETE /api/memories/:id → deleteGalleryItem()<br/>
-              POST /api/events → addCalendarEvent()<br/>
-              PUT /api/events/:id → updateCalendarEvent()
-            </div>
-          </div>
-
-          <div style={{ background:'#FEF9ED', border:'1px solid #FDE68A', borderRadius:16, padding:22 }}>
-            <h4 style={{ fontSize:'0.95rem', fontWeight:700, marginBottom:10, display:'flex', alignItems:'center', gap:8 }}>
-              <RotateCcw size={16} color="#92660A" /> Restaurar Dados Padrão
-            </h4>
-            <p style={{ fontSize:'0.82rem', color:'#92660A', lineHeight:1.65, marginBottom:14 }}>
-              Apaga todos os cadastros feitos e restaura os dados originais de fábrica do sistema.
-              <strong> Esta ação não pode ser desfeita.</strong>
-            </p>
-            <button className="btn" style={{ background:'#FBBF24', color:'#451A03', fontSize:'0.82rem', padding:'8px 14px' }}
-              onClick={() => setConfirmReset(true)}>
-              <RotateCcw size={13} /> Restaurar Tudo
-            </button>
-          </div>
+        <div className="form-group">
+          <label className="form-label">Telefone</label>
+          <input className="form-input" type="tel" value={form.phone || ''} onChange={e => setField('phone', e.target.value)} />
         </div>
+        <div className="form-group">
+          <label className="form-label">Endereço</label>
+          <input className="form-input" type="text" value={form.address || ''} onChange={e => setField('address', e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Chave PIX para Doações</label>
+          <input className="form-input" type="text" value={form.pixKey || ''} onChange={e => setField('pixKey', e.target.value)} />
+        </div>
+        <button className="btn btn-primary" onClick={() => updateBrandInfo(form)}>
+          <CheckCircle size={15} /> Salvar Informações
+        </button>
       </div>
-
-      <ConfirmDeleteModal isOpen={confirmReset}
-        title="Restaurar dados padrão?"
-        subtitle="Todos os cadastros de lembranças e atividades serão removidos e os dados originais serão restaurados."
-        onConfirm={() => { resetToDefaultData(); setConfirmReset(false); }}
-        onCancel={() => setConfirmReset(false)} />
     </div>
   );
 }
@@ -1638,64 +1594,65 @@ export default function AdminPage({ onClose }) {
   }
 
   // ── Dashboard ──────────────────────────────────────────────────────
-  return (
-    <div className="admin-page">
-      {/* Topbar */}
-      <header className="admin-topbar">
-        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-          <div style={{ width:40, height:40, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center' }}>
-            <Shield size={20} color="#fff" />
-          </div>
-          <div>
-            <div style={{ fontWeight:800, fontSize:'0.97rem', color:'var(--text-main)' }}>Painel Administrativo</div>
-            <div style={{ fontSize:'0.73rem', color:'var(--text-subtle)' }}>Associação Melhor Idade</div>
-          </div>
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-          <div style={{ fontSize:'0.82rem', color:'var(--text-subtle)', padding:'6px 14px', background:'#F5F9F8', borderRadius:99, border:'1px solid #DCE7E5' }}>
-            👤 Coordenação — {siteData.brand.name}
-          </div>
-          <button className="btn btn-pill" style={{ fontSize:'0.82rem' }} onClick={onClose}>
-            <ChevronRight size={14} /> Ver Site
-          </button>
-          <button className="btn" style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5', fontSize:'0.82rem', padding:'8px 14px' }}
-            onClick={() => setIsLoggedIn(false)}>
-            <LogOut size={13} /> Sair
-          </button>
-        </div>
-      </header>
+    return (
+      <div className="admin-page">
+        {/* Topbar */}
+                <header className="admin-topbar">
+                  <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
+                    <div style={{ width:36, height:36, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      <Shield size={18} color="#fff" />
+                    </div>
+                    <div style={{ minWidth:0 }}>
+                      <div style={{ fontWeight:700, fontSize:'0.9rem', color:'var(--text-main)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Painel Administrativo</div>
+                      <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Associação Melhor Idade</div>
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', justifyContent:'flex-end' }}>
+                    <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)', padding:'4px 10px', background:'#F5F9F8', borderRadius:99, border:'1px solid #DCE7E5', whiteSpace:'nowrap', display:'none' }}>
+                      👤 Coordenação — {siteData.brand.name}
+                    </div>
+                    <button className="btn btn-pill" style={{ fontSize:'0.78rem', padding:'6px 12px' }} onClick={onClose}>
+                      <ChevronRight size={12} /> Ver Site
+                    </button>
+                    <button className="btn" style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5', fontSize:'0.78rem', padding:'6px 12px' }}
+                      onClick={() => setIsLoggedIn(false)}>
+                      <LogOut size={12} /> Sair
+                    </button>
+                  </div>
+                </header>
 
-      <div className="admin-layout">
-        {/* Sidebar de Navegação */}
-        <aside className="admin-sidebar">
-          <nav>
-            {tabs.map(tab => (
-              <button key={tab.id} className={`admin-nav-item ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}>
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-          <div style={{ marginTop:'auto', padding:'20px 16px', borderTop:'1px solid #DCE7E5' }}>
-            <div style={{ fontSize:'0.73rem', color:'var(--text-subtle)', lineHeight:1.6 }}>
-              <strong style={{ display:'block', marginBottom:4 }}>Dados salvos em:</strong>
-              LocalStorage do navegador<br/>
-              Pronto para integrar com backend
+              <div className="admin-layout">
+                {/* Sidebar de Navegação */}
+                <aside className="admin-sidebar" role="navigation" aria-label="Painel administrativo">
+                  <nav style={{ display:'flex', flexDirection:'column', gap:6, flex:1 }}>
+                    {tabs.map(tab => (
+                      <button key={tab.id} className={`admin-nav-item ${activeTab === tab.id ? 'active' : ''}`}
+                        onClick={() => setActiveTab(tab.id)}
+                        style={{ textAlign: 'left', padding: '12px 16px', fontSize: '0.9rem', gap: 12, justifyContent: 'flex-start', borderRadius: 10 }}>
+                        {tab.icon}
+                        <span>{tab.label}</span>
+                      </button>
+                    ))}
+                  </nav>
+                  <div style={{ marginTop:'auto', padding:'16px 12px', borderTop:'1px solid #DCE7E5', width:'100%' }}>
+                    <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', lineHeight:1.6, textAlign:'center' }}>
+                      <strong style={{ display:'block', marginBottom:4 }}>Dados salvos em:</strong>
+                      LocalStorage do navegador<br/>
+                      Pronto para integrar com backend
+                    </div>
+                  </div>
+                </aside>
+
+                {/* Conteúdo Principal */}
+                <main className="admin-content">
+                  {activeTab === 'overview' && <TabOverview setActiveTab={setActiveTab} />}
+                  {activeTab === 'gallery' && <TabGallery />}
+                  {activeTab === 'calendar' && <TabCalendar />}
+                  {activeTab === 'sponsors' && <TabSponsors />}
+                  {activeTab === 'testimonials' && <TabTestimonials />}
+                  {activeTab === 'settings' && <TabSettings />}
+                </main>
+              </div>
             </div>
-          </div>
-        </aside>
-
-        {/* Conteúdo Principal */}
-        <main className="admin-content">
-          {activeTab === 'overview' && <TabOverview setActiveTab={setActiveTab} />}
-          {activeTab === 'gallery' && <TabGallery />}
-          {activeTab === 'calendar' && <TabCalendar />}
-          {activeTab === 'sponsors' && <TabSponsors />}
-          {activeTab === 'testimonials' && <TabTestimonials />}
-          {activeTab === 'settings' && <TabSettings />}
-        </main>
-      </div>
-    </div>
-  );
-}
+          );
+        }

@@ -1641,33 +1641,65 @@ h1, h2, h3, h4, .font-serif {
     height: auto;
     position: static;
     flex-direction: row;
-    
+    flex-wrap: wrap;
     overflow-x: auto;
     padding: 8px 12px;
     border-right: none;
     border-bottom: 1px solid var(--border-light);
-    gap: 4px;
-    
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-light) transparent;
+  }
+
+  .admin-sidebar::-webkit-scrollbar {
+    height: 6px;
+  }
+  .admin-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .admin-sidebar::-webkit-scrollbar-thumb {
+    background: var(--border-light);
+    border-radius: 3px;
   }
 
   .admin-nav-item {
-    padding: 8px 12px;
+    padding: 10px 16px;
     border-left: none;
     border-bottom: 3px solid transparent;
     white-space: nowrap;
     flex-direction: column;
     gap: 4px;
-    font-size: 0.75rem;
-    border-radius: 8px;
+    font-size: 0.8rem;
+    border-radius: 10px;
+    min-width: 100px;
+    background: var(--bg-page);
+    transition: all 0.2s ease;
+  }
+
+  .admin-nav-item:hover {
+    background: var(--tertiary-light);
+  }
+
+  .admin-nav-item svg {
+    width: 20px;
+    height: 20px;
   }
 
   .admin-nav-item.active {
     border-left-color: transparent;
     border-bottom-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .admin-nav-item.active svg {
+    color: var(--primary);
   }
 
   .admin-content {
-    padding: 24px 20px;
+    padding: 20px 16px;
     max-height: none;
     overflow-y: visible;
   }
@@ -1675,15 +1707,124 @@ h1, h2, h3, h4, .font-serif {
   .admin-topbar {
     padding: 12px 16px;
     gap: 10px;
-    
+    flex-wrap: wrap;
+  }
+
+  /* Stats grid: 2 colunas no tablet, 1 no mobile pequeno */
+  .admin-content > div[style*="gridTemplateColumns"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Quick action cards: 2 colunas */
+  .admin-content > div[style*="auto-fit"] {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 
 @media (max-width: 640px) {
   .admin-login-card {
-    padding: 32px 24px;
+    padding: 28px 20px;
     border-radius: 16px;
-    margin: 20px;
+    margin: 16px;
+  }
+
+  .admin-sidebar {
+    padding: 6px 10px;
+    gap: 4px;
+  }
+
+  .admin-nav-item {
+    padding: 8px 12px;
+    min-width: 90px;
+    font-size: 0.72rem;
+  }
+
+  .admin-nav-item svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .admin-content {
+    padding: 16px 12px;
+  }
+
+  .admin-topbar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .admin-topbar > div:first-child > div:first-child {
+    font-size: 0.9rem;
+  }
+
+  .admin-topbar > div:first-child > div:last-child {
+    font-size: 0.68rem;
+  }
+
+  /* Stats grid: 1 coluna */
+  .admin-content > div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Quick action cards: 1 coluna */
+  .admin-content > div[style*="auto-fit"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Grid de itens (galeria, patrocinadores, depoimentos): 1 coluna */
+  .admin-content > div[style*="repeat(auto-fill"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tabela do calendário: vira cards empilhados */
+  .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] {
+    flex-direction: column;
+  }
+
+  /* Cards do calendário: data acima, conteúdo abaixo */
+  .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+
+  .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div > div:first-child {
+    min-width: auto;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div > div:nth-child(2) {
+    flex: 1;
+    width: 100%;
+    padding: 14px;
+    background: #F5F9F8;
+    border-radius: 0 0 10px 10px;
+    border-top: 1px solid #E8F0ED;
+  }
+
+  /* Ações do calendário: em linha */
+  .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div > div:last-child {
+    flex-direction: row;
+    align-self: flex-end;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    border-top: none;
+  }
+
+  /* Botões de ação dos cards: largura total no mobile */
+  .admin-content button[class*="btn"] {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Formulários em modais: campos empilhados */
+  .modal-card form > div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
   }
 
   .toast-notification {
@@ -1705,6 +1846,127 @@ h1, h2, h3, h4, .font-serif {
     text-align: justify;
     hyphens: auto;
   }
+
+  /* Botões do header do modal */
+    .modal-header {
+      padding-bottom: 16px;
+    }
+
+    .modal-card {
+      max-height: 95vh !important;
+      border-radius: 16px 16px 0 0 !important;
+      max-width: 100% !important;
+      margin: 0 !important;
+    }
+
+    .modal-overlay {
+      align-items: flex-end !important;
+      padding: 0 !important;
+    }
+
+    /* Botão X do modal no mobile - menor, mais discreto, no canto superior direito */
+    .modal-close-btn {
+      top: 12px !important;
+      right: 12px !important;
+      width: 32px !important;
+      height: 32px !important;
+      background: rgba(255,255,255,0.9) !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+      border: 1px solid #E5E5E5 !important;
+    }
+    .modal-close-btn:hover {
+      background: #F5F5F5 !important;
+    }
+    .modal-close-btn svg {
+      width: 18px !important;
+      height: 18px !important;
+    }
+
+    /* Footer do modal: botões empilhados */
+    .modal-card form > div[style*="justifyContent.*flex-end"] {
+      flex-direction: column-reverse;
+    }
+    .modal-card form > div[style*="justifyContent.*flex-end"] > button {
+      width: 100%;
+    }
+
+    /* Reduzir tamanhos no admin mobile */
+    .admin-section-title {
+      font-size: 1.1rem !important;
+    }
+    .admin-content h3, .admin-content h4 {
+      font-size: 0.95rem !important;
+    }
+    .admin-content p, .admin-content span, .admin-content label, .admin-content .form-label {
+      font-size: 0.82rem !important;
+    }
+    .admin-content .form-input, .admin-content .form-select, .admin-content .form-group input, .admin-content .form-group select, .admin-content .form-group textarea {
+      font-size: 0.85rem !important;
+      padding: 10px 12px !important;
+    }
+    .admin-content button.btn, .admin-content button[class*="btn"] {
+      font-size: 0.8rem !important;
+      padding: 8px 14px !important;
+    }
+    .admin-content .btn-pill {
+      font-size: 0.75rem !important;
+      padding: 6px 10px !important;
+    }
+    /* Cards de estatísticas */
+    .admin-content > div[style*="gridTemplateColumns"] > div {
+      padding: 14px 12px !important;
+    }
+    .admin-content > div[style*="gridTemplateColumns"] > div > div:last-child {
+      font-size: 0.72rem !important;
+    }
+    .admin-content > div[style*="gridTemplateColumns"] > div > div:nth-child(2) {
+      font-size: 1.5rem !important;
+    }
+    /* Quick action cards */
+    .admin-content > div[style*="auto-fit"] > div {
+      padding: 16px 14px !important;
+    }
+    .admin-content > div[style*="auto-fit"] > div h3 {
+      font-size: 0.9rem !important;
+    }
+    .admin-content > div[style*="auto-fit"] > div p {
+      font-size: 0.78rem !important;
+    }
+    /* Grid de itens (galeria, patrocinadores, depoimentos, calendário) */
+    .admin-content > div[style*="repeat(auto-fill"] > div {
+      padding: 12px !important;
+    }
+    .admin-content > div[style*="repeat(auto-fill"] > div h4 {
+      font-size: 0.88rem !important;
+    }
+    .admin-content > div[style*="repeat(auto-fill"] > div p {
+      font-size: 0.78rem !important;
+    }
+    /* Tabela calendário cards */
+    .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div {
+      padding: 10px !important;
+    }
+    .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div > div:first-child {
+      padding: 8px 10px !important;
+      min-width: auto !important;
+    }
+    .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div > div:first-child div:first-child {
+      font-size: 1rem !important;
+    }
+    .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div > div:nth-child(2) {
+      padding: 10px !important;
+    }
+    .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div h4 {
+      font-size: 0.88rem !important;
+    }
+    .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div p {
+      font-size: 0.78rem !important;
+    }
+    /* Badges de categoria */
+    .admin-content .CategoryBadge, .admin-content [style*="borderRadius: 999"] {
+      font-size: 0.65rem !important;
+      padding: 1px 8px !important;
+    }
 }
 
 /* =========================================================
