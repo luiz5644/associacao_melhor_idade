@@ -6,12 +6,13 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { id: 'home', label: 'Início' },
-    { id: 'history', label: 'Nossa História' },
-    { id: 'activities', label: 'Atividades' },
-    { id: 'calendar', label: 'Calendário' },
-    { id: 'gallery', label: 'Galeria de Fotos' },
-  ];
+      { id: 'home', label: 'Início' },
+      { id: 'history', label: 'Nossa História' },
+      { id: 'activities', label: 'Atividades' },
+      { id: 'calendar', label: 'Calendário' },
+      { id: 'gallery', label: 'Galeria de Fotos' },
+      { id: 'testimonials', label: 'Depoimentos' },
+    ];
 
   const handleNavClick = (pageId) => {
     setActivePage(pageId);
@@ -36,18 +37,18 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
           </div>
         </a>
 
-        {/* Desktop Nav Pills */}
-        <nav className="nav-pills" aria-label="Menu Principal">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              className={`nav-pill-btn ${activePage === item.id ? 'active' : ''}`}
-              onClick={() => handleNavClick(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
+        {/* Desktop Nav Links */}
+                <nav className="nav-links" aria-label="Menu Principal">
+                  {navItems.map((item) => (
+                    <button
+                      key={item.id}
+                      className={`nav-link-btn ${activePage === item.id ? 'active' : ''}`}
+                      onClick={() => handleNavClick(item.id)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </nav>
 
         {/* Right Action: Área do Administrador */}
         <div className="header-actions">
@@ -92,23 +93,23 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
           </div>
 
           {navItems.map((item) => (
-            <button
-              key={item.id}
-              className={`nav-pill-btn ${activePage === item.id ? 'active' : ''}`}
-              style={{ textAlign: 'left', width: '100%', padding: '10px 16px', fontSize: '0.92rem' }}
-              onClick={() => handleNavClick(item.id)}
-            >
-              {item.label}
-            </button>
-          ))}
+                      <button
+                        key={item.id}
+                        className={`nav-link-btn ${activePage === item.id ? 'active' : ''}`}
+                        style={{ textAlign: 'center', width: '100%', padding: '12px 16px', fontSize: '0.95rem' }}
+                        onClick={() => handleNavClick(item.id)}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
 
           <hr style={{ border: 'none', borderTop: '1px solid #EBE1D8', margin: '6px 0' }} />
 
           <button 
-            className="admin-link-btn"
-            style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
-            onClick={() => { setMobileMenuOpen(false); onOpenAdmin(); }}
-          >
+                      className="admin-link-btn"
+                      style={{ width: '100%', justifyContent: 'center', padding: '10px', textAlign: 'center' }}
+                      onClick={() => { setMobileMenuOpen(false); onOpenAdmin(); }}
+                    >
             <Shield size={16} />
             <span>área do administrador</span>
           </button>

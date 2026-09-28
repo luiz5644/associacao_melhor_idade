@@ -55,6 +55,14 @@ export default function Footer({ onNavigatePage, onSelectActivity }) {
                   Oficinas e Artesanato
                 </button>
               </li>
+              <li>
+                <button 
+                  className="footer-link-btn"
+                  onClick={() => onNavigatePage('testimonials')}
+                >
+                  Depoimentos
+                </button>
+              </li>
             </ul>
           </div>
 

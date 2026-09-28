@@ -6,6 +6,7 @@ const STORAGE_KEY_CALENDAR = 'ami_calendar_events_v1';
 const STORAGE_KEY_HIGHLIGHTS = 'ami_calendar_highlights_v1';
 const STORAGE_KEY_BRAND = 'ami_brand_info_v1';
 const STORAGE_KEY_SPONSORS = 'ami_sponsors_v1';
+const STORAGE_KEY_TESTIMONIALS = 'ami_testimonials_v1';
 
 const DataContext = createContext(null);
 
@@ -65,6 +66,14 @@ export function DataProvider({ children }) {
     return siteData.sponsors || [];
   });
 
+  const [testimonials, setTestimonials] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_TESTIMONIALS);
+      if (saved) return JSON.parse(saved);
+    } catch (_) {}
+    return siteData.testimonials.items;
+  });
+
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => {
@@ -91,6 +100,10 @@ export function DataProvider({ children }) {
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(sponsors)); } catch (_) {}
   }, [sponsors]);
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY_TESTIMONIALS, JSON.stringify(testimonials)); } catch (_) {}
+  }, [testimonials]);
 
   // ── CRUD: Álbum de Lembranças ──────────────────────────────────────
   const addGalleryItem = (itemData) => {
@@ -228,28 +241,66 @@ export function DataProvider({ children }) {
     showToast('Patrocinador removido com sucesso.', 'warning');
   };
 
+  // ── CRUD: Depoimentos ─────────────────────────────────────────────
+  const addTestimonial = (testimonialData) => {
+    const newTestimonial = {
+      id: `test-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      name: testimonialData.name.trim(),
+      role: testimonialData.role || '',
+      avatar: testimonialData.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop',
+      text: testimonialData.text.trim()
+    };
+    setTestimonials(prev => [newTestimonial, ...prev]);
+    showToast('Depoimento adicionado com sucesso!', 'success');
+    return newTestimonial;
+  };
+
+  const updateTestimonial = (id, updatedData) => {
+    setTestimonials(prev => prev.map(t => {
+      if (t.id !== id) return t;
+      return {
+        ...t,
+        ...updatedData,
+        name: updatedData.name ? updatedData.name.trim() : t.name,
+        role: updatedData.role !== undefined ? updatedData.role : t.role,
+        avatar: updatedData.avatar || t.avatar,
+        text: updatedData.text ? updatedData.text.trim() : t.text,
+        updatedAt: new Date().toISOString()
+      };
+    }));
+    showToast('Depoimento atualizado com sucesso!', 'info');
+  };
+
+  const deleteTestimonial = (id) => {
+    setTestimonials(prev => prev.filter(t => t.id !== id));
+    showToast('Depoimento removido.', 'warning');
+  };
+
   const updateBrandInfo = (newInfo) => {
     setBrandInfo(prev => ({ ...prev, ...newInfo }));
     showToast('Informações da Associação salvas com sucesso!', 'success');
   };
 
   const resetToDefaultData = () => {
-    [STORAGE_KEY_GALLERY, STORAGE_KEY_CALENDAR, STORAGE_KEY_HIGHLIGHTS, STORAGE_KEY_BRAND, STORAGE_KEY_SPONSORS]
+    [STORAGE_KEY_GALLERY, STORAGE_KEY_CALENDAR, STORAGE_KEY_HIGHLIGHTS, STORAGE_KEY_BRAND, STORAGE_KEY_SPONSORS, STORAGE_KEY_TESTIMONIALS]
       .forEach(k => localStorage.removeItem(k));
     setGalleryItems(siteData.gallery.items);
     setCalendarEvents(seedCalendarEvents());
     setCalendarHighlights(siteData.calendar.highlights);
     setBrandInfo(siteData.brand);
     setSponsors(siteData.sponsors || []);
+    setTestimonials(siteData.testimonials.items);
     showToast('Dados restaurados para o padrão original!', 'info');
   };
 
   return (
     <DataContext.Provider value={{
-      galleryItems, calendarEvents, calendarHighlights, brandInfo, sponsors, toast,
+      galleryItems, calendarEvents, calendarHighlights, brandInfo, sponsors, testimonials, toast,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
       addCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
       addSponsor, updateSponsor, deleteSponsor,
+      addTestimonial, updateTestimonial, deleteTestimonial,
       updateBrandInfo, resetToDefaultData, showToast
     }}>
       {children}

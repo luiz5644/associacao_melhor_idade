@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { siteData } from '../data/mockData';
 
 export default function HistoryPage({ onSelectPhoto, onOpenDonation }) {
   const { history, home } = siteData;
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <div className="history-page">

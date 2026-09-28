@@ -7,6 +7,7 @@ import HistoryPage from './pages/HistoryPage';
 import ActivitiesPage from './pages/ActivitiesPage';
 import CalendarPage from './pages/CalendarPage';
 import GalleryPage from './pages/GalleryPage';
+import TestimonialsPage from './pages/TestimonialsPage';
 import AdminPage from './pages/AdminPage';
 import DonationModal from './components/DonationModal';
 import ScheduleModal from './components/ScheduleModal';
@@ -91,11 +92,15 @@ function AppContent() {
         )}
 
         {activePage === 'gallery' && (
-          <GalleryPage 
-            onSelectPhoto={setSelectedPhoto}
-          />
-        )}
-      </main>
+                  <GalleryPage 
+                    onSelectPhoto={setSelectedPhoto}
+                  />
+                )}
+
+                {activePage === 'testimonials' && (
+                  <TestimonialsPage />
+                )}
+              </main>
 
       {/* 4. Rodapé Global */}
       <Footer 

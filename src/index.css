@@ -50,7 +50,11 @@
   --text-footer-muted: #A8B8B6;
 
   --border-light: #DCE7E5;
-  --border-card: #E0ECE9;
+    --border-card: #E0ECE9;
+
+    /* Aliases semânticos para uso direto */
+    --accent: var(--primary);
+    --bg-light: var(--tertiary-light);
 
   /* Tipografia */
   --font-serif: 'Playfair Display', 'DM Serif Display', Georgia, serif;
@@ -280,46 +284,63 @@ h1, h2, h3, h4, .font-serif {
   text-transform: uppercase;
 }
 
-.nav-pills {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background-color: transparent;
-}
-
-.nav-pill-btn {
-  background-color: var(--bg-pill);
-  color: #1B2527;
+.nav-link-btn {
+  background: none;
+  color: var(--text-main);
   font-family: var(--font-sans);
-  font-size: 0.88rem;
-  font-weight: 600;
-  padding: 8px 18px;
-  border-radius: var(--radius-pill);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 8px 14px;
   border: none;
+  border-radius: 6px;
   cursor: pointer;
-  transition: var(--transition);
+  transition: color 0.2s ease, background-color 0.2s ease;
   text-decoration: none;
+  position: relative;
 }
 
-.nav-pill-btn:hover {
-  background-color: var(--bg-pill-hover);
-  color: #14272B;
+.nav-link-btn:hover {
+  color: var(--accent);
+  background-color: var(--bg-light);
 }
 
-.nav-pill-btn.active {
-  background-color: #B8DDD4;
-  color: #14272B;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+.nav-link-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  transition: width 0.25s ease, left 0.25s ease;
 }
 
+.nav-link-btn:hover::after {
+  width: 60%;
+  left: 20%;
+}
+
+/* Estado ativo = igual ao normal (sem destaque permanente).
+   O destaque só aparece no hover. */
+.nav-link-btn.active {
+  color: var(--text-main);
+  font-weight: 500;
+  background: none;
+}
+
+.nav-link-btn.active::after {
+  width: 0;
+}
+
+/* Admin link button - mantém simples mas distinto */
 .admin-link-btn {
-  background-color: var(--bg-pill);
-  color: #1B2527;
+  background: none;
+  color: var(--text-main);
   font-size: 0.82rem;
-  font-weight: 600;
-  padding: 9px 20px;
-  border-radius: var(--radius-pill);
-  border: 1px solid transparent;
+  font-weight: 500;
+  padding: 8px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
   cursor: pointer;
   transition: var(--transition);
   display: inline-flex;
@@ -328,8 +349,9 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .admin-link-btn:hover {
-  background-color: var(--bg-pill-hover);
-  border-color: var(--border-light);
+  background: var(--bg-light);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* Mobile Menu Toggle */
@@ -1348,20 +1370,19 @@ h1, h2, h3, h4, .font-serif {
     gap: 36px;
   }
 
-  .nav-pills {
-    display: none;
-  }
+  /* No mobile: esconde menu desktop e botão admin, mostra hambúrguer */
+    .nav-links {
+      display: none;
+    }
 
-  .mobile-menu-btn {
-    display: block;
-  }
+    .header-actions {
+      display: none;
+    }
 
-  /* Botão do administrador some no header mobile —
-     já existe dentro do menu lateral */
-  .header-actions {
-    display: none;
+    .mobile-menu-btn {
+      display: block;
+    }
   }
-}
 
 @media (max-width: 640px) {
   .cards-grid-3,
@@ -2177,20 +2198,138 @@ h1, h2, h3, h4, .font-serif {
 }
 
 
-/* =========================================================
-   AJUSTES FINOS MOBILE — TAMANHOS DE ELEMENTOS E TEXTO
-   (Correções adicionais além da responsividade já existente)
-   ========================================================= */
+.testimonials-page {
+  padding: 32px 0 48px;
+}
 
-/* Reduz levemente a escala base em telas bem pequenas,
-   ajustando de forma proporcional tudo que usa rem */
-@media (max-width: 380px) {
-  html {
-    font-size: 15px;
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 32px;
+}
+
+/* Força largura igual: o grid define a largura, o card só ocupa 100% */
+.testimonial-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;           /* ocupa a célula do grid por completo */
+  box-sizing: border-box; /* padding não estoura a célula */
+  min-height: 100%;       /* iguala altura na linha */
+}
+
+.testimonial-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: #BED8D3;
+}
+
+.testimonial-avatar-wrap {
+  margin-bottom: 18px;
+  flex-shrink: 0;
+}
+
+.testimonial-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--bg-pill);
+  box-shadow: var(--shadow-sm);
+}
+
+.testimonial-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;               /* empurra o autor para baixo, iguala altura */
+  width: 100%;
+}
+
+.testimonial-text {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--text-body);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;   /* limita a ~6 linhas para não estourar */
+  -webkit-box-orient: vertical;
+}
+
+.testimonial-author {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 8px;
+  border-top: 1px solid #EBE1D8;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.testimonial-name {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.testimonial-role {
+  font-size: 0.82rem;
+  color: var(--text-subtle);
+  font-weight: 500;
+}
+
+/* Paginação / Carregar mais */
+.testimonials-load-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.testimonials-load-more .btn {
+  min-width: 220px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 1024px) {
+  .testimonials-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-/* Container com menos respiro lateral no celular */
+@media (max-width: 640px) {
+  .testimonials-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .testimonial-card {
+    padding: 22px 18px;
+  }
+
+  .testimonial-avatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .testimonial-text {
+    font-size: 1rem;
+    -webkit-line-clamp: 5;
+  }
+}
+
+  /* Container com menos respiro lateral no celular */
 @media (max-width: 480px) {
   .container {
     padding: 0 16px;

@@ -333,7 +333,37 @@ export const siteData = {
     ]
   },
 
-  // 6. PATROCINADORES & PARCEIROS
+  // 6. DEPOIMENTOS
+  testimonials: {
+    tag: "O QUE DIZEM NOSSOS IDOSOS",
+    title: "Vidas Transformadas pelo Carinho",
+    subtitle: "Conheça histórias reais de quem encontrou uma nova família na Associação Melhor Idade.",
+    items: [
+      {
+        id: "test-1",
+        name: "Dona Alzira, 78 anos",
+        role: "Fundadora e Associada",
+        avatar: "https://images.unsplash.com/photo-1554151228-14d9def656e4?q=80&w=400&auto=format&fit=crop",
+        text: "Quando vim para a associação pela primeira vez, estava muito sozinha depois que meu marido se foi. Aqui encontrei não só amigas, mas uma família que me abraça todos os dias. O forró de sexta-feira me faz sentir viva de novo — danço, rio e esqueço as dores. A Melhor Idade me devolveu a vontade de sorrir."
+      },
+      {
+        id: "test-2",
+        name: "Seu João, 82 anos",
+        role: "Associado há 12 anos",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
+        text: "Meus filhos moram longe e eu passava as tardes vendo TV sozinho. Minha neta insistiu pra eu vir conhecer o coral. No primeiro ensaio, o maestro Roberto me colocou pra cantar e eu me arrepiei todo. Hoje não perco uma terça-feira. O canto me deu voz de novo, e as viagens me deram pernas pra andar o mundo."
+      },
+      {
+        id: "test-3",
+        name: "Dona Maria José, 75 anos",
+        role: "Voluntária e Associada",
+        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop",
+        text: "Entre a oficina de cerâmica e a horta comunitária, descobri que ainda tenho muito o que ensinar. As meninas me perguntam sobre crochê, eu mostro ponto por ponto, e a gente ri muito. Aqui ninguém é 'velho' — a gente é experiente, é querido, é útil. Essa associação é meu segundo lar, e sou grata por cada abraço que recebo."
+      }
+    ]
+  },
+
+  // 7. PATROCINADORES & PARCEIROS
   sponsors: [
     {
       id: "sp-1",
@@ -377,4 +407,3 @@ export const siteData = {
     }
   ]
 };
-

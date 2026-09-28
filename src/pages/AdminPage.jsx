@@ -1272,6 +1272,215 @@ function TabSponsors() {
   );
 }
 
+// ── PAINEL: DEPOIMENTOS ───────────────────────────────────────────────────────
+function TabTestimonials() {
+  const { testimonials, addTestimonial, updateTestimonial, deleteTestimonial } = useData();
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const handleSave = (data) => {
+    if (editingItem) {
+      updateTestimonial(editingItem.id, data);
+    } else {
+      addTestimonial(data);
+    }
+    setEditingItem(null);
+    setShowForm(false);
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <h2 className="admin-section-title">Depoimentos</h2>
+          <p style={{ color: 'var(--text-subtle)', fontSize: '0.9rem' }}>{testimonials.length} depoimentos cadastrados</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
+          <Plus size={16} /> Novo Depoimento
+        </button>
+      </div>
+
+      {testimonials.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-subtle)' }}>
+          <HeartHandshake size={40} style={{ opacity: 0.3, marginBottom: 12, display: 'block', margin: '0 auto 12px' }} />
+          <p style={{ fontWeight: 600 }}>Nenhum depoimento encontrado.</p>
+          <p style={{ fontSize: '0.85rem', marginTop: 4 }}>Clique em "Novo Depoimento" para adicionar.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 18 }}>
+          {testimonials.map((t) => (
+            <div
+              key={t.id}
+              style={{ background: '#fff', border: '1px solid #DCE7E5', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(27,37,39,0.04)' }}
+            >
+              <div style={{ height: 150, overflow: 'hidden', background: '#EEE' }}>
+                <img
+                  src={t.avatar}
+                  alt={`Foto de ${t.name}`}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={e => { e.target.style.display = 'none'; }}
+                />
+              </div>
+              <div style={{ padding: '14px 16px' }}>
+                <h4 style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', marginBottom: 4, lineHeight: 1.3 }}>{t.name}</h4>
+                {t.role && <p style={{ fontSize: '0.78rem', color: 'var(--text-subtle)', marginBottom: 8 }}>{t.role}</p>}
+                {t.text && (
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-body)', lineHeight: 1.55,
+                    overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
+                    {t.text}
+                  </p>
+                )}
+                <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
+                  <button
+                    className="btn btn-pill"
+                    style={{ padding: '5px 14px', fontSize: '0.8rem' }}
+                    onClick={() => { setEditingItem(t); setShowForm(true); }}
+                  >
+                    <Pencil size={12} /> Editar
+                  </button>
+                  <button
+                    className="btn"
+                    style={{ padding: '5px 14px', fontSize: '0.8rem', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5' }}
+                    onClick={() => setDeleteTarget(t)}
+                  >
+                    <Trash2 size={12} /> Excluir
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modais */}
+      <TestimonialFormModal
+        isOpen={showForm}
+        item={editingItem}
+        onSave={handleSave}
+        onClose={() => { setShowForm(false); setEditingItem(null); }}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        title={deleteTarget?.name}
+        subtitle="Este depoimento será removido permanentemente da página de Depoimentos."
+        onConfirm={() => { deleteTestimonial(deleteTarget.id); setDeleteTarget(null); }}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </div>
+  );
+}
+
+// ── Modal de Depoimento ───────────────────────────────────────────────────────
+function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
+  const [form, setForm] = useState({ name: '', role: '', avatar: '', text: '' });
+  const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
+
+  useEffect(() => {
+    setForm({
+      name: item?.name || '',
+      role: item?.role || '',
+      avatar: item?.avatar || '',
+      text: item?.text || ''
+    });
+  }, [item, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.text.trim()) return;
+    onSave({
+      name: form.name.trim(),
+      role: form.role.trim(),
+      avatar: form.avatar.trim(),
+      text: form.text.trim()
+    });
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="modal-card" style={{ maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 38, height: 38, background: '#FDF6F0', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <HeartHandshake size={20} color="#2A5C66" />
+            </div>
+            <div>
+              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem' }}>
+                {item ? 'Editar Depoimento' : 'Novo Depoimento'}
+              </h3>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-subtle)' }}>
+                Depoimento exibido na página pública de Depoimentos
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)' }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Nome <span style={{ color: '#DC2626' }}>*</span></label>
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Ex: Dona Alzira, 78 anos"
+              required
+              value={form.name}
+              onChange={e => setField('name', e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Papel / Ocupação</label>
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Ex: Associada há 10 anos, Voluntária..."
+              value={form.role}
+              onChange={e => setField('role', e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Foto (URL)</label>
+            <input
+              className="form-input"
+              type="url"
+              placeholder="https://exemplo.com/foto.jpg"
+              value={form.avatar}
+              onChange={e => setField('avatar', e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Depoimento <span style={{ color: '#DC2626' }}>*</span></label>
+            <textarea
+              className="form-input"
+              rows={5}
+              placeholder="Conte como a associação impactou a vida desta pessoa..."
+              required
+              value={form.text}
+              onChange={e => setField('text', e.target.value)}
+              style={{ resize: 'vertical', lineHeight: 1.6 }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn btn-primary">
+              <CheckCircle size={15} /> {item ? 'Salvar Alterações' : 'Adicionar Depoimento'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── PAINEL: CONFIGURAÇÕES ─────────────────────────────────────────────────────
 function TabSettings() {
   const { brandInfo, updateBrandInfo, resetToDefaultData } = useData();
@@ -1367,7 +1576,8 @@ export default function AdminPage({ onClose }) {
     { id: 'overview',  label: 'Visão Geral',            icon: <LayoutDashboard size={17} /> },
     { id: 'gallery',   label: 'Álbum de Lembranças',    icon: <Images size={17} /> },
     { id: 'calendar',  label: 'Calendário & Atividades', icon: <CalendarDays size={17} /> },
-    { id: 'sponsors',  label: 'Patrocinadores & Apoio', icon: <Building2 size={17} /> },
+    { id: 'sponsors', label: 'Patrocinadores & Apoio', icon: <Building2 size={17} /> },
+    { id: 'testimonials', label: 'Depoimentos',        icon: <HeartHandshake size={17} /> },
     { id: 'settings',  label: 'Configurações',           icon: <Settings size={17} /> },
   ];
 
@@ -1482,6 +1692,7 @@ export default function AdminPage({ onClose }) {
           {activeTab === 'gallery' && <TabGallery />}
           {activeTab === 'calendar' && <TabCalendar />}
           {activeTab === 'sponsors' && <TabSponsors />}
+          {activeTab === 'testimonials' && <TabTestimonials />}
           {activeTab === 'settings' && <TabSettings />}
         </main>
       </div>
