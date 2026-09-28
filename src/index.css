@@ -57,8 +57,8 @@
     --bg-light: var(--tertiary-light);
 
   /* Tipografia */
-  --font-serif: 'Playfair Display', 'DM Serif Display', Georgia, serif;
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-serif: 'Playfair Display', 'DM Serif Display', Georgia, serif;
+    --font-sans: 'Poppins', system-ui, -apple-system, sans-serif;
 
   /* Sombras e Raios */
   --radius-xs: 6px;
@@ -1693,6 +1693,19 @@ h1, h2, h3, h4, .font-serif {
     left: 16px;
     max-width: none;
   }
+
+  /* Justificar textos no mobile para melhor leitura */
+  .hero-desc,
+  .page-subtitle,
+  .timeline-text,
+  .cta-desc,
+  .memory-description,
+  .activity-description,
+  .gallery-item-description,
+  p {
+    text-align: justify;
+    hyphens: auto;
+  }
 }
 
 /* =========================================================
@@ -2172,6 +2185,13 @@ h1, h2, h3, h4, .font-serif {
   justify-content: center;
   gap: 8px;
   margin-top: 24px;
+}
+
+/* Esconder setas do carrossel no desktop (rolagem automática faz o trabalho) */
+@media (min-width: 901px) {
+  .sponsors-nav-controls {
+    display: none;
+  }
 }
 
 .sponsor-dot {

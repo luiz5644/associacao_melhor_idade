@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, HeartHandshake } from 'lucide-react';
+import { ExternalLink, HeartHandshake } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
 export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation }) {
@@ -120,14 +120,6 @@ export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation })
     return null;
   }
 
-  const handlePrev = () => {
-    setCurrentIndex(prev => (prev - 1 + activeSponsors.length) % activeSponsors.length);
-  };
-
-  const handleNext = () => {
-    setCurrentIndex(prev => (prev + 1) % activeSponsors.length);
-  };
-
   return (
     <section 
       className="sponsors-section" 
@@ -148,25 +140,6 @@ export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation })
               Agradecemos de coração às empresas e comércios amigos que investem no bem-estar, 
               alimentação e atividades culturais dos nossos idosos.
             </p>
-          </div>
-
-          <div className="sponsors-nav-controls">
-            <button 
-              className="carousel-btn prev-btn" 
-              onClick={handlePrev} 
-              aria-label="Patrocinador anterior"
-              title="Anterior"
-            >
-              <ChevronLeft size={22} />
-            </button>
-            <button 
-              className="carousel-btn next-btn" 
-              onClick={handleNext} 
-              aria-label="Próximo patrocinador"
-              title="Próximo"
-            >
-              <ChevronRight size={22} />
-            </button>
           </div>
         </div>
 

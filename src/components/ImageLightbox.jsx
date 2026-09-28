@@ -5,9 +5,11 @@ export default function ImageLightbox({ photo, photosList, onClose, onSelectPhot
   if (!photo) return null;
 
   const currentIndex = photosList.findIndex((p) => p.id === photo.id);
+  const isInList = currentIndex >= 0;
 
   const handlePrev = (e) => {
     e.stopPropagation();
+    if (!isInList) return;
     if (currentIndex > 0) {
       onSelectPhoto(photosList[currentIndex - 1]);
     } else {
@@ -17,6 +19,7 @@ export default function ImageLightbox({ photo, photosList, onClose, onSelectPhot
 
   const handleNext = (e) => {
     e.stopPropagation();
+    if (!isInList) return;
     if (currentIndex < photosList.length - 1) {
       onSelectPhoto(photosList[currentIndex + 1]);
     } else {
@@ -27,12 +30,13 @@ export default function ImageLightbox({ photo, photosList, onClose, onSelectPhot
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
+      if (!isInList) return;
       if (e.key === 'ArrowLeft') handlePrev(e);
       if (e.key === 'ArrowRight') handleNext(e);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, photosList]);
+  }, [currentIndex, photosList, isInList]);
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
@@ -46,8 +50,8 @@ export default function ImageLightbox({ photo, photosList, onClose, onSelectPhot
           <X size={24} />
         </button>
 
-        {/* Prev / Next buttons */}
-        {photosList.length > 1 && (
+        {/* Prev / Next buttons — só aparecem se a foto estiver na lista */}
+        {isInList && photosList.length > 1 && (
           <>
             <button 
               onClick={handlePrev}
