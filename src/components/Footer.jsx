@@ -19,9 +19,9 @@ export default function Footer({ onNavigatePage, onSelectActivity }) {
             </p>
           </div>
 
-          {/* Col 2: Atividades Links */}
+          {/* Col 2: Ações Links */}
           <div className="footer-col">
-            <h4 className="footer-col-title">Atividades</h4>
+            <h4 className="footer-col-title">Ações</h4>
             <ul className="footer-links">
               <li>
                 <button 

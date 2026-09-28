@@ -124,10 +124,10 @@ export const siteData = {
   },
 
   // 3. TELA ATIVIDADES
-  activities: {
-    tag: "ATIVIDADES COM AMOR",
-    title: "Nossas Atividades diárias",
-    subtitle: "Oferecemos uma variedade de oficinas, encontros e dinâmicas criadas especialmente para o seu bem-estar mental e físico.",
+    activities: {
+      tag: "AÇÕES COM AMOR",
+      title: "Nossas Ações diárias",
+      subtitle: "Oferecemos uma variedade de oficinas, encontros e dinâmicas criadas especialmente para o seu bem-estar mental e físico.",
     items: [
       {
         id: "act-forro",

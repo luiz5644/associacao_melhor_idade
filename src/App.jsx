@@ -131,7 +131,7 @@ function AppContent() {
 }
 
 export default function App() {
-  return (
+  return ( 
     <DataProvider>
       <AppContent />
     </DataProvider>

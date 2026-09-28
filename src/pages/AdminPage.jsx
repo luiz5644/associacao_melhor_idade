@@ -377,7 +377,7 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
         </button>
         <div className="modal-header">
           <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
-            <CalendarDays size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Calendário de Atividades</span>
+            <CalendarDays size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Calendário de Ações</span>
           </div>
           <h3 className="modal-title">{item ? 'Editar Atividade' : 'Nova Atividade'}</h3>
           <p className="modal-subtitle">Cadastre um encontro ou evento para o calendário público.</p>
@@ -728,7 +728,7 @@ function TabOverview({ setActiveTab }) {
   const { galleryItems, calendarEvents, sponsors } = useData();
   const stats = [
     { icon: <Users size={22} color="#2A5C66" />, value: 248, label: 'Associados Ativos', bg: '#EAF4F6', border: '#D2ECF0' },
-    { icon: <CalendarCheck size={22} color="#3D6058" />, value: calendarEvents.length, label: 'Atividades Agendadas', bg: '#F0F9F5', border: '#CBE8DF' },
+    { icon: <CalendarCheck size={22} color="#3D6058" />, value: calendarEvents.length, label: 'Ações Agendadas', bg: '#F0F9F5', border: '#CBE8DF' },
     { icon: <Images size={22} color="#7B5EA7" />, value: galleryItems.length, label: 'Lembranças no Álbum', bg: '#F5F0FB', border: '#E2D4F5' },
     { icon: <Building2 size={22} color="#B8621A" />, value: (sponsors || []).length, label: 'Patrocinadores & Parceiros', bg: '#FDF6F0', border: '#F8DFC2' }
   ];
@@ -771,19 +771,19 @@ function TabOverview({ setActiveTab }) {
         </div>
 
         <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:38, height:38, background:'#EAF4F6', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <CalendarDays size={20} color="#2A5C66" />
-            </div>
-            <h3 style={{ fontSize:'1rem', fontWeight:700 }}>Calendário de Atividades</h3>
-          </div>
-          <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
-            {calendarEvents.length} atividades agendadas no calendário.
-          </p>
-          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px' }} onClick={() => setActiveTab('calendar')}>
-            <Plus size={14} /> Agendar Atividade
-          </button>
-        </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+                    <div style={{ width:38, height:38, background:'#EAF4F6', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                      <CalendarDays size={20} color="#2A5C66" />
+                    </div>
+                    <h3 style={{ fontSize:'1rem', fontWeight:700 }}>Calendário de Ações</h3>
+                  </div>
+                  <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
+                    {calendarEvents.length} ações agendadas no calendário.
+                  </p>
+                  <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px' }} onClick={() => setActiveTab('calendar')}>
+                    <Plus size={14} /> Agendar Ação
+                  </button>
+                </div>
 
         <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
@@ -804,7 +804,7 @@ function TabOverview({ setActiveTab }) {
       {/* Próximas atividades */}
       {upcomingEvents.length > 0 && (
         <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24 }}>
-          <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.1rem', marginBottom:16 }}>Próximas Atividades Cadastradas</h3>
+          <h3 style={{ fontFamily:'var(--font-sans)', fontSize:'1.1rem', marginBottom:16 }}>Próximas Ações Cadastradas</h3>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {upcomingEvents.map(ev => (
               <div key={ev.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'10px 14px', background:'#F5F9F8', borderRadius:10 }}>
@@ -970,11 +970,11 @@ function TabCalendar() {
     <div>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
         <div>
-          <h2 className="admin-section-title">Calendário de Atividades</h2>
-          <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{calendarEvents.length} atividades cadastradas</p>
-        </div>
-        <button className="btn btn-primary" onClick={() => { setEditingEvent(null); setShowForm(true); }}>
-          <Plus size={16} /> Nova Atividade
+          <h2 className="admin-section-title">Calendário de Ações</h2>
+                    <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{calendarEvents.length} ações cadastradas</p>
+                  </div>
+                  <button className="btn btn-primary" onClick={() => { setEditingEvent(null); setShowForm(true); }}>
+                    <Plus size={16} /> Nova Ação
         </button>
       </div>
 
@@ -1575,7 +1575,7 @@ export default function AdminPage({ onClose }) {
   const tabs = [
     { id: 'overview',  label: 'Visão Geral',            icon: <LayoutDashboard size={17} /> },
     { id: 'gallery',   label: 'Álbum de Lembranças',    icon: <Images size={17} /> },
-    { id: 'calendar',  label: 'Calendário & Atividades', icon: <CalendarDays size={17} /> },
+    { id: 'calendar',  label: 'Calendário & Ações', icon: <CalendarDays size={17} /> },
     { id: 'sponsors', label: 'Patrocinadores & Apoio', icon: <Building2 size={17} /> },
     { id: 'testimonials', label: 'Depoimentos',        icon: <HeartHandshake size={17} /> },
     { id: 'settings',  label: 'Configurações',           icon: <Settings size={17} /> },

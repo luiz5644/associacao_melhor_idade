@@ -8,7 +8,7 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
   const navItems = [
       { id: 'home', label: 'Início' },
       { id: 'history', label: 'Nossa História' },
-      { id: 'activities', label: 'Atividades' },
+      { id: 'activities', label: 'Ações' },
       { id: 'calendar', label: 'Calendário' },
       { id: 'gallery', label: 'Galeria de Fotos' },
       { id: 'testimonials', label: 'Depoimentos' },

@@ -128,9 +128,9 @@ export default function CalendarPage() {
             {/* Detalhes do Dia Selecionado */}
             <div className="selected-day-events">
               <h3 className="selected-day-title">
-                <CalendarIcon size={18} color="#2A5C66" />
-                <span>Atividades no Dia {selectedDay} de {MONTHS[currentMonthIndex]}</span>
-              </h3>
+                              <CalendarIcon size={18} color="#2A5C66" />
+                              <span>Ações no Dia {selectedDay} de {MONTHS[currentMonthIndex]}</span>
+                            </h3>
 
               {eventsForSelectedDay.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
