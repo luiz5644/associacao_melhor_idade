@@ -3,11 +3,11 @@ import {
   Shield, LogOut, LayoutDashboard, Images, CalendarDays, Settings,
   Plus, Pencil, Trash2, X, CheckCircle, Users, CalendarCheck,
   HeartHandshake, Camera, Upload, Link, Clock, MapPin, Star,
-  ChevronRight, Search, AlertTriangle, ChevronDown,
-  Building2, ExternalLink, Globe
+  ChevronRight, Search, AlertTriangle,
+  Building2, ExternalLink, Globe, Tag, UserCheck, RefreshCw
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import { siteData } from '../data/mockData';
+import { adminApi } from '../services/api';
 
 const CATEGORIES_GALLERY = ['Celebracoes', 'Forro', 'Coral', 'Viagens', 'Artes'];
 const CATEGORIES_CALENDAR = ['Música', 'Coral', 'Lazer', 'Artes', 'Saúde', 'Dança', 'Festas'];
@@ -331,8 +331,12 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
 }
 
 
-// ── Formulário de Atividade (Calendário) ──────────────────────────────────────
 function CalendarFormModal({ isOpen, item, onSave, onClose }) {
+  const { categories } = useData();
+  const availableCategories = (categories && categories.length > 0)
+    ? categories.map(c => c.nome)
+    : CATEGORIES_CALENDAR;
+
   const [form, setForm] = useState({
     title: item?.title || '',
     desc: item?.desc || '',
@@ -340,7 +344,7 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
     month: item?.month !== undefined ? item.month : 9,
     year: item?.year || 2026,
     time: item?.time || '14:00',
-    category: item?.category || 'Lazer',
+    category: item?.category || (availableCategories[0] || 'Lazer'),
     location: item?.location || 'Sede da Associação',
     isHighlight: item?.isHighlight || false
   });
@@ -422,7 +426,7 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
             <div className="form-group">
               <label className="form-label">Categoria</label>
               <select className="form-select" value={form.category} onChange={e => setField('category', e.target.value)}>
-                {CATEGORIES_CALENDAR.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                {availableCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
               </select>
             </div>
           </div>
@@ -1520,28 +1524,308 @@ function TabSettings() {
   );
 }
 
+// ── PAINEL: CATEGORIAS DO CALENDÁRIO (INTEGRADO AO BACKEND) ───────────────────
+function TabCategories() {
+  const { categories, addCategory, updateCategory, deleteCategory, backendConnected } = useData();
+  const [showModal, setShowModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [catName, setCatName] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const handleOpenCreate = () => {
+    setEditingCategory(null);
+    setCatName('');
+    setShowModal(true);
+  };
+
+  const handleOpenEdit = (cat) => {
+    setEditingCategory(cat);
+    setCatName(cat.nome);
+    setShowModal(true);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!catName.trim()) return;
+    if (editingCategory) {
+      updateCategory(editingCategory.id, catName.trim());
+    } else {
+      addCategory(catName.trim());
+    }
+    setShowModal(false);
+    setEditingCategory(null);
+    setCatName('');
+  };
+
+  return (
+    <div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:12 }}>
+        <div>
+          <h2 className="admin-section-title">Categorias do Calendário</h2>
+          <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>
+            {categories.length} categorias disponíveis para classificar encontros e atividades.
+          </p>
+        </div>
+        <button className="btn btn-primary" onClick={handleOpenCreate}>
+          <Plus size={16} /> Nova Categoria
+        </button>
+      </div>
+
+      <div style={{ background: backendConnected ? '#F0FDF4' : '#FEF3C7', border: `1px solid ${backendConnected ? '#BBF7D0' : '#FDE68A'}`, borderRadius: 12, padding: '12px 16px', marginBottom: 24, display:'flex', alignItems:'center', gap:10 }}>
+        <span style={{ fontSize:'1.1rem' }}>{backendConnected ? '🟢' : '🟠'}</span>
+        <div style={{ fontSize:'0.85rem', color: backendConnected ? '#166534' : '#92400E' }}>
+          <strong>{backendConnected ? 'Conexão Ativa com Backend (MySQL)' : 'Modo Armazenamento Local'}</strong> — {backendConnected ? 'Categorias sincronizadas diretamente via rota /categoria do backend.' : 'Backend offline. As alterações serão salvas localmente até o backend ser iniciado.'}
+        </div>
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:14 }}>
+        {categories.map(cat => (
+          <div key={cat.id} style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:12, padding:'16px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', boxShadow:'0 1px 4px rgba(27,37,39,0.04)' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ width:34, height:34, background:'#EAF4F6', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', color:'#2A5C66' }}>
+                <Tag size={16} />
+              </div>
+              <div>
+                <div style={{ fontWeight:700, fontSize:'0.95rem' }}>{cat.nome}</div>
+                <div style={{ fontSize:'0.72rem', color:'var(--text-subtle)' }}>ID #{cat.id}</div>
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:6 }}>
+              <button className="btn btn-pill" style={{ padding:'5px 10px', fontSize:'0.75rem' }} onClick={() => handleOpenEdit(cat)} title="Editar">
+                <Pencil size={12} />
+              </button>
+              <button className="btn" style={{ padding:'5px 10px', fontSize:'0.75rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }} onClick={() => setDeleteTarget(cat)} title="Excluir">
+                <Trash2 size={12} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)} role="dialog" aria-modal="true">
+          <div className="modal-card" style={{ maxWidth: 440 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+              <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.2rem' }}>
+                {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
+              </h3>
+              <button onClick={() => setShowModal(false)} style={{ background:'none', border:'none', cursor:'pointer' }}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label">Nome da Categoria *</label>
+                <input className="form-input" type="text" placeholder="Ex: Ginástica, Pintura..." required value={catName} onChange={e => setCatName(e.target.value)} autoFocus />
+              </div>
+              <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:20 }}>
+                <button type="button" className="btn btn-pill" onClick={() => setShowModal(false)}>Cancelar</button>
+                <button type="submit" className="btn btn-primary"><CheckCircle size={14} /> Salvar Categoria</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDeleteModal isOpen={!!deleteTarget} title={deleteTarget?.nome} subtitle="Esta categoria será removida do cadastro." onConfirm={() => { deleteCategory(deleteTarget.id); setDeleteTarget(null); }} onCancel={() => setDeleteTarget(null)} />
+    </div>
+  );
+}
+
+// ── PAINEL: ADMINISTRADORES (INTEGRADO AO BACKEND) ─────────────────────────────
+function TabAdmins() {
+  const { admins, fetchAdmins, addAdmin, updateAdmin, deleteAdmin, backendConnected } = useData();
+  const [showModal, setShowModal] = useState(false);
+  const [editingAdmin, setEditingAdmin] = useState(null);
+  const [form, setForm] = useState({ username: '', cpf: '', senha: '' });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (backendConnected) {
+      fetchAdmins();
+    }
+  }, [backendConnected]);
+
+  const handleOpenCreate = () => {
+    setEditingAdmin(null);
+    setForm({ username: '', cpf: '', senha: '' });
+    setShowModal(true);
+  };
+
+  const handleOpenEdit = (admin) => {
+    setEditingAdmin(admin);
+    setForm({ username: admin.username, cpf: admin.cpf || '', senha: '' });
+    setShowModal(true);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.username.trim()) return;
+    setLoading(true);
+    try {
+      if (editingAdmin) {
+        await updateAdmin(editingAdmin.id, {
+          username: form.username.trim(),
+          senha: form.senha.trim() || undefined
+        });
+      } else {
+        await addAdmin({
+          username: form.username.trim(),
+          cpf: form.cpf.trim(),
+          senha: form.senha.trim() || undefined
+        });
+      }
+      setShowModal(false);
+      setEditingAdmin(null);
+      setForm({ username: '', cpf: '', senha: '' });
+    } catch (_) {}
+    finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:12 }}>
+        <div>
+          <h2 className="admin-section-title">Administradores do Sistema</h2>
+          <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>
+            Gerenciamento de contas com permissão de acesso à área administrativa (via rota /admin).
+          </p>
+        </div>
+        <button className="btn btn-primary" onClick={handleOpenCreate} disabled={!backendConnected}>
+          <Plus size={16} /> Novo Administrador
+        </button>
+      </div>
+
+      <div style={{ background: backendConnected ? '#F0FDF4' : '#FEF3C7', border: `1px solid ${backendConnected ? '#BBF7D0' : '#FDE68A'}`, borderRadius: 12, padding: '12px 16px', marginBottom: 24, display:'flex', alignItems:'center', gap:10 }}>
+        <span style={{ fontSize:'1.1rem' }}>{backendConnected ? '🟢' : '🟠'}</span>
+        <div style={{ fontSize:'0.85rem', color: backendConnected ? '#166534' : '#92400E' }}>
+          <strong>{backendConnected ? 'Backend Conectado' : 'Atenção: Backend Offline'}</strong> — {backendConnected ? 'Contas de administrador são validadas com token JWT e senhas criptografadas no MySQL.' : 'Inicie o servidor backend (porta 3000) e o MySQL para gerenciar e autenticar administradores reais.'}
+        </div>
+      </div>
+
+      {admins.length === 0 ? (
+        <div style={{ textAlign:'center', padding:'48px 20px', background:'#fff', border:'1px solid #DCE7E5', borderRadius:14 }}>
+          <UserCheck size={36} color="#8E9696" style={{ margin:'0 auto 12px', display:'block' }} />
+          <h4 style={{ fontWeight:700, fontSize:'1rem', marginBottom:6 }}>Nenhum administrador listado no momento</h4>
+          <p style={{ fontSize:'0.85rem', color:'var(--text-subtle)', marginBottom:16 }}>
+            {backendConnected ? 'Você pode cadastrar o primeiro administrador da associação clicando no botão acima.' : 'Conecte o backend para carregar os administradores do banco de dados.'}
+          </p>
+        </div>
+      ) : (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:14 }}>
+          {admins.map(adm => (
+            <div key={adm.id} style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:14, padding:'18px 20px', boxShadow:'0 1px 4px rgba(27,37,39,0.04)' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
+                <div style={{ width:40, height:40, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700 }}>
+                  {adm.username.slice(0, 2).toUpperCase()}
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:700, fontSize:'0.98rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{adm.username}</div>
+                  <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)' }}>CPF: {adm.cpf || 'Não informado'}</div>
+                </div>
+              </div>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderTop:'1px solid #F0F4F3', paddingTop:12 }}>
+                <span style={{ fontSize:'0.72rem', background:'#F5F9F8', padding:'3px 8px', borderRadius:6, color:'var(--text-subtle)' }}>ID #{adm.id}</span>
+                <div style={{ display:'flex', gap:6 }}>
+                  <button className="btn btn-pill" style={{ padding:'5px 12px', fontSize:'0.75rem' }} onClick={() => handleOpenEdit(adm)}>
+                    <Pencil size={12} /> Editar
+                  </button>
+                  <button className="btn" style={{ padding:'5px 12px', fontSize:'0.75rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }} onClick={() => setDeleteTarget(adm)}>
+                    <Trash2 size={12} /> Excluir
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)} role="dialog" aria-modal="true">
+          <div className="modal-card" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+              <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.2rem' }}>
+                {editingAdmin ? 'Editar Administrador' : 'Novo Administrador'}
+              </h3>
+              <button onClick={() => setShowModal(false)} style={{ background:'none', border:'none', cursor:'pointer' }}><X size={18} /></button>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label">Nome de Usuário / Login *</label>
+                <input className="form-input" type="text" placeholder="Ex: coord.maria" required value={form.username} onChange={e => setForm(p => ({ ...p, username: e.target.value }))} autoFocus />
+              </div>
+              {!editingAdmin && (
+                <div className="form-group">
+                  <label className="form-label">CPF (com ou sem pontuação) *</label>
+                  <input className="form-input" type="text" placeholder="Ex: 123.456.789-00" required value={form.cpf} onChange={e => setForm(p => ({ ...p, cpf: e.target.value }))} />
+                </div>
+              )}
+              <div className="form-group">
+                <label className="form-label">{editingAdmin ? 'Nova Senha (deixe em branco para manter a atual)' : 'Senha de Acesso (opcional - padrão: 8 primeiros dígitos do CPF)'}</label>
+                <input className="form-input" type="password" placeholder="Mínimo 6 caracteres" minLength={6} value={form.senha} onChange={e => setForm(p => ({ ...p, senha: e.target.value }))} />
+              </div>
+              <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:20 }}>
+                <button type="button" className="btn btn-pill" onClick={() => setShowModal(false)}>Cancelar</button>
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  <CheckCircle size={14} /> {loading ? 'Salvando...' : (editingAdmin ? 'Salvar Alterações' : 'Cadastrar Administrador')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDeleteModal isOpen={!!deleteTarget} title={deleteTarget?.username} subtitle="Esta conta de administrador será excluída do banco de dados." onConfirm={async () => { await deleteAdmin(deleteTarget.id); setDeleteTarget(null); }} onCancel={() => setDeleteTarget(null)} />
+    </div>
+  );
+}
+
 // ── PÁGINA PRINCIPAL DO ADMIN ─────────────────────────────────────────────────
 export default function AdminPage({ onClose }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState('');
+  const { backendConnected, backendLoading, checkBackendConnection, fetchAdmins } = useData();
+  const [isLoggedIn, setIsLoggedIn] = useState(() => adminApi.isAuthenticated());
+  const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [submittingLogin, setSubmittingLogin] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   const tabs = [
-    { id: 'overview',  label: 'Visão Geral',            icon: <LayoutDashboard size={17} /> },
-    { id: 'gallery',   label: 'Álbum de Lembranças',    icon: <Images size={17} /> },
-    { id: 'calendar',  label: 'Calendário & Ações', icon: <CalendarDays size={17} /> },
-    { id: 'sponsors', label: 'Patrocinadores & Apoio', icon: <Building2 size={17} /> },
-    { id: 'testimonials', label: 'Depoimentos',        icon: <HeartHandshake size={17} /> },
-    { id: 'settings',  label: 'Configurações',           icon: <Settings size={17} /> },
+    { id: 'overview',     label: 'Visão Geral',              icon: <LayoutDashboard size={17} /> },
+    { id: 'gallery',      label: 'Álbum de Lembranças',      icon: <Images size={17} /> },
+    { id: 'calendar',     label: 'Calendário & Ações',       icon: <CalendarDays size={17} /> },
+    { id: 'categories',   label: 'Categorias do Calendário', icon: <Tag size={17} /> },
+    { id: 'admins',       label: 'Administradores',          icon: <UserCheck size={17} /> },
+    { id: 'sponsors',     label: 'Patrocinadores & Apoio',   icon: <Building2 size={17} /> },
+    { id: 'testimonials', label: 'Depoimentos',              icon: <HeartHandshake size={17} /> },
+    { id: 'settings',     label: 'Configurações',            icon: <Settings size={17} /> },
   ];
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Demo: qualquer usuário/senha funciona (lógica real no backend)
     setLoginError('');
-    setIsLoggedIn(true);
+    setSubmittingLogin(true);
+
+    try {
+      if (backendConnected) {
+        await adminApi.login(username, password);
+        await fetchAdmins();
+        setIsLoggedIn(true);
+      } else {
+        // Modo demonstração quando offline
+        setIsLoggedIn(true);
+      }
+    } catch (err) {
+      setLoginError(err.message || 'Usuário ou senha inválidos no backend.');
+    } finally {
+      setSubmittingLogin(false);
+    }
+  };
+
+  const handleLogout = () => {
+    adminApi.logout();
+    setIsLoggedIn(false);
   };
 
   // ── Tela de Login ──────────────────────────────────────────────────
@@ -1549,7 +1833,7 @@ export default function AdminPage({ onClose }) {
     return (
       <div className="admin-page admin-login-page">
         <div className="admin-login-card">
-          <div style={{ textAlign:'center', marginBottom:32 }}>
+          <div style={{ textAlign:'center', marginBottom:28 }}>
             <div style={{ width:64, height:64, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:18, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px', boxShadow:'0 8px 24px rgba(42,92,102,0.25)' }}>
               <Shield size={30} color="#fff" />
             </div>
@@ -1561,27 +1845,53 @@ export default function AdminPage({ onClose }) {
             </p>
           </div>
 
+          <div style={{
+            display:'flex', alignItems:'center', justifyContent:'space-between',
+            padding:'8px 14px', borderRadius:10, marginBottom:20,
+            background: backendConnected ? '#ECFDF5' : '#FFFBEB',
+            border: `1px solid ${backendConnected ? '#A7F3D0' : '#FDE68A'}`,
+            fontSize:'0.82rem',
+            color: backendConnected ? '#065F46' : '#92400E'
+          }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ width:8, height:8, borderRadius:'50%', background: backendConnected ? '#10B981' : '#F59E0B' }} />
+              <span>{backendConnected ? 'Backend Conectado (Porta 3000)' : 'Backend Offline (Modo Local)'}</span>
+            </div>
+            <button 
+              onClick={() => checkBackendConnection(false)}
+              style={{ background:'none', border:'none', cursor:'pointer', padding:2, color:'inherit', display:'flex', alignItems:'center', gap:4, textDecoration:'underline' }}
+              title="Testar conexão com backend"
+            >
+              <RefreshCw size={12} className={backendLoading ? 'spin' : ''} />
+              <span>Verificar</span>
+            </button>
+          </div>
+
           <form onSubmit={handleLogin}>
             <div className="form-group">
-              <label className="form-label">Usuário</label>
-              <input className="form-input" type="text" placeholder="admin@associacaomelhoridade.org"
-                value={username} onChange={e => setUsername(e.target.value)} autoComplete="username" />
+              <label className="form-label">Usuário / CPF</label>
+              <input className="form-input" type="text" placeholder="Nome de usuário ou CPF"
+                value={username} onChange={e => setUsername(e.target.value)} autoComplete="username" required />
             </div>
             <div className="form-group">
               <label className="form-label">Senha</label>
               <input className="form-input" type="password" placeholder="••••••••"
-                value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" />
+                value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required />
             </div>
             {loginError && (
               <div style={{ background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#DC2626', borderRadius:8, padding:'10px 14px', fontSize:'0.85rem', marginBottom:14, display:'flex', alignItems:'center', gap:8 }}>
                 <AlertTriangle size={15} /> {loginError}
               </div>
             )}
-            <p style={{ fontSize:'0.82rem', color:'var(--text-subtle)', marginBottom:16, background:'#F5F9F8', padding:'10px 14px', borderRadius:8 }}>
-              💡 <strong>Demonstração:</strong> Clique em <em>Entrar</em> diretamente para acessar o painel.
-            </p>
-            <button type="submit" className="btn btn-primary" style={{ width:'100%', padding:'13px 20px', fontSize:'1rem' }}>
-              Entrar no Painel
+
+            {!backendConnected && (
+              <p style={{ fontSize:'0.82rem', color:'var(--text-subtle)', marginBottom:16, background:'#F5F9F8', padding:'10px 14px', borderRadius:8 }}>
+                💡 <strong>Demonstração Local:</strong> Como o backend não foi detectado na porta 3000, você pode clicar em <em>Entrar no Painel</em> para acessar o modo local.
+              </p>
+            )}
+
+            <button type="submit" className="btn btn-primary" disabled={submittingLogin} style={{ width:'100%', padding:'13px 20px', fontSize:'1rem' }}>
+              {submittingLogin ? 'Autenticando...' : 'Entrar no Painel'}
             </button>
           </form>
 
@@ -1594,65 +1904,83 @@ export default function AdminPage({ onClose }) {
   }
 
   // ── Dashboard ──────────────────────────────────────────────────────
-    return (
-      <div className="admin-page">
-        {/* Topbar */}
-                <header className="admin-topbar">
-                  <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
-                    <div style={{ width:36, height:36, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                      <Shield size={18} color="#fff" />
-                    </div>
-                    <div style={{ minWidth:0 }}>
-                      <div style={{ fontWeight:700, fontSize:'0.9rem', color:'var(--text-main)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Painel Administrativo</div>
-                      <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Associação Melhor Idade</div>
-                    </div>
-                  </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', justifyContent:'flex-end' }}>
-                    <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)', padding:'4px 10px', background:'#F5F9F8', borderRadius:99, border:'1px solid #DCE7E5', whiteSpace:'nowrap', display:'none' }}>
-                      👤 Coordenação — {siteData.brand.name}
-                    </div>
-                    <button className="btn btn-pill" style={{ fontSize:'0.78rem', padding:'6px 12px' }} onClick={onClose}>
-                      <ChevronRight size={12} /> Ver Site
-                    </button>
-                    <button className="btn" style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5', fontSize:'0.78rem', padding:'6px 12px' }}
-                      onClick={() => setIsLoggedIn(false)}>
-                      <LogOut size={12} /> Sair
-                    </button>
-                  </div>
-                </header>
+  return (
+    <div className="admin-page">
+      {/* Topbar */}
+      <header className="admin-topbar">
+        <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
+          <div style={{ width:36, height:36, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+            <Shield size={18} color="#fff" />
+          </div>
+          <div style={{ minWidth:0 }}>
+            <div style={{ fontWeight:700, fontSize:'0.9rem', color:'var(--text-main)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Painel Administrativo</div>
+            <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Associação Melhor Idade</div>
+          </div>
+        </div>
 
-              <div className="admin-layout">
-                {/* Sidebar de Navegação */}
-                <aside className="admin-sidebar" role="navigation" aria-label="Painel administrativo">
-                  <nav style={{ display:'flex', flexDirection:'column', gap:6, flex:1 }}>
-                    {tabs.map(tab => (
-                      <button key={tab.id} className={`admin-nav-item ${activeTab === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveTab(tab.id)}
-                        style={{ textAlign: 'left', padding: '12px 16px', fontSize: '0.9rem', gap: 12, justifyContent: 'flex-start', borderRadius: 10 }}>
-                        {tab.icon}
-                        <span>{tab.label}</span>
-                      </button>
-                    ))}
-                  </nav>
-                  <div style={{ marginTop:'auto', padding:'16px 12px', borderTop:'1px solid #DCE7E5', width:'100%' }}>
-                    <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', lineHeight:1.6, textAlign:'center' }}>
-                      <strong style={{ display:'block', marginBottom:4 }}>Dados salvos em:</strong>
-                      LocalStorage do navegador<br/>
-                      Pronto para integrar com backend
-                    </div>
-                  </div>
-                </aside>
+        <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', justifyContent:'flex-end' }}>
+          {/* Badge de status do backend */}
+          <div style={{
+            display:'inline-flex', alignItems:'center', gap:6, fontSize:'0.75rem', fontWeight:600,
+            padding:'4px 10px', borderRadius:99,
+            background: backendConnected ? '#ECFDF5' : '#FFFBEB',
+            color: backendConnected ? '#065F46' : '#92400E',
+            border: `1px solid ${backendConnected ? '#A7F3D0' : '#FDE68A'}`
+          }}>
+            <span style={{ width:8, height:8, borderRadius:'50%', background: backendConnected ? '#10B981' : '#F59E0B' }} />
+            <span>{backendConnected ? 'Backend Conectado' : 'Modo Local'}</span>
+            <button 
+              onClick={() => checkBackendConnection(false)} 
+              style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex', alignItems:'center', color:'inherit' }}
+              title="Recarregar status de conexão com backend"
+            >
+              <RefreshCw size={11} className={backendLoading ? 'spin' : ''} />
+            </button>
+          </div>
 
-                {/* Conteúdo Principal */}
-                <main className="admin-content">
-                  {activeTab === 'overview' && <TabOverview setActiveTab={setActiveTab} />}
-                  {activeTab === 'gallery' && <TabGallery />}
-                  {activeTab === 'calendar' && <TabCalendar />}
-                  {activeTab === 'sponsors' && <TabSponsors />}
-                  {activeTab === 'testimonials' && <TabTestimonials />}
-                  {activeTab === 'settings' && <TabSettings />}
-                </main>
-              </div>
+          <button className="btn btn-pill" style={{ fontSize:'0.78rem', padding:'6px 12px' }} onClick={onClose}>
+            <ChevronRight size={12} /> Ver Site
+          </button>
+          <button className="btn" style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5', fontSize:'0.78rem', padding:'6px 12px' }}
+            onClick={handleLogout}>
+            <LogOut size={12} /> Sair
+          </button>
+        </div>
+      </header>
+
+      <div className="admin-layout">
+        {/* Sidebar de Navegação */}
+        <aside className="admin-sidebar" role="navigation" aria-label="Painel administrativo">
+          <nav style={{ display:'flex', flexDirection:'column', gap:6, flex:1 }}>
+            {tabs.map(tab => (
+              <button key={tab.id} className={`admin-nav-item ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+                style={{ textAlign: 'left', padding: '12px 16px', fontSize: '0.9rem', gap: 12, justifyContent: 'flex-start', borderRadius: 10 }}>
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+          <div style={{ marginTop:'auto', padding:'16px 12px', borderTop:'1px solid #DCE7E5', width:'100%' }}>
+            <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', lineHeight:1.6, textAlign:'center' }}>
+              <strong style={{ display:'block', marginBottom:4 }}>Status da Integração:</strong>
+              {backendConnected ? '🟢 Rotas do Backend Ativas (porta 3000)' : '🟠 Modo Armazenamento Local Ativo'}
             </div>
-          );
-        }
+          </div>
+        </aside>
+
+        {/* Conteúdo Principal */}
+        <main className="admin-content">
+          {activeTab === 'overview' && <TabOverview setActiveTab={setActiveTab} />}
+          {activeTab === 'gallery' && <TabGallery />}
+          {activeTab === 'calendar' && <TabCalendar />}
+          {activeTab === 'categories' && <TabCategories />}
+          {activeTab === 'admins' && <TabAdmins />}
+          {activeTab === 'sponsors' && <TabSponsors />}
+          {activeTab === 'testimonials' && <TabTestimonials />}
+          {activeTab === 'settings' && <TabSettings />}
+        </main>
+      </div>
+    </div>
+  );
+}

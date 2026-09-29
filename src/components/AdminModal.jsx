@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { X, Shield, Lock, User, PlusCircle, Users, CalendarCheck, HeartHandshake, CheckCircle } from 'lucide-react';
+import { useData } from '../context/DataContext';
+import { adminApi } from '../services/api';
 
 export default function AdminModal({ isOpen, onClose, onAddEvent }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { categories, backendConnected } = useData();
+  const [isLoggedIn, setIsLoggedIn] = useState(() => adminApi.isAuthenticated());
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loading, setLoading] = useState(false);
   
   // Novo evento
   const [newTitle, setNewTitle] = useState('');
@@ -16,9 +21,23 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
 
   if (!isOpen) return null;
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setIsLoggedIn(true);
+    setLoginError('');
+    setLoading(true);
+
+    try {
+      if (backendConnected) {
+        await adminApi.login(username, password);
+        setIsLoggedIn(true);
+      } else {
+        setIsLoggedIn(true);
+      }
+    } catch (err) {
+      setLoginError(err.message || 'Erro ao autenticar');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCreateEvent = (e) => {
@@ -84,13 +103,20 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
                 required
               />
             </div>
+            {loginError && (
+              <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#DC2626', borderRadius: 8, padding: '8px 12px', fontSize: '0.85rem', marginBottom: 12 }}>
+                {loginError}
+              </div>
+            )}
 
             <p style={{ fontSize: '0.82rem', color: '#6E6E6E', marginBottom: '16px' }}>
-              💡 Dica de demonstração: Você pode clicar diretamente em <strong>Entrar no Painel</strong>.
+              {backendConnected 
+                ? '🔐 Login conectado à base de dados de administradores.'
+                : '💡 Dica: Backend offline. Você pode clicar diretamente em Entrar no Painel para modo local.'}
             </p>
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-              Entrar no Painel
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
+              {loading ? 'Entrando...' : 'Entrar no Painel'}
             </button>
           </form>
         ) : (
@@ -174,10 +200,9 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
                       value={newCategory} 
                       onChange={(e) => setNewCategory(e.target.value)}
                     >
-                      <option value="Música">Música</option>
-                      <option value="Coral">Coral</option>
-                      <option value="Lazer">Lazer</option>
-                      <option value="Artes">Artes</option>
+                      {(categories && categories.length > 0 ? categories.map(c => c.nome) : ['Música', 'Coral', 'Lazer', 'Artes']).map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -197,7 +222,10 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
                   <button 
                     type="button" 
                     className="btn btn-pill"
-                    onClick={() => setIsLoggedIn(false)}
+                    onClick={() => {
+                      adminApi.logout();
+                      setIsLoggedIn(false);
+                    }}
                   >
                     Sair da Conta
                   </button>
