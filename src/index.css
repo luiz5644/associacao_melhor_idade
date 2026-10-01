@@ -1960,14 +1960,9 @@ h1, h2, h3, h4, .font-serif {
       font-size: 0.88rem !important;
     }
     .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div p {
-      font-size: 0.78rem !important;
+          font-size: 0.78rem !important;
+        }
     }
-    /* Badges de categoria */
-    .admin-content .CategoryBadge, .admin-content [style*="borderRadius: 999"] {
-      font-size: 0.65rem !important;
-      padding: 1px 8px !important;
-    }
-}
 
 /* =========================================================
    MODAL DE DETALHES DA LEMBRANÇA (CARROSSEL MULTI-FOTO)
@@ -2171,21 +2166,6 @@ h1, h2, h3, h4, .font-serif {
   justify-content: space-between;
   background: #fff;
   overflow-y: auto;
-}
-
-.memory-category-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: var(--bg-pill);
-  color: var(--primary);
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 4px 12px;
-  border-radius: 99px;
-  margin-bottom: 14px;
 }
 
 .memory-detail-title {

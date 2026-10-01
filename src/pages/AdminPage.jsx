@@ -4,68 +4,13 @@ import {
   Plus, Pencil, Trash2, X, CheckCircle, Users, CalendarCheck,
   HeartHandshake, Camera, Upload, Link, Clock, MapPin, Star,
   ChevronRight, Search, AlertTriangle,
-  Building2, ExternalLink, Globe, Tag, UserCheck, RefreshCw
+  Building2, ExternalLink, Globe, UserCheck, RefreshCw
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { adminApi } from '../services/api';
 import CadastroAdminPage from './CadastroAdminPage';
 
-const CATEGORIES_GALLERY = ['Celebracoes', 'Forro', 'Coral', 'Viagens', 'Artes'];
-const CATEGORIES_CALENDAR = ['Música', 'Coral', 'Lazer', 'Artes', 'Saúde', 'Dança', 'Festas'];
-const CATEGORIES_SPONSOR = [
-  'Patrocinador Ouro',
-  'Patrocinador Prata',
-  'Patrocinador Bronze',
-  'Parceiro Saúde',
-  'Apoiador Comunitário',
-  'Apoiador Local'
-];
-const CAT_LABEL = {
-  Celebracoes: 'Celebrações', Forro: 'Forró', Coral: 'Coral',
-  Viagens: 'Viagens e Passeios', Artes: 'Artes e Trabalhos Manuais'
-};
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-
-function SponsorCategoryBadge({ category }) {
-  const colors = {
-    'Patrocinador Ouro': { bg: '#FEF9C3', text: '#854D0E', border: '#FDE047' },
-    'Patrocinador Prata': { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1' },
-    'Patrocinador Bronze': { bg: '#FFEDD5', text: '#9A3412', border: '#FDBA74' },
-    'Parceiro Saúde': { bg: '#EDFAF3', text: '#2D7A50', border: '#C8EDD8' },
-    'Apoiador Comunitário': { bg: '#EAF4F6', text: '#2A5C66', border: '#D2ECF0' },
-    'Apoiador Local': { bg: '#F5F0FB', text: '#7B5EA7', border: '#E2D4F5' },
-  };
-  const c = colors[category] || { bg: '#F5F9F8', text: '#4D4D4D', border: '#DCE7E5' };
-  return (
-    <span style={{ display:'inline-flex', alignItems:'center', fontSize:'0.72rem', fontWeight:700, letterSpacing:'0.04em',
-      background: c.bg, color: c.text, border: `1px solid ${c.border}`, borderRadius: 999, padding: '2px 10px' }}>
-      {category}
-    </span>
-  );
-}
-
-// ── Componente auxiliar: Badge de categoria ──────────────────────────────────
-function CategoryBadge({ category }) {
-  const colors = {
-    Música: { bg: '#FDF6F0', text: '#B8621A', border: '#F8DFC2' },
-    Coral: { bg: '#EAF4F6', text: '#2A5C66', border: '#D2ECF0' },
-    Lazer: { bg: '#F0F9F5', text: '#3D6058', border: '#CBE8DF' },
-    Artes: { bg: '#F5F0FB', text: '#7B5EA7', border: '#E2D4F5' },
-    Saúde: { bg: '#EDFAF3', text: '#2D7A50', border: '#C8EDD8' },
-    Dança: { bg: '#FDF5E6', text: '#B07812', border: '#F5DFA3' },
-    Festas: { bg: '#FEF0F4', text: '#A0285A', border: '#F9C8D9' },
-    Celebracoes: { bg: '#FEF0F4', text: '#A0285A', border: '#F9C8D9' },
-    Forro: { bg: '#FDF6F0', text: '#B8621A', border: '#F8DFC2' },
-    Viagens: { bg: '#EAF4F6', text: '#2A5C66', border: '#D2ECF0' },
-  };
-  const c = colors[category] || { bg: '#F5F9F8', text: '#4D4D4D', border: '#DCE7E5' };
-  return (
-    <span style={{ display:'inline-flex', alignItems:'center', fontSize:'0.72rem', fontWeight:700, letterSpacing:'0.05em',
-      background: c.bg, color: c.text, border: `1px solid ${c.border}`, borderRadius: 999, padding: '2px 10px', textTransform:'uppercase' }}>
-      {CAT_LABEL[category] || category}
-    </span>
-  );
-}
 
 // ── Modal de Confirmação de Exclusão ─────────────────────────────────────────
 function ConfirmDeleteModal({ isOpen, onConfirm, onCancel, title, subtitle }) {
@@ -95,7 +40,6 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
     title: item?.title || '',
     description: item?.description || '',
     date: item?.date || '',
-    category: item?.category || 'Celebracoes',
     photos: item?.photos?.length > 0 ? [...item.photos] : (item?.image ? [item.image] : []),
   });
   const [urlInput, setUrlInput] = useState('');
@@ -154,7 +98,6 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
       title: form.title.trim(),
       description: form.description,
       date: form.date,
-      category: form.category,
       image: form.photos[0] || '',
       photos: form.photos,
     });
@@ -180,30 +123,22 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
         <form onSubmit={handleSubmit}>
           {/* Dados da Lembrança */}
           <div className="form-group">
-            <label className="form-label">Título <span style={{ color:'#DC2626' }}>*</span></label>
-            <input className="form-input" type="text" placeholder="Ex: Festa de São João 2026" required
-              value={form.title} onChange={e => setField('title', e.target.value)} />
-          </div>
+                      <label className="form-label">Título <span style={{ color:'#DC2626' }}>*</span></label>
+                      <input className="form-input" type="text" placeholder="Ex: Festa de São João 2026" required
+                        value={form.title} onChange={e => setField('title', e.target.value)} />
+                    </div>
 
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-            <div className="form-group">
-              <label className="form-label">Data do Evento</label>
-              <input className="form-input" type="date" value={form.date} onChange={e => setField('date', e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Categoria</label>
-              <select className="form-select" value={form.category} onChange={e => setField('category', e.target.value)}>
-                {CATEGORIES_GALLERY.map(cat => <option key={cat} value={cat}>{CAT_LABEL[cat] || cat}</option>)}
-              </select>
-            </div>
-          </div>
+                    <div className="form-group">
+                      <label className="form-label">Data do Evento</label>
+                      <input className="form-input" type="date" value={form.date} onChange={e => setField('date', e.target.value)} />
+                    </div>
 
-          <div className="form-group">
-            <label className="form-label">Sobre / Descrição</label>
-            <textarea className="form-input" rows={3} placeholder="Conte sobre o momento especial capturado nesta lembrança..."
-              value={form.description} onChange={e => setField('description', e.target.value)}
-              style={{ resize:'vertical', lineHeight:1.6 }} />
-          </div>
+                    <div className="form-group">
+                      <label className="form-label">Sobre / Descrição</label>
+                      <textarea className="form-input" rows={3} placeholder="Conte sobre o momento especial capturado nesta lembrança..."
+                        value={form.description} onChange={e => setField('description', e.target.value)}
+                        style={{ resize:'vertical', lineHeight:1.6 }} />
+                    </div>
 
           {/* ─── Seção de Fotos ──────────────────────────────── */}
           <div style={{ background:'#F5F9F8', borderRadius:14, padding:'20px', border:'1px solid #DCE7E5', marginBottom:18 }}>
@@ -333,11 +268,6 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
 
 
 function CalendarFormModal({ isOpen, item, onSave, onClose }) {
-  const { categories } = useData();
-  const availableCategories = (categories && categories.length > 0)
-    ? categories.map(c => c.nome)
-    : CATEGORIES_CALENDAR;
-
   const [form, setForm] = useState({
     title: item?.title || '',
     desc: item?.desc || '',
@@ -345,7 +275,6 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
     month: item?.month !== undefined ? item.month : 9,
     year: item?.year || 2026,
     time: item?.time || '14:00',
-    category: item?.category || (availableCategories[0] || 'Lazer'),
     location: item?.location || 'Sede da Associação',
     isHighlight: item?.isHighlight || false
   });
@@ -365,7 +294,6 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
       month: parseInt(form.month, 10),
       year: parseInt(form.year, 10),
       time: form.time,
-      category: form.category,
       location: form.location,
       isHighlight: form.isHighlight
     });
@@ -425,17 +353,10 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
               <input className="form-input" type="time" value={form.time} onChange={e => setField('time', e.target.value)} />
             </div>
             <div className="form-group">
-              <label className="form-label">Categoria</label>
-              <select className="form-select" value={form.category} onChange={e => setField('category', e.target.value)}>
-                {availableCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-              </select>
+              <label className="form-label"><MapPin size={13} style={{ verticalAlign:'middle', marginRight:4 }} />Local da Atividade</label>
+              <input className="form-input" type="text" placeholder="Ex: Salão Nobre, Sala de Música, Pátio Externo..."
+                value={form.location} onChange={e => setField('location', e.target.value)} />
             </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label"><MapPin size={13} style={{ verticalAlign:'middle', marginRight:4 }} />Local da Atividade</label>
-            <input className="form-input" type="text" placeholder="Ex: Salão Nobre, Sala de Música, Pátio Externo..."
-              value={form.location} onChange={e => setField('location', e.target.value)} />
           </div>
 
           <div className="form-group">
@@ -476,7 +397,6 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
   const [form, setForm] = useState({
     name: '',
     logo: '',
-    category: 'Patrocinador Ouro',
     websiteUrl: '',
     description: '',
     active: true
@@ -489,7 +409,6 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
       setForm({
         name: item.name || '',
         logo: item.logo || '',
-        category: item.category || 'Patrocinador Ouro',
         websiteUrl: item.websiteUrl || '',
         description: item.description || '',
         active: item.active !== undefined ? item.active : true
@@ -499,7 +418,6 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
       setForm({
         name: '',
         logo: '',
-        category: 'Patrocinador Ouro',
         websiteUrl: '',
         description: '',
         active: true
@@ -539,46 +457,38 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="modal-card" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ width:38, height:38, background:'#FDF6F0', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
-              <Building2 size={20} color="#B8621A" />
+      <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+        <div className="modal-card" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ width:38, height:38, background:'#FDF6F0', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <Building2 size={20} color="#B8621A" />
+              </div>
+              <div>
+                <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.25rem' }}>
+                  {item ? 'Editar Patrocinador' : 'Novo Patrocinador'}
+                </h3>
+                <p style={{ fontSize:'0.82rem', color:'var(--text-subtle)' }}>
+                  Empresa parceira com logo no carrossel da página inicial
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.25rem' }}>
-                {item ? 'Editar Patrocinador' : 'Novo Patrocinador'}
-              </h3>
-              <p style={{ fontSize:'0.82rem', color:'var(--text-subtle)' }}>
-                Empresa parceira com logo no carrossel da página inicial
-              </p>
-            </div>
-          </div>
-          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-subtle)' }}>
-            <X size={20} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Nome da Empresa ou Comércio *</label>
-            <input 
-              className="form-input" 
-              type="text" 
-              required 
-              placeholder="Ex: Farmácia São Lucas, Padaria Central..."
-              value={form.name} 
-              onChange={e => setField('name', e.target.value)} 
-            />
+            <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-subtle)' }}>
+              <X size={20} />
+            </button>
           </div>
 
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+          <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Tipo / Categoria de Apoio</label>
-              <select className="form-select" value={form.category} onChange={e => setField('category', e.target.value)}>
-                {CATEGORIES_SPONSOR.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-              </select>
+              <label className="form-label">Nome da Empresa ou Comércio *</label>
+              <input 
+                className="form-input" 
+                type="text" 
+                required 
+                placeholder="Ex: Farmácia São Lucas, Padaria Central..."
+                value={form.name} 
+                onChange={e => setField('name', e.target.value)} 
+              />
             </div>
 
             <div className="form-group">
@@ -594,26 +504,24 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
                 onChange={e => setField('websiteUrl', e.target.value)} 
               />
             </div>
-          </div>
 
-          {/* Seletor de Logo */}
-          <div className="form-group">
-            <label className="form-label">
-              <Camera size={14} style={{ verticalAlign:'middle', marginRight:5 }} />
-              Logo da Empresa / Patrocinador
-            </label>
+            <div className="form-group">
+              <label className="form-label">
+                <Camera size={14} style={{ verticalAlign:'middle', marginRight:5 }} />
+                Logo da Empresa / Patrocinador
+              </label>
 
-            {/* Alternar modo Arquivo / URL */}
-            <div style={{ display:'flex', gap:8, marginBottom:10 }}>
-              <button 
-                type="button"
-                className={`btn btn-pill ${uploadMode === 'file' ? 'active' : ''}`}
-                style={{ fontSize:'0.8rem', padding:'5px 12px' }}
-                onClick={() => setUploadMode('file')}
-              >
-                <Upload size={13} /> Enviar do Computador
-              </button>
-              <button 
+              {/* Alternar modo Arquivo / URL */}
+                            <div style={{ display:'flex', gap:8, marginBottom:10 }}>
+                              <button 
+                                type="button"
+                                className={`btn btn-pill ${uploadMode === 'file' ? 'active' : ''}`}
+                                style={{ fontSize:'0.8rem', padding:'5px 12px' }}
+                                onClick={() => setUploadMode('file')}
+                              >
+                                <Upload size={13} /> Enviar do Computador
+                              </button>
+                              <button
                 type="button"
                 className={`btn btn-pill ${uploadMode === 'url' ? 'active' : ''}`}
                 style={{ fontSize:'0.8rem', padding:'5px 12px' }}
@@ -813,16 +721,15 @@ function TabOverview({ setActiveTab }) {
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {upcomingEvents.map(ev => (
               <div key={ev.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'10px 14px', background:'#F5F9F8', borderRadius:10, flexWrap:'wrap' }}>
-                <div style={{ textAlign:'center', minWidth:44, background:'#2A5C66', borderRadius:8, padding:'6px 4px', color:'#fff', flexShrink:0 }}>
-                  <div style={{ fontSize:'1.1rem', fontWeight:800, lineHeight:1 }}>{ev.day}</div>
-                  <div style={{ fontSize:'0.65rem', textTransform:'uppercase', letterSpacing:'0.05em' }}>{MONTHS[ev.month]?.slice(0,3)}</div>
-                </div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontWeight:700, fontSize:'0.92rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{ev.title}</div>
-                  <div style={{ fontSize:'0.78rem', color:'var(--text-subtle)' }}>{ev.time} • {ev.location}</div>
-                </div>
-                <CategoryBadge category={ev.category} />
-              </div>
+                              <div style={{ textAlign:'center', minWidth:44, background:'#2A5C66', borderRadius:8, padding:'6px 4px', color:'#fff', flexShrink:0 }}>
+                                <div style={{ fontSize:'1.1rem', fontWeight:800, lineHeight:1 }}>{ev.day}</div>
+                                <div style={{ fontSize:'0.65rem', textTransform:'uppercase', letterSpacing:'0.05em' }}>{MONTHS[ev.month]?.slice(0,3)}</div>
+                              </div>
+                              <div style={{ flex:1, minWidth:0 }}>
+                                <div style={{ fontWeight:700, fontSize:'0.92rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{ev.title}</div>
+                                <div style={{ fontSize:'0.78rem', color:'var(--text-subtle)' }}>{ev.time} • {ev.location}</div>
+                              </div>
+                            </div>
             ))}
           </div>
         </div>
@@ -835,15 +742,13 @@ function TabOverview({ setActiveTab }) {
 function TabGallery() {
   const { galleryItems, addGalleryItem, updateGalleryItem, deleteGalleryItem } = useData();
   const [search, setSearch] = useState('');
-  const [filterCat, setFilterCat] = useState('Todos');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const filtered = galleryItems.filter(item => {
-    const matchCat = filterCat === 'Todos' || item.category === filterCat;
     const matchSearch = !search || item.title.toLowerCase().includes(search.toLowerCase()) || item.description?.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
+    return matchSearch;
   });
 
   const handleSave = (data) => {
@@ -857,31 +762,27 @@ function TabGallery() {
   };
 
   return (
-    <div>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
-        <div>
-          <h2 className="admin-section-title">Álbum de Lembranças</h2>
-          <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{galleryItems.length} lembranças cadastradas</p>
+      <div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
+          <div>
+            <h2 className="admin-section-title">Álbum de Lembranças</h2>
+            <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{galleryItems.length} lembranças cadastradas</p>
+          </div>
+          <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
+            <Plus size={16} /> Nova Lembrança
+          </button>
         </div>
-        <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
-          <Plus size={16} /> Nova Lembrança
-        </button>
-      </div>
 
-      {/* Busca & Filtros */}
-      <div style={{ display:'flex', gap:12, marginBottom:22, flexWrap:'wrap' }}>
-        <div style={{ position:'relative', flex:'1 1 220px' }}>
-          <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
-          <input className="form-input" style={{ paddingLeft:36 }} type="text"
-            placeholder="Buscar por título ou descrição..." value={search} onChange={e => setSearch(e.target.value)} />
+        {/* Busca */}
+        <div style={{ display:'flex', gap:12, marginBottom:22, flexWrap:'wrap' }}>
+          <div style={{ position:'relative', flex:'1 1 220px' }}>
+            <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
+            <input className="form-input" style={{ paddingLeft:36 }} type="text"
+              placeholder="Buscar por título ou descrição..." value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
         </div>
-        <select className="form-select" style={{ flex:'0 0 auto' }} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
-          <option value="Todos">Todas as Categorias</option>
-          {CATEGORIES_GALLERY.map(c => <option key={c} value={c}>{CAT_LABEL[c] || c}</option>)}
-        </select>
-      </div>
 
-      {filtered.length === 0 ? (
+        {filtered.length === 0 ? (
         <div style={{ textAlign:'center', padding:'48px 20px', color:'var(--text-subtle)' }}>
           <Images size={40} style={{ opacity:0.3, marginBottom:12, display:'block', margin:'0 auto 12px' }} />
           <p style={{ fontWeight:600 }}>Nenhuma lembrança encontrada.</p>
@@ -898,12 +799,9 @@ function TabGallery() {
                   style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.4s' }}
                   onMouseEnter={e => e.currentTarget.style.transform='scale(1.05)'}
                   onMouseLeave={e => e.currentTarget.style.transform='scale(1)'}
-                  onError={e => { e.target.style.display='none'; }} />
-                <div style={{ position:'absolute', top:8, right:8 }}>
-                  <CategoryBadge category={item.category} />
-                </div>
-              </div>
-              <div style={{ padding:'14px 16px' }}>
+                                    onError={e => { e.target.style.display='none'; }} />
+                                </div>
+                                <div style={{ padding:'14px 16px' }}>
                 <h4 style={{ fontFamily:'var(--font-serif)', fontSize:'1rem', marginBottom:4, lineHeight:1.3 }}>{item.title}</h4>
                 {item.subtitle && <p style={{ fontSize:'0.78rem', color:'var(--text-subtle)', marginBottom:8 }}>{item.subtitle}</p>}
                 {item.description && (
@@ -944,17 +842,15 @@ function TabGallery() {
 function TabCalendar() {
   const { calendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent } = useData();
   const [search, setSearch] = useState('');
-  const [filterCat, setFilterCat] = useState('Todas');
   const [filterMonth, setFilterMonth] = useState('Todos');
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const filtered = calendarEvents.filter(ev => {
-    const matchCat = filterCat === 'Todas' || ev.category === filterCat;
     const matchMonth = filterMonth === 'Todos' || String(ev.month) === filterMonth;
     const matchSearch = !search || ev.title.toLowerCase().includes(search.toLowerCase()) || ev.desc?.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchMonth && matchSearch;
+    return matchMonth && matchSearch;
   }).sort((a, b) => {
     const da = a.year*10000+a.month*100+a.day;
     const db = b.year*10000+b.month*100+b.day;
@@ -972,35 +868,31 @@ function TabCalendar() {
   };
 
   return (
-    <div>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
-        <div>
-          <h2 className="admin-section-title">Calendário de Ações</h2>
-                    <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{calendarEvents.length} ações cadastradas</p>
-                  </div>
-                  <button className="btn btn-primary" onClick={() => { setEditingEvent(null); setShowForm(true); }}>
-                    <Plus size={16} /> Nova Ação
-        </button>
-      </div>
-
-      {/* Busca & Filtros */}
-      <div style={{ display:'flex', gap:12, marginBottom:22, flexWrap:'wrap' }}>
-        <div style={{ position:'relative', flex:'1 1 200px' }}>
-          <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
-          <input className="form-input" style={{ paddingLeft:36 }} type="text"
-            placeholder="Buscar atividade..." value={search} onChange={e => setSearch(e.target.value)} />
+      <div>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
+          <div>
+            <h2 className="admin-section-title">Calendário de Ações</h2>
+                      <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{calendarEvents.length} ações cadastradas</p>
+                    </div>
+                    <button className="btn btn-primary" onClick={() => { setEditingEvent(null); setShowForm(true); }}>
+                      <Plus size={16} /> Nova Ação
+          </button>
         </div>
-        <select className="form-select" style={{ flex:'0 0 auto' }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
-          <option value="Todos">Todos os Meses</option>
-          {MONTHS.map((m, i) => <option key={i} value={String(i)}>{m}</option>)}
-        </select>
-        <select className="form-select" style={{ flex:'0 0 auto' }} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
-          <option value="Todas">Todas as Categorias</option>
-          {CATEGORIES_CALENDAR.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </div>
 
-      {filtered.length === 0 ? (
+        {/* Busca & Filtro de Mês */}
+        <div style={{ display:'flex', gap:12, marginBottom:22, flexWrap:'wrap' }}>
+          <div style={{ position:'relative', flex:'1 1 200px' }}>
+            <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
+            <input className="form-input" style={{ paddingLeft:36 }} type="text"
+              placeholder="Buscar atividade..." value={search} onChange={e => setSearch(e.target.value)} />
+          </div>
+          <select className="form-select" style={{ flex:'0 0 auto' }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
+            <option value="Todos">Todos os Meses</option>
+            {MONTHS.map((m, i) => <option key={i} value={String(i)}>{m}</option>)}
+          </select>
+        </div>
+
+        {filtered.length === 0 ? (
         <div style={{ textAlign:'center', padding:'48px 20px', color:'var(--text-subtle)' }}>
           <CalendarDays size={40} style={{ opacity:0.3, marginBottom:12, display:'block', margin:'0 auto 12px' }} />
           <p style={{ fontWeight:600 }}>Nenhuma atividade encontrada.</p>
@@ -1021,18 +913,17 @@ function TabCalendar() {
                 </div>
                 <div style={{ fontSize:'0.62rem', opacity:0.7, marginTop:2 }}>{ev.year}</div>
               </div>
-              {/* Conteúdo */}
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginBottom:4 }}>
-                  <CategoryBadge category={ev.category} />
-                  {ev.isHighlight && (
-                    <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:'0.7rem', fontWeight:700,
-                      color:'#92660A', background:'#FEF3C7', border:'1px solid #FDE68A', borderRadius:999, padding:'2px 9px' }}>
-                      <Star size={10} fill="#92660A" /> Destaque
-                    </span>
-                  )}
-                </div>
-                <h4 style={{ fontWeight:700, fontSize:'0.97rem', marginBottom:4 }}>{ev.title}</h4>
+                            {/* Conteúdo */}
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginBottom:4 }}>
+                                {ev.isHighlight && (
+                                  <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:'0.7rem', fontWeight:700,
+                                    color:'#92660A', background:'#FEF3C7', border:'1px solid #FDE68A', borderRadius:999, padding:'2px 9px' }}>
+                                    <Star size={10} fill="#92660A" /> Destaque
+                                  </span>
+                                )}
+                              </div>
+                              <h4 style={{ fontWeight:700, fontSize:'0.97rem', marginBottom:4 }}>{ev.title}</h4>
                 <div style={{ fontSize:'0.8rem', color:'var(--text-subtle)', display:'flex', gap:14, flexWrap:'wrap' }}>
                   <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Clock size={11} /> {ev.time}</span>
                   {ev.location && <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><MapPin size={11} /> {ev.location}</span>}
@@ -1071,7 +962,6 @@ function TabCalendar() {
 function TabSponsors() {
   const { sponsors, addSponsor, updateSponsor, deleteSponsor } = useData();
   const [search, setSearch] = useState('');
-  const [filterCat, setFilterCat] = useState('Todas');
   const [showForm, setShowForm] = useState(false);
   const [editingSponsor, setEditingSponsor] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -1079,9 +969,8 @@ function TabSponsors() {
   const sponsorList = sponsors || [];
 
   const filtered = sponsorList.filter(sp => {
-    const matchCat = filterCat === 'Todas' || sp.category === filterCat;
     const matchSearch = !search || sp.name?.toLowerCase().includes(search.toLowerCase()) || sp.description?.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
+    return matchSearch;
   });
 
   const handleSave = (data) => {
@@ -1113,40 +1002,33 @@ function TabSponsors() {
       </div>
 
       {/* Filtros e Busca */}
-      <div style={{ display:'flex', gap:12, marginBottom:24, flexWrap:'wrap', alignItems:'center' }}>
-        <div style={{ position:'relative', flex:1, minWidth:220 }}>
-          <Search size={16} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'var(--text-subtle)' }} />
-          <input 
-            className="form-input" 
-            type="text" 
-            placeholder="Buscar por nome da empresa ou descrição..."
-            value={search} 
-            onChange={e => setSearch(e.target.value)} 
-            style={{ paddingLeft:38 }} 
-          />
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <span style={{ fontSize:'0.82rem', color:'var(--text-subtle)', fontWeight:600 }}>Categoria:</span>
-          <select className="form-select" style={{ width:'auto' }} value={filterCat} onChange={e => setFilterCat(e.target.value)}>
-            <option value="Todas">Todas as Categorias</option>
-            {CATEGORIES_SPONSOR.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-          </select>
-        </div>
-      </div>
+            <div style={{ display:'flex', gap:12, marginBottom:24, flexWrap:'wrap', alignItems:'center' }}>
+              <div style={{ position:'relative', flex:1, minWidth:220 }}>
+                <Search size={16} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'var(--text-subtle)' }} />
+                <input 
+                  className="form-input" 
+                  type="text" 
+                  placeholder="Buscar por nome da empresa ou descrição..."
+                  value={search} 
+                  onChange={e => setSearch(e.target.value)} 
+                  style={{ paddingLeft:38 }} 
+                />
+              </div>
+            </div>
 
-      {/* Grid de Patrocinadores */}
-      {filtered.length === 0 ? (
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:48, textAlign:'center' }}>
-          <Building2 size={40} style={{ opacity:0.25, display:'block', margin:'0 auto 12px' }} />
-          <h3 style={{ fontSize:'1.1rem', marginBottom:6 }}>Nenhum patrocinador encontrado</h3>
-          <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:20 }}>
-            {search || filterCat !== 'Todas' ? 'Tente alterar os termos da busca ou filtros.' : 'Cadastre sua primeira empresa parceira.'}
-          </p>
-          <button className="btn btn-primary" onClick={() => { setEditingSponsor(null); setShowForm(true); }}>
-            <Plus size={15} /> Cadastrar Patrocinador
-          </button>
-        </div>
-      ) : (
+            {/* Grid de Patrocinadores */}
+            {filtered.length === 0 ? (
+              <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:48, textAlign:'center' }}>
+                <Building2 size={40} style={{ opacity:0.25, display:'block', margin:'0 auto 12px' }} />
+                <h3 style={{ fontSize:'1.1rem', marginBottom:6 }}>Nenhum patrocinador encontrado</h3>
+                <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:20 }}>
+                  {search ? 'Tente alterar os termos da busca.' : 'Cadastre sua primeira empresa parceira.'}
+                </p>
+                <button className="btn btn-primary" onClick={() => { setEditingSponsor(null); setShowForm(true); }}>
+                  <Plus size={15} /> Cadastrar Patrocinador
+                </button>
+              </div>
+            ) : (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20 }}>
           {filtered.map(sponsor => (
             <div 
@@ -1164,23 +1046,22 @@ function TabSponsors() {
               }}
             >
               <div>
-                {/* Header com Badge e Status */}
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-                  <SponsorCategoryBadge category={sponsor.category} />
-                  <span style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 99,
-                    background: sponsor.active !== false ? '#EDFAF3' : '#FEF2F2',
-                    color: sponsor.active !== false ? '#2D7A50' : '#DC2626',
-                    border: `1px solid ${sponsor.active !== false ? '#C8EDD8' : '#FCA5A5'}`
-                  }}>
-                    {sponsor.active !== false ? 'No Carrossel' : 'Oculto'}
-                  </span>
-                </div>
+                              {/* Header com Badge e Status */}
+                              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+                                <span style={{
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  padding: '2px 8px',
+                                  borderRadius: 99,
+                                  background: sponsor.active !== false ? '#EDFAF3' : '#FEF2F2',
+                                  color: sponsor.active !== false ? '#2D7A50' : '#DC2626',
+                                  border: `1px solid ${sponsor.active !== false ? '#C8EDD8' : '#FCA5A5'}`
+                                }}>
+                                  {sponsor.active !== false ? 'No Carrossel' : 'Oculto'}
+                                </span>
+                              </div>
 
-                {/* Logo Frame */}
+                              {/* Logo Frame */}
                 <div style={{
                   height: 100,
                   background: '#FAF7F5',
@@ -1525,112 +1406,6 @@ function TabSettings() {
   );
 }
 
-// ── PAINEL: CATEGORIAS DO CALENDÁRIO (INTEGRADO AO BACKEND) ───────────────────
-function TabCategories() {
-  const { categories, addCategory, updateCategory, deleteCategory, backendConnected } = useData();
-  const [showModal, setShowModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [catName, setCatName] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState(null);
-
-  const handleOpenCreate = () => {
-    setEditingCategory(null);
-    setCatName('');
-    setShowModal(true);
-  };
-
-  const handleOpenEdit = (cat) => {
-    setEditingCategory(cat);
-    setCatName(cat.nome);
-    setShowModal(true);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!catName.trim()) return;
-    if (editingCategory) {
-      updateCategory(editingCategory.id, catName.trim());
-    } else {
-      addCategory(catName.trim());
-    }
-    setShowModal(false);
-    setEditingCategory(null);
-    setCatName('');
-  };
-
-  return (
-    <div>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:12 }}>
-        <div>
-          <h2 className="admin-section-title">Categorias do Calendário</h2>
-          <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>
-            {categories.length} categorias disponíveis para classificar encontros e atividades.
-          </p>
-        </div>
-        <button className="btn btn-primary" onClick={handleOpenCreate}>
-          <Plus size={16} /> Nova Categoria
-        </button>
-      </div>
-
-      <div style={{ background: backendConnected ? '#F0FDF4' : '#FEF3C7', border: `1px solid ${backendConnected ? '#BBF7D0' : '#FDE68A'}`, borderRadius: 12, padding: '12px 16px', marginBottom: 24, display:'flex', alignItems:'center', gap:10 }}>
-        <span style={{ fontSize:'1.1rem' }}>{backendConnected ? '🟢' : '🟠'}</span>
-        <div style={{ fontSize:'0.85rem', color: backendConnected ? '#166534' : '#92400E' }}>
-          <strong>{backendConnected ? 'Conexão Ativa com Backend (MySQL)' : 'Modo Armazenamento Local'}</strong> — {backendConnected ? 'Categorias sincronizadas diretamente via rota /categoria do backend.' : 'Backend offline. As alterações serão salvas localmente até o backend ser iniciado.'}
-        </div>
-      </div>
-
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:14 }}>
-        {categories.map(cat => (
-          <div key={cat.id} style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:12, padding:'16px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', boxShadow:'0 1px 4px rgba(27,37,39,0.04)' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:34, height:34, background:'#EAF4F6', borderRadius:8, display:'flex', alignItems:'center', justifyContent:'center', color:'#2A5C66' }}>
-                <Tag size={16} />
-              </div>
-              <div>
-                <div style={{ fontWeight:700, fontSize:'0.95rem' }}>{cat.nome}</div>
-                <div style={{ fontSize:'0.72rem', color:'var(--text-subtle)' }}>ID #{cat.id}</div>
-              </div>
-            </div>
-            <div style={{ display:'flex', gap:6 }}>
-              <button className="btn btn-pill" style={{ padding:'5px 10px', fontSize:'0.75rem' }} onClick={() => handleOpenEdit(cat)} title="Editar">
-                <Pencil size={12} />
-              </button>
-              <button className="btn" style={{ padding:'5px 10px', fontSize:'0.75rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }} onClick={() => setDeleteTarget(cat)} title="Excluir">
-                <Trash2 size={12} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)} role="dialog" aria-modal="true">
-          <div className="modal-card" style={{ maxWidth: 440 }} onClick={e => e.stopPropagation()}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-              <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.2rem' }}>
-                {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
-              </h3>
-              <button onClick={() => setShowModal(false)} style={{ background:'none', border:'none', cursor:'pointer' }}><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">Nome da Categoria *</label>
-                <input className="form-input" type="text" placeholder="Ex: Ginástica, Pintura..." required value={catName} onChange={e => setCatName(e.target.value)} autoFocus />
-              </div>
-              <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:20 }}>
-                <button type="button" className="btn btn-pill" onClick={() => setShowModal(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary"><CheckCircle size={14} /> Salvar Categoria</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <ConfirmDeleteModal isOpen={!!deleteTarget} title={deleteTarget?.nome} subtitle="Esta categoria será removida do cadastro." onConfirm={() => { deleteCategory(deleteTarget.id); setDeleteTarget(null); }} onCancel={() => setDeleteTarget(null)} />
-    </div>
-  );
-}
-
 // ── PAINEL: ADMINISTRADORES (INTEGRADO AO BACKEND) ─────────────────────────────
 function TabAdmins() {
   const { admins, fetchAdmins, addAdmin, updateAdmin, deleteAdmin, backendConnected } = useData();
@@ -1793,16 +1568,15 @@ export default function AdminPage({ onClose }) {
   const [activeTab, setActiveTab] = useState('overview');
 
   const tabs = [
-    { id: 'overview',        label: 'Visão Geral',              icon: <LayoutDashboard size={17} /> },
-    { id: 'gallery',         label: 'Álbum de Lembranças',      icon: <Images size={17} /> },
-    { id: 'calendar',        label: 'Calendário & Ações',       icon: <CalendarDays size={17} /> },
-    { id: 'categories',      label: 'Categorias do Calendário', icon: <Tag size={17} /> },
-    { id: 'admins',          label: 'Administradores',          icon: <UserCheck size={17} /> },
-    { id: 'cadastrar-admin', label: 'Cadastrar Adm.',           icon: <Users size={17} /> },
-    { id: 'sponsors',        label: 'Patrocinadores & Apoio',   icon: <Building2 size={17} /> },
-    { id: 'testimonials',    label: 'Depoimentos',              icon: <HeartHandshake size={17} /> },
-    { id: 'settings',        label: 'Configurações',            icon: <Settings size={17} /> },
-  ];
+      { id: 'overview',        label: 'Visão Geral',              icon: <LayoutDashboard size={17} /> },
+      { id: 'gallery',         label: 'Álbum de Lembranças',      icon: <Images size={17} /> },
+      { id: 'calendar',        label: 'Calendário & Ações',       icon: <CalendarDays size={17} /> },
+      { id: 'admins',          label: 'Administradores',          icon: <UserCheck size={17} /> },
+      { id: 'cadastrar-admin', label: 'Cadastrar Adm.',           icon: <Users size={17} /> },
+      { id: 'sponsors',        label: 'Patrocinadores & Apoio',   icon: <Building2 size={17} /> },
+      { id: 'testimonials',    label: 'Depoimentos',              icon: <HeartHandshake size={17} /> },
+      { id: 'settings',        label: 'Configurações',            icon: <Settings size={17} /> },
+    ];
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -1972,19 +1746,18 @@ export default function AdminPage({ onClose }) {
         </aside>
 
         {/* Conteúdo Principal */}
-        <main className="admin-content">
-          {activeTab === 'overview' && <TabOverview setActiveTab={setActiveTab} />}
-          {activeTab === 'gallery' && <TabGallery />}
-          {activeTab === 'calendar' && <TabCalendar />}
-          {activeTab === 'categories' && <TabCategories />}
-          {activeTab === 'admins' && <TabAdmins />}
-          {activeTab === 'cadastrar-admin' && (
-            <CadastroAdminPage onVoltar={() => setActiveTab('admins')} />
-          )}
-          {activeTab === 'sponsors' && <TabSponsors />}
-          {activeTab === 'testimonials' && <TabTestimonials />}
-          {activeTab === 'settings' && <TabSettings />}
-        </main>
+                <main className="admin-content">
+                  {activeTab === 'overview' && <TabOverview setActiveTab={setActiveTab} />}
+                  {activeTab === 'gallery' && <TabGallery />}
+                  {activeTab === 'calendar' && <TabCalendar />}
+                  {activeTab === 'admins' && <TabAdmins />}
+                  {activeTab === 'cadastrar-admin' && (
+                    <CadastroAdminPage onVoltar={() => setActiveTab('admins')} />
+                  )}
+                  {activeTab === 'sponsors' && <TabSponsors />}
+                  {activeTab === 'testimonials' && <TabTestimonials />}
+                  {activeTab === 'settings' && <TabSettings />}
+                </main>
       </div>
     </div>
   );

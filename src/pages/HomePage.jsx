@@ -47,9 +47,8 @@ export default function HomePage({ onNavigate, onOpenDonation, onOpenSponsorModa
                 title="Ver no calendário"
               >
                 <div className="upcoming-header">
-                  <span className="upcoming-day">{item.day}</span>
-                  <span className="upcoming-tag">{item.category}</span>
-                </div>
+                                  <span className="upcoming-day">{item.day}</span>
+                                </div>
                 <h3 className="upcoming-title">{item.title}</h3>
                 <p className="upcoming-desc">{item.description}</p>
               </div>

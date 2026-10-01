@@ -20,7 +20,6 @@ export default function ActivitiesPage({ onOpenSchedule }) {
             <div key={act.id} className="activity-card">
               <img src={act.image} alt={act.title} className="activity-img" />
               <div className="activity-body">
-                <span className="activity-tag">{act.categoryTag}</span>
                 <h2 className="activity-title">{act.title}</h2>
                 <p className="activity-desc">{act.description}</p>
                 <button 

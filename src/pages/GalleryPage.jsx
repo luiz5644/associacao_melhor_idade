@@ -1,12 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { siteData } from '../data/mockData';
 import { useData } from '../context/DataContext';
-import { X, ChevronLeft, ChevronRight, Images, Calendar, Tag } from 'lucide-react';
-
-const CAT_LABEL = {
-  Celebracoes: 'Celebrações', Forro: 'Forró', Coral: 'Coral',
-  Viagens: 'Viagens e Passeios', Artes: 'Artes e Trabalhos Manuais', Todos: 'Todos os Momentos'
-};
+import { X, ChevronLeft, ChevronRight, Images, Calendar } from 'lucide-react';
 
 // ── Modal de Detalhes da Lembrança com Carrossel ──────────────────────────────
 function MemoryDetailModal({ memory, onClose }) {
@@ -132,15 +127,9 @@ function MemoryDetailModal({ memory, onClose }) {
         </div>
 
         {/* ─── Informações da Lembrança ──────────────────── */}
-        <div className="memory-info-panel">
-          <div>
-            {/* Tag de categoria */}
-            <span className="memory-category-tag">
-              <Tag size={11} />
-              {CAT_LABEL[memory.category] || memory.category || 'Lembrança'}
-            </span>
-
-            <h2 className="memory-detail-title">{memory.title}</h2>
+                <div className="memory-info-panel">
+                  <div>
+                    <h2 className="memory-detail-title">{memory.title}</h2>
 
             {formattedDate && (
               <div className="memory-detail-date">

@@ -4,7 +4,7 @@ import { useData } from '../context/DataContext';
 import { adminApi } from '../services/api';
 
 export default function AdminModal({ isOpen, onClose, onAddEvent }) {
-  const { categories, backendConnected } = useData();
+  const { backendConnected } = useData();
   const [isLoggedIn, setIsLoggedIn] = useState(() => adminApi.isAuthenticated());
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
@@ -15,7 +15,6 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
   const [newTitle, setNewTitle] = useState('');
   const [newDay, setNewDay] = useState('15');
   const [newTime, setNewTime] = useState('14:00');
-  const [newCategory, setNewCategory] = useState('Música');
   const [newDesc, setNewDesc] = useState('');
   const [eventAddedSuccess, setEventAddedSuccess] = useState(false);
 
@@ -41,22 +40,21 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
   };
 
   const handleCreateEvent = (e) => {
-    e.preventDefault();
-    if (!newTitle) return;
+      e.preventDefault();
+      if (!newTitle) return;
 
-    onAddEvent({
-      day: parseInt(newDay, 10),
-      title: newTitle,
-      time: newTime,
-      category: newCategory,
-      desc: newDesc || "Atividade especial da comunidade."
-    });
+      onAddEvent({
+        day: parseInt(newDay, 10),
+        title: newTitle,
+        time: newTime,
+        desc: newDesc || "Atividade especial da comunidade."
+      });
 
-    setEventAddedSuccess(true);
-    setNewTitle('');
-    setNewDesc('');
-    setTimeout(() => setEventAddedSuccess(false), 3000);
-  };
+      setEventAddedSuccess(true);
+      setNewTitle('');
+      setNewDesc('');
+      setTimeout(() => setEventAddedSuccess(false), 3000);
+    };
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
@@ -169,43 +167,30 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                  <div className="form-group">
-                    <label className="form-label">Dia (Outubro)</label>
-                    <select 
-                      className="form-select" 
-                      value={newDay} 
-                      onChange={(e) => setNewDay(e.target.value)}
-                    >
-                      {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                        <option key={d} value={d}>Dia {d}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                                  <div className="form-group">
+                                    <label className="form-label">Dia (Outubro)</label>
+                                    <select 
+                                      className="form-select" 
+                                      value={newDay} 
+                                      onChange={(e) => setNewDay(e.target.value)}
+                                    >
+                                      {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                                        <option key={d} value={d}>Dia {d}</option>
+                                      ))}
+                                    </select>
+                                  </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Horário</label>
-                    <input 
-                      type="time" 
-                      className="form-input" 
-                      value={newTime}
-                      onChange={(e) => setNewTime(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Categoria</label>
-                    <select 
-                      className="form-select" 
-                      value={newCategory} 
-                      onChange={(e) => setNewCategory(e.target.value)}
-                    >
-                      {(categories && categories.length > 0 ? categories.map(c => c.nome) : ['Música', 'Coral', 'Lazer', 'Artes']).map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+                                  <div className="form-group">
+                                    <label className="form-label">Horário</label>
+                                    <input 
+                                      type="time" 
+                                      className="form-input" 
+                                      value={newTime}
+                                      onChange={(e) => setNewTime(e.target.value)}
+                                    />
+                                  </div>
+                                </div>
 
                 <div className="form-group">
                   <label className="form-label">Descrição Breve</label>

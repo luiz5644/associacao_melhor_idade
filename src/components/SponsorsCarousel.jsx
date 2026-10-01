@@ -167,10 +167,7 @@ export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation })
                     e.currentTarget.src = 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop';
                   }}
                 />
-                {sponsor.category && (
-                  <span className="sponsor-badge">{sponsor.category}</span>
-                )}
-              </div>
+                </div>
 
               <div className="sponsor-body">
                 <h3 className="sponsor-name">{sponsor.name}</h3>

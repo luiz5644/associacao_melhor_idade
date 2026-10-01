@@ -218,118 +218,95 @@ export const siteData = {
 
   // 4. TELA CALENDÁRIO
   calendar: {
-    tag: "CALENDÁRIO DO IDOSO",
-    title: "Nossa Programação",
-    subtitle: "Datas claras e de fácil leitura para você programar seus dias de diversão e aprendizado.",
-    categories: [
-      { id: "Todas", label: "Todas" },
-      { id: "Música", label: "Música" },
-      { id: "Coral", label: "Coral" },
-      { id: "Lazer", label: "Lazer" },
-      { id: "Artes", label: "Artes" }
-    ],
-    // Destaques fixos do mês (conforme imagem do Figma)
-    highlights: [
-      {
-        dateLabel: "Terça, 01 - 09:00",
-        category: "Coral",
-        title: "Canto Coral",
-        description: "Aprimorando voz e postura com o maestro Roberto.",
-        color: "#2A5C66"
-      },
-      {
-        dateLabel: "Sexta, 04 - 14:00",
-        category: "Música",
-        title: "Tarde do Forró Comunitário",
-        description: "Baile especial com sanfoneiro ao vivo.",
-        color: "#E8A87C"
-      },
-      {
-        dateLabel: "Quarta, 08 - 14:00",
-        category: "Artes",
-        title: "Oficina de Pintura em Tela",
-        description: "Traga avental, tintas inclusas.",
-        color: "#3D6058"
-      }
-    ],
-    // Eventos distribuídos nos dias de Outubro 2026
-    eventsOctober2026: [
-      { day: 1, title: "Canto Coral", time: "09:00", category: "Coral", desc: "Aprimorando voz e postura com o maestro Roberto." },
-      { day: 4, title: "Tarde do Forró Comunitário", time: "14:00", category: "Música", desc: "Baile especial com sanfoneiro ao vivo e mesa de bolos." },
-      { day: 6, title: "Café com Poesia", time: "15:00", category: "Lazer", desc: "Leitura de poemas e contação de causos." },
-      { day: 8, title: "Oficina de Pintura em Tela", time: "14:00", category: "Artes", desc: "Técnica de aquarela e óleo sobre tela. Tintas inclusas." },
-      { day: 11, title: "Forró Semanal da Saudade", time: "14:00", category: "Música", desc: "Músicas de Luiz Gonzaga, Dominguinhos e Trio Nordestino." },
-      { day: 14, title: "Aula de Ioga e Respiração", time: "08:30", category: "Lazer", desc: "Alongamento suave na grama do jardim." },
-      { day: 15, title: "Ensaio Geral do Coral", time: "09:00", category: "Coral", desc: "Preparação para o festival de corais da cidade." },
-      { day: 18, title: "Forró com Concurso de Dança", time: "14:00", category: "Música", desc: "Premiação simbólica para o casal mais animado." },
-      { day: 22, title: "Oficina de Modelagem em Cerâmica", time: "14:00", category: "Artes", desc: "Criação de vasos decorativos com argila natural." },
-      { day: 25, title: "Excursão Campos do Jordão", time: "07:00", category: "Lazer", desc: "Passeio pelo teleférico, feira de malhas e chocolate artesanal." },
-      { day: 28, title: "Canto Coral & Harmonia", time: "09:00", category: "Coral", desc: "Repertório natalino e clássicos da MPB." },
-      { day: 31, title: "Baile das Máscaras & Aniversariantes", time: "16:00", category: "Música", desc: "Grande celebração com bolo de aniversário comunitário!" }
-    ]
+      tag: "CALENDÁRIO DO IDOSO",
+      title: "Nossa Programação",
+      subtitle: "Datas claras e de fácil leitura para você programar seus dias de diversão e aprendizado.",
+      // Destaques fixos do mês (conforme imagem do Figma)
+      highlights: [
+        {
+          dateLabel: "Terça, 01 - 09:00",
+          title: "Canto Coral",
+          description: "Aprimorando voz e postura com o maestro Roberto.",
+          color: "#2A5C66"
+        },
+        {
+          dateLabel: "Sexta, 04 - 14:00",
+          title: "Tarde do Forró Comunitário",
+          description: "Baile especial com sanfoneiro ao vivo.",
+          color: "#E8A87C"
+        },
+        {
+          dateLabel: "Quarta, 08 - 14:00",
+          title: "Oficina de Pintura em Tela",
+          description: "Traga avental, tintas inclusas.",
+          color: "#3D6058"
+        }
+      ],
+      // Eventos distribuídos nos dias de Outubro 2026
+            eventsOctober2026: [
+            { day: 1, title: "Canto Coral", time: "09:00", desc: "Aprimorando voz e postura com o maestro Roberto." },
+            { day: 4, title: "Tarde do Forró Comunitário", time: "14:00", desc: "Baile especial com sanfoneiro ao vivo e mesa de bolos." },
+            { day: 6, title: "Café com Poesia", time: "15:00", desc: "Leitura de poemas e contação de causos." },
+            { day: 8, title: "Oficina de Pintura em Tela", time: "14:00", desc: "Técnica de aquarela e óleo sobre tela. Tintas inclusas." },
+            { day: 11, title: "Forró Semanal da Saudade", time: "14:00", desc: "Músicas de Luiz Gonzaga, Dominguinhos e Trio Nordestino." },
+            { day: 14, title: "Aula de Ioga e Respiração", time: "08:30", desc: "Alongamento suave na grama do jardim." },
+            { day: 15, title: "Ensaio Geral do Coral", time: "09:00", desc: "Preparação para o festival de corais da cidade." },
+            { day: 18, title: "Forró com Concurso de Dança", time: "14:00", desc: "Premiação simbólica para o casal mais animado." },
+            { day: 22, title: "Oficina de Modelagem em Cerâmica", time: "14:00", desc: "Criação de vasos decorativos com argila natural." },
+            { day: 25, title: "Excursão Campos do Jordão", time: "07:00", desc: "Passeio pelo teleférico, feira de malhas e chocolate artesanal." },
+            { day: 28, title: "Canto Coral & Harmonia", time: "09:00", desc: "Repertório natalino e clássicos da MPB." },
+            { day: 31, title: "Baile das Máscaras & Aniversariantes", time: "16:00", desc: "Grande celebração com bolo de aniversário comunitário!" }
+          ]
   },
 
   // 5. TELA GALERIA DE FOTOS
   gallery: {
-    tag: "GALERIA DE FOTOS",
-    title: "Álbum de Lembranças",
-    subtitle: "Cada fotografia guarda um sorriso, uma história e o orgulho de pertencer à nossa grande família.",
-    categories: [
-      { id: "Todos", label: "Todos os Momentos" },
-      { id: "Forro", label: "Forró" },
-      { id: "Coral", label: "Coral" },
-      { id: "Viagens", label: "Viagens e Passeios" },
-      { id: "Celebracoes", label: "Celebrações" }
-    ],
-    items: [
+      tag: "GALERIA DE FOTOS",
+      title: "Álbum de Lembranças",
+      subtitle: "Cada fotografia guarda um sorriso, uma história e o orgulho de pertencer à nossa grande família.",
+      items: [
       {
-        id: "gal-1",
-        category: "Celebracoes",
-        title: "Nossa Quadrilha de São João",
-        subtitle: "Junho de 2026",
-        image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=900&auto=format&fit=crop",
-        description: "Mais de 150 participantes vestidos a caráter celebrando o São João da comunidade com muito carinho e comidas típicas."
-      },
-      {
-        id: "gal-2",
-        category: "Coral",
-        title: "Coral Cantando na Praça",
+              id: "gal-1",
+              title: "Nossa Quadrilha de São João",
+              subtitle: "Junho de 2026",
+              image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=900&auto=format&fit=crop",
+              description: "Mais de 150 participantes vestidos a caráter celebrando o São João da comunidade com muito carinho e comidas típicas."
+            },
+            {
+              id: "gal-2",
+              title: "Coral Cantando na Praça",
         subtitle: "Apresentação de Primavera",
         image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=900&auto=format&fit=crop",
         description: "Concerto ao ar livre sob a sombra das árvores na Praça das Flores, emocionando moradores e visitantes."
       },
       {
-        id: "gal-3",
-        category: "Viagens",
-        title: "Passeio em Ubatuba",
-        subtitle: "Pé na areia e muita brisa",
-        image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=900&auto=format&fit=crop",
-        description: "Final de semana inesquecível no litoral norte, com banho de mar assistido, caminhadas na areia e peixe fresco."
-      },
-      {
-        id: "gal-4",
-        category: "Forro",
-        title: "Baile do Forró Semanal",
-        subtitle: "Todas as sextas com alegria",
-        image: "https://images.unsplash.com/photo-1545232979-fbf6c1417ca9?q=80&w=900&auto=format&fit=crop",
-        description: "O momento mais aguardado da semana: nossos idosos preenchem o salão com vitalidade, passos ensaiados e muita amizade."
-      },
-      {
-        id: "gal-5",
-        category: "Celebracoes",
-        title: "Festa de Fim de Ano",
-        subtitle: "Jantar comunitário",
-        image: "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?q=80&w=900&auto=format&fit=crop",
-        description: "Banquete de confraternização comemorando as conquistas do ano, homenageando associados e compartilhando votos de paz."
-      },
-      {
-        id: "gal-6",
-        category: "Celebracoes",
-        title: "Oficina de Cerâmica",
-        subtitle: "Nossos artesãos orgulhosos",
-        image: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?q=80&w=900&auto=format&fit=crop",
-        description: "Exposição final das peças produzidas no semestre: vasos pintados à mão, esculturas em argila e toalhas bordadas."
-      }
+              id: "gal-3",
+              title: "Passeio em Ubatuba",
+              subtitle: "Pé na areia e muita brisa",
+              image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=900&auto=format&fit=crop",
+              description: "Final de semana inesquecível no litoral norte, com banho de mar assistido, caminhadas na areia e peixe fresco."
+            },
+            {
+              id: "gal-4",
+              title: "Baile do Forró Semanal",
+              subtitle: "Todas as sextas com alegria",
+              image: "https://images.unsplash.com/photo-1545232979-fbf6c1417ca9?q=80&w=900&auto=format&fit=crop",
+              description: "O momento mais aguardado da semana: nossos idosos preenchem o salão com vitalidade, passos ensaiados e muita amizade."
+            },
+            {
+              id: "gal-5",
+              title: "Festa de Fim de Ano",
+              subtitle: "Jantar comunitário",
+              image: "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?q=80&w=900&auto=format&fit=crop",
+              description: "Banquete de confraternização comemorando as conquistas do ano, homenageando associados e compartilhando votos de paz."
+            },
+            {
+              id: "gal-6",
+              title: "Oficina de Cerâmica",
+              subtitle: "Nossos artesãos orgulhosos",
+              image: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?q=80&w=900&auto=format&fit=crop",
+              description: "Exposição final das peças produzidas no semestre: vasos pintados à mão, esculturas em argila e toalhas bordadas."
+            }
     ]
   },
 

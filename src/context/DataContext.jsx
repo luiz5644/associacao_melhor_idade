@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { siteData } from '../data/mockData';
 import {
   adminApi,
-  categoriaApi,
   atividadeApi,
   checkBackendHealth,
   adaptAtividadeToFrontend,
@@ -15,19 +14,8 @@ const STORAGE_KEY_HIGHLIGHTS = 'ami_calendar_highlights_v1';
 const STORAGE_KEY_BRAND = 'ami_brand_info_v1';
 const STORAGE_KEY_SPONSORS = 'ami_sponsors_v1';
 const STORAGE_KEY_TESTIMONIALS = 'ami_testimonials_v1';
-const STORAGE_KEY_CATEGORIES = 'ami_categories_v1';
 
 const DataContext = createContext(null);
-
-const DEFAULT_CATEGORIES = [
-  { id: 1, nome: 'Música' },
-  { id: 2, nome: 'Coral' },
-  { id: 3, nome: 'Lazer' },
-  { id: 4, nome: 'Artes' },
-  { id: 5, nome: 'Saúde' },
-  { id: 6, nome: 'Dança' },
-  { id: 7, nome: 'Festas' },
-];
 
 function seedCalendarEvents() {
   return siteData.calendar.eventsOctober2026.map((ev, index) => ({
@@ -49,15 +37,6 @@ export function DataProvider({ children }) {
   // Estado de conexão com backend
   const [backendConnected, setBackendConnected] = useState(false);
   const [backendLoading, setBackendLoading] = useState(true);
-
-  // Categorias do calendário (do backend / fallback local)
-  const [categories, setCategories] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_CATEGORIES);
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
-    return DEFAULT_CATEGORIES;
-  });
 
   // Administradores (do backend)
   const [admins, setAdmins] = useState([]);
@@ -143,10 +122,6 @@ export function DataProvider({ children }) {
     try { localStorage.setItem(STORAGE_KEY_TESTIMONIALS, JSON.stringify(testimonials)); } catch (_) {}
   }, [testimonials]);
 
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(categories)); } catch (_) {}
-  }, [categories]);
-
   // ── Sincronização inicial com o Backend (se ativo na porta 3000) ────
   const checkAndSyncBackend = useCallback(async (silent = false) => {
     setBackendLoading(true);
@@ -155,23 +130,11 @@ export function DataProvider({ children }) {
       setBackendConnected(isOnline);
 
       if (isOnline) {
-        // Carrega categorias do backend
-        let loadedCats = [];
-        try {
-          const catsData = await categoriaApi.list();
-          if (Array.isArray(catsData) && catsData.length > 0) {
-            loadedCats = catsData;
-            setCategories(catsData);
-          }
-        } catch (err) {
-          console.warn('[Backend] Erro ao carregar categorias:', err);
-        }
-
         // Carrega atividades do calendário do backend
         try {
           const ativsData = await atividadeApi.list();
           if (Array.isArray(ativsData) && ativsData.length > 0) {
-            const adapted = ativsData.map(a => adaptAtividadeToFrontend(a, loadedCats.length ? loadedCats : categories));
+            const adapted = ativsData.map(a => adaptAtividadeToFrontend(a));
             setCalendarEvents(adapted);
 
             // Atualiza highlights
@@ -205,73 +168,11 @@ export function DataProvider({ children }) {
     } finally {
       setBackendLoading(false);
     }
-  }, [categories, showToast]);
+  }, [showToast]);
 
   useEffect(() => {
     checkAndSyncBackend(true);
   }, []);
-
-  // ── Gestão de Categorias (Backend + Local) ─────────────────────────
-  const addCategory = async (nome) => {
-    const nomeTrimmed = nome.trim();
-    if (!nomeTrimmed) return;
-
-    if (backendConnected) {
-      try {
-        await categoriaApi.create(nomeTrimmed);
-        const updated = await categoriaApi.list();
-        setCategories(updated);
-        showToast(`Categoria "${nomeTrimmed}" salva no backend!`, 'success');
-        return;
-      } catch (err) {
-        console.error('Erro ao salvar categoria no backend:', err);
-        showToast('Erro ao salvar categoria no backend. Salvando localmente.', 'warning');
-      }
-    }
-
-    const newCat = { id: Date.now(), nome: nomeTrimmed };
-    setCategories(prev => [...prev, newCat]);
-    showToast(`Categoria "${nomeTrimmed}" adicionada!`, 'success');
-  };
-
-  const updateCategory = async (id, nome) => {
-    const nomeTrimmed = nome.trim();
-    if (!nomeTrimmed) return;
-
-    if (backendConnected) {
-      try {
-        await categoriaApi.update(id, nomeTrimmed);
-        const updated = await categoriaApi.list();
-        setCategories(updated);
-        showToast('Categoria atualizada no backend!', 'info');
-        return;
-      } catch (err) {
-        console.error('Erro ao atualizar categoria no backend:', err);
-        showToast('Erro ao atualizar no backend. Atualizando localmente.', 'warning');
-      }
-    }
-
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, nome: nomeTrimmed } : c));
-    showToast('Categoria atualizada!', 'info');
-  };
-
-  const deleteCategory = async (id) => {
-    if (backendConnected) {
-      try {
-        await categoriaApi.delete(id);
-        const updated = await categoriaApi.list();
-        setCategories(updated);
-        showToast('Categoria removida do backend!', 'warning');
-        return;
-      } catch (err) {
-        console.error('Erro ao deletar categoria no backend:', err);
-        showToast('Erro ao remover no backend. Removendo localmente.', 'warning');
-      }
-    }
-
-    setCategories(prev => prev.filter(c => c.id !== id));
-    showToast('Categoria removida.', 'warning');
-  };
 
   // ── Gestão de Administradores (Backend) ────────────────────────────
   const fetchAdmins = async () => {
@@ -390,11 +291,11 @@ export function DataProvider({ children }) {
 
     if (backendConnected) {
       try {
-        const payload = adaptAtividadeToBackend(newEvent, categories);
+        const payload = adaptAtividadeToBackend(newEvent);
         await atividadeApi.create(payload);
         const ativs = await atividadeApi.list();
         if (Array.isArray(ativs) && ativs.length > 0) {
-          const adapted = ativs.map(a => adaptAtividadeToFrontend(a, categories));
+          const adapted = ativs.map(a => adaptAtividadeToFrontend(a));
           setCalendarEvents(adapted);
           showToast('Atividade salva com sucesso no banco de dados!', 'success');
           return;
@@ -428,10 +329,10 @@ export function DataProvider({ children }) {
       const numericId = typeof id === 'number' ? id : parseInt(String(id).replace('cal-', ''), 10);
       if (!isNaN(numericId) && numericId > 0 && !String(id).includes('seed')) {
         try {
-          const payload = adaptAtividadeToBackend({ ...updatedData, id: numericId }, categories);
+          const payload = adaptAtividadeToBackend({ ...updatedData, id: numericId });
           await atividadeApi.update(numericId, payload);
           const ativs = await atividadeApi.list();
-          const adapted = ativs.map(a => adaptAtividadeToFrontend(a, categories));
+          const adapted = ativs.map(a => adaptAtividadeToFrontend(a));
           setCalendarEvents(adapted);
           showToast('Atividade atualizada com sucesso no backend!', 'info');
           return;
@@ -463,7 +364,7 @@ export function DataProvider({ children }) {
         try {
           await atividadeApi.delete(numericId);
           const ativs = await atividadeApi.list();
-          const adapted = ativs.map(a => adaptAtividadeToFrontend(a, categories));
+          const adapted = ativs.map(a => adaptAtividadeToFrontend(a));
           setCalendarEvents(adapted);
           setCalendarHighlights(prev => prev.filter(hl => hl.id !== `hl-${id}`));
           showToast('Atividade excluída com sucesso do backend!', 'warning');
@@ -559,7 +460,7 @@ export function DataProvider({ children }) {
   };
 
   const resetToDefaultData = () => {
-    [STORAGE_KEY_GALLERY, STORAGE_KEY_CALENDAR, STORAGE_KEY_HIGHLIGHTS, STORAGE_KEY_BRAND, STORAGE_KEY_SPONSORS, STORAGE_KEY_TESTIMONIALS, STORAGE_KEY_CATEGORIES]
+    [STORAGE_KEY_GALLERY, STORAGE_KEY_CALENDAR, STORAGE_KEY_HIGHLIGHTS, STORAGE_KEY_BRAND, STORAGE_KEY_SPONSORS, STORAGE_KEY_TESTIMONIALS]
       .forEach(k => localStorage.removeItem(k));
     setGalleryItems(siteData.gallery.items);
     setCalendarEvents(seedCalendarEvents());
@@ -567,7 +468,6 @@ export function DataProvider({ children }) {
     setBrandInfo(siteData.brand);
     setSponsors(siteData.sponsors || []);
     setTestimonials(siteData.testimonials.items);
-    setCategories(DEFAULT_CATEGORIES);
     showToast('Dados restaurados para o padrão original!', 'info');
   };
 
@@ -577,12 +477,6 @@ export function DataProvider({ children }) {
       backendConnected,
       backendLoading,
       checkBackendConnection: checkAndSyncBackend,
-
-      // Categorias
-      categories,
-      addCategory,
-      updateCategory,
-      deleteCategory,
 
       // Administradores
       admins,

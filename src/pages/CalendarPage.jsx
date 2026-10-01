@@ -133,15 +133,15 @@ export default function CalendarPage() {
                             </h3>
 
               {eventsForSelectedDay.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {eventsForSelectedDay.map((ev, idx) => (
-                    <div key={idx} className="day-event-item">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#2A5C66' }}>
-                          {ev.time} • {ev.category}
-                        </span>
-                      </div>
-                      <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1B2527', marginBottom: '4px' }}>{ev.title}</h4>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {eventsForSelectedDay.map((ev, idx) => (
+                                  <div key={idx} className="day-event-item">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#2A5C66' }}>
+                                        {ev.time}
+                                      </span>
+                                    </div>
+                                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1B2527', marginBottom: '4px' }}>{ev.title}</h4>
                       {ev.location && (
                         <p style={{ fontSize: '0.78rem', color: '#6E6E6E', marginBottom: '4px' }}>📍 {ev.location}</p>
                       )}
