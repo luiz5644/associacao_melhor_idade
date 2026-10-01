@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { adminApi } from '../services/api';
+import CadastroAdminPage from './CadastroAdminPage';
 
 const CATEGORIES_GALLERY = ['Celebracoes', 'Forro', 'Coral', 'Viagens', 'Artes'];
 const CATEGORIES_CALENDAR = ['Música', 'Coral', 'Lazer', 'Artes', 'Saúde', 'Dança', 'Festas'];
@@ -1792,14 +1793,15 @@ export default function AdminPage({ onClose }) {
   const [activeTab, setActiveTab] = useState('overview');
 
   const tabs = [
-    { id: 'overview',     label: 'Visão Geral',              icon: <LayoutDashboard size={17} /> },
-    { id: 'gallery',      label: 'Álbum de Lembranças',      icon: <Images size={17} /> },
-    { id: 'calendar',     label: 'Calendário & Ações',       icon: <CalendarDays size={17} /> },
-    { id: 'categories',   label: 'Categorias do Calendário', icon: <Tag size={17} /> },
-    { id: 'admins',       label: 'Administradores',          icon: <UserCheck size={17} /> },
-    { id: 'sponsors',     label: 'Patrocinadores & Apoio',   icon: <Building2 size={17} /> },
-    { id: 'testimonials', label: 'Depoimentos',              icon: <HeartHandshake size={17} /> },
-    { id: 'settings',     label: 'Configurações',            icon: <Settings size={17} /> },
+    { id: 'overview',        label: 'Visão Geral',              icon: <LayoutDashboard size={17} /> },
+    { id: 'gallery',         label: 'Álbum de Lembranças',      icon: <Images size={17} /> },
+    { id: 'calendar',        label: 'Calendário & Ações',       icon: <CalendarDays size={17} /> },
+    { id: 'categories',      label: 'Categorias do Calendário', icon: <Tag size={17} /> },
+    { id: 'admins',          label: 'Administradores',          icon: <UserCheck size={17} /> },
+    { id: 'cadastrar-admin', label: 'Cadastrar Adm.',           icon: <Users size={17} /> },
+    { id: 'sponsors',        label: 'Patrocinadores & Apoio',   icon: <Building2 size={17} /> },
+    { id: 'testimonials',    label: 'Depoimentos',              icon: <HeartHandshake size={17} /> },
+    { id: 'settings',        label: 'Configurações',            icon: <Settings size={17} /> },
   ];
 
   const handleLogin = async (e) => {
@@ -1976,6 +1978,9 @@ export default function AdminPage({ onClose }) {
           {activeTab === 'calendar' && <TabCalendar />}
           {activeTab === 'categories' && <TabCategories />}
           {activeTab === 'admins' && <TabAdmins />}
+          {activeTab === 'cadastrar-admin' && (
+            <CadastroAdminPage onVoltar={() => setActiveTab('admins')} />
+          )}
           {activeTab === 'sponsors' && <TabSponsors />}
           {activeTab === 'testimonials' && <TabTestimonials />}
           {activeTab === 'settings' && <TabSettings />}
