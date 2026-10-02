@@ -4,7 +4,8 @@ import {
   Plus, Pencil, Trash2, X, CheckCircle, Users, CalendarCheck,
   HeartHandshake, Camera, Upload, Link, Clock, MapPin, Star,
   ChevronRight, Search, AlertTriangle,
-  Building2, ExternalLink, Globe, UserCheck, RefreshCw
+  Building2, ExternalLink, Globe, UserCheck, RefreshCw,
+  Menu
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { adminApi } from '../services/api';
@@ -1566,17 +1567,48 @@ export default function AdminPage({ onClose }) {
   const [loginError, setLoginError] = useState('');
   const [submittingLogin, setSubmittingLogin] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+    const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  const tabs = [
-      { id: 'overview',        label: 'Visão Geral',              icon: <LayoutDashboard size={17} /> },
-      { id: 'gallery',         label: 'Álbum de Lembranças',      icon: <Images size={17} /> },
-      { id: 'calendar',        label: 'Calendário & Ações',       icon: <CalendarDays size={17} /> },
-      { id: 'admins',          label: 'Administradores',          icon: <UserCheck size={17} /> },
-      { id: 'cadastrar-admin', label: 'Cadastrar Adm.',           icon: <Users size={17} /> },
-      { id: 'sponsors',        label: 'Patrocinadores & Apoio',   icon: <Building2 size={17} /> },
-      { id: 'testimonials',    label: 'Depoimentos',              icon: <HeartHandshake size={17} /> },
-      { id: 'settings',        label: 'Configurações',            icon: <Settings size={17} /> },
-    ];
+    // Lock body scroll when drawer is open
+    useEffect(() => {
+      if (mobileDrawerOpen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+      return () => { document.body.style.overflow = ''; };
+    }, [mobileDrawerOpen]);
+
+    // Close drawer on ESC key
+    useEffect(() => {
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') setMobileDrawerOpen(false);
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    const navItems = [
+          { id: 'overview',        label: 'Visão Geral' },
+          { id: 'gallery',         label: 'Álbum de Lembranças' },
+          { id: 'calendar',        label: 'Calendário & Ações' },
+          { id: 'admins',          label: 'Administradores' },
+          { id: 'cadastrar-admin', label: 'Cadastrar Adm.' },
+          { id: 'sponsors',        label: 'Patrocinadores & Apoio' },
+          { id: 'testimonials',    label: 'Depoimentos' },
+          { id: 'settings',        label: 'Configurações' },
+        ];
+
+    const tabs = [
+        { id: 'overview',        label: 'Visão Geral',              icon: <LayoutDashboard size={17} /> },
+        { id: 'gallery',         label: 'Álbum de Lembranças',      icon: <Images size={17} /> },
+        { id: 'calendar',        label: 'Calendário & Ações',       icon: <CalendarDays size={17} /> },
+        { id: 'admins',          label: 'Administradores',          icon: <UserCheck size={17} /> },
+        { id: 'cadastrar-admin', label: 'Cadastrar Adm.',           icon: <Users size={17} /> },
+        { id: 'sponsors',        label: 'Patrocinadores & Apoio',   icon: <Building2 size={17} /> },
+        { id: 'testimonials',    label: 'Depoimentos',              icon: <HeartHandshake size={17} /> },
+        { id: 'settings',        label: 'Configurações',            icon: <Settings size={17} /> },
+      ];
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -1684,45 +1716,58 @@ export default function AdminPage({ onClose }) {
     <div className="admin-page">
       {/* Topbar */}
       <header className="admin-topbar">
-        <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
-          <div style={{ width:36, height:36, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <Shield size={18} color="#fff" />
-          </div>
-          <div style={{ minWidth:0 }}>
-            <div style={{ fontWeight:700, fontSize:'0.9rem', color:'var(--text-main)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Painel Administrativo</div>
-            <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Associação Melhor Idade</div>
-          </div>
-        </div>
+              <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
+                <div style={{ width:36, height:36, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <Shield size={18} color="#fff" />
+                </div>
+                <div style={{ minWidth:0 }}>
+                  <div style={{ fontWeight:700, fontSize:'0.9rem', color:'var(--text-main)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Painel Administrativo</div>
+                  <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Associação Melhor Idade</div>
+                </div>
+              </div>
 
-        <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', justifyContent:'flex-end' }}>
-          {/* Badge de status do backend */}
-          <div style={{
-            display:'inline-flex', alignItems:'center', gap:6, fontSize:'0.75rem', fontWeight:600,
-            padding:'4px 10px', borderRadius:99,
-            background: backendConnected ? '#ECFDF5' : '#FFFBEB',
-            color: backendConnected ? '#065F46' : '#92400E',
-            border: `1px solid ${backendConnected ? '#A7F3D0' : '#FDE68A'}`
-          }}>
-            <span style={{ width:8, height:8, borderRadius:'50%', background: backendConnected ? '#10B981' : '#F59E0B' }} />
-            <span>{backendConnected ? 'Backend Conectado' : 'Modo Local'}</span>
-            <button 
-              onClick={() => checkBackendConnection(false)} 
-              style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex', alignItems:'center', color:'inherit' }}
-              title="Recarregar status de conexão com backend"
-            >
-              <RefreshCw size={11} className={backendLoading ? 'spin' : ''} />
-            </button>
-          </div>
+              <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', justifyContent:'flex-end' }}>
+                {/* Badge de status do backend */}
+                          <div style={{
+                            display:'inline-flex', alignItems:'center', gap:6, fontSize:'0.75rem', fontWeight:600,
+                            padding:'4px 10px', borderRadius:99,
+                            background: backendConnected ? '#ECFDF5' : '#FFFBEB',
+                            color: backendConnected ? '#065F46' : '#92400E',
+                            border: `1px solid ${backendConnected ? '#A7F3D0' : '#FDE68A'}`
+                          }}>
+                            <span style={{ width:8, height:8, borderRadius:'50%', background: backendConnected ? '#10B981' : '#F59E0B' }} />
+                            <span>{backendConnected ? 'Backend Conectado' : 'Modo Local'}</span>
+                            <button
+                              onClick={() => checkBackendConnection(false)}
+                              style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex', alignItems:'center', color:'inherit' }}
+                              title="Recarregar status de conexão com backend"
+                            >
+                              <RefreshCw size={11} className={backendLoading ? 'spin' : ''} />
+                            </button>
+                          </div>
 
-          <button className="btn btn-pill" style={{ fontSize:'0.78rem', padding:'6px 12px' }} onClick={onClose}>
-            <ChevronRight size={12} /> Ver Site
-          </button>
-          <button className="btn" style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5', fontSize:'0.78rem', padding:'6px 12px' }}
-            onClick={handleLogout}>
-            <LogOut size={12} /> Sair
-          </button>
-        </div>
-      </header>
+                          {/* Mobile menu button - hamburger */}
+                          <button
+                            className="admin-mobile-menu-btn"
+                            onClick={() => setMobileDrawerOpen(true)}
+                            style={{ display:'none', background:'none', border:'none', cursor:'pointer', padding:8, color:'var(--text-main)' }}
+                            aria-label="Abrir menu de navegação"
+                          >
+                            <Menu size={22} />
+                          </button>
+
+                          {/* Desktop only: Ver Site and Sair buttons */}
+                          <div className="admin-topbar-desktop-actions">
+                            <button className="btn btn-pill" style={{ fontSize:'0.78rem', padding:'6px 12px' }} onClick={onClose}>
+                              <ChevronRight size={12} /> Ver Site
+                            </button>
+                            <button className="btn" style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5', fontSize:'0.78rem', padding:'6px 12px' }}
+                              onClick={handleLogout}>
+                              <LogOut size={12} /> Sair
+                            </button>
+                          </div>
+              </div>
+            </header>
 
       <div className="admin-layout">
         {/* Sidebar de Navegação */}
@@ -1757,8 +1802,58 @@ export default function AdminPage({ onClose }) {
                   {activeTab === 'sponsors' && <TabSponsors />}
                   {activeTab === 'testimonials' && <TabTestimonials />}
                   {activeTab === 'settings' && <TabSettings />}
-                </main>
-      </div>
-    </div>
-  );
-}
+                                  </main>
+                        </div>
+
+                        {/* Mobile Drawer Navigation */}
+                                                {mobileDrawerOpen && (
+                                                  <div className="admin-mobile-drawer-overlay" onClick={() => setMobileDrawerOpen(false)} aria-hidden="true">
+                                                    <div className="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu de navegação">
+                                                      {/* Header do Drawer */}
+                                                      <div className="admin-mobile-drawer-header">
+                                                        <div className="admin-mobile-drawer-brand">
+                                                          <div className="admin-mobile-drawer-badge">M</div>
+                                                          <span className="admin-mobile-drawer-title">Melhor Idade</span>
+                                                        </div>
+                                                        <button className="admin-mobile-drawer-close" onClick={() => setMobileDrawerOpen(false)} aria-label="Fechar menu">
+                                                          <X size={24} />
+                                                        </button>
+                                                      </div>
+
+                                                      {/* Navegação */}
+                                                      <nav className="admin-mobile-drawer-nav" role="navigation" aria-label="Menu administrativo">
+                                                        {navItems.map(item => {
+                                                          const Icon = item.icon;
+                                                          const isActive = activeTab === item.id;
+                                                          return (
+                                                            <button
+                                                              key={item.id}
+                                                              className={`admin-mobile-nav-item ${isActive ? 'active' : ''}`}
+                                                              onClick={() => { setActiveTab(item.id); setMobileDrawerOpen(false); }}
+                                                            >
+                                                              <span>{item.label}</span>
+                                                            </button>
+                                                          );
+                                                        })}
+                                                      </nav>
+
+                                                      <hr className="admin-mobile-drawer-divider" />
+
+                                                      <button 
+                                                        className="admin-mobile-drawer-footer-btn"
+                                                        onClick={() => { setMobileDrawerOpen(false); onClose(); }}
+                                                      >
+                                                        <ExternalLink size={18} /> Ver Site Público
+                                                      </button>
+                                                      <button 
+                                                        className="admin-mobile-drawer-footer-btn"
+                                                        onClick={handleLogout}
+                                                      >
+                                                        <LogOut size={18} /> Sair
+                                                      </button>
+                                                    </div>
+                                                  </div>
+                                                )}
+                      </div>
+                    );
+                  }
