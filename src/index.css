@@ -2071,10 +2071,7 @@ h1, h2, h3, h4, .font-serif {
           text-decoration: none;
         }
 
-        .admin-mobile-nav-item:hover {
-          background: #f0f7f8;
-          color: #1f4e5b;
-        }
+        
 
         .admin-mobile-nav-item .nav-icon {
           width: 20px;
@@ -2126,6 +2123,36 @@ h1, h2, h3, h4, .font-serif {
         .admin-mobile-nav-item.active .nav-icon {
           color: #1f4e5b;
         }
+        @media (hover: hover) {
+  .admin-mobile-nav-item:hover {
+    background: #e3f0f2;
+    color: #1f4e5b;
+    transform: translateX(4px);
+  }
+
+  .admin-mobile-nav-item:hover .nav-icon {
+    color: #1f4e5b;
+  }
+}
+
+/* Toque no celular: feedback ao pressionar */
+.admin-mobile-nav-item:active {
+  background: #d3e7ea;
+  color: #1f4e5b;
+  transform: scale(0.98);
+}
+
+/* Navegação por teclado */
+.admin-mobile-nav-item:focus-visible {
+  outline: 2px solid #1f4e5b;
+  outline-offset: -2px;
+}
+
+/* Item ativo: escurece um pouco, mas não desloca (a barra da direita fica fixa) */
+.admin-mobile-nav-item.active:hover {
+  background: #e3f0f2;
+  transform: none;
+}
 
         .admin-mobile-drawer-divider {
           border: none;
