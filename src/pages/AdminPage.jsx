@@ -5,7 +5,7 @@ import {
   HeartHandshake, Camera, Upload, Link, Clock, MapPin, Star,
   ChevronRight, Search, AlertTriangle,
   Building2, ExternalLink, Globe, UserCheck, RefreshCw,
-  Menu
+  Menu, LayoutGrid, Image, Calendar, UserPlus, Heart
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { adminApi } from '../services/api';
@@ -1589,14 +1589,14 @@ export default function AdminPage({ onClose }) {
     }, []);
 
     const navItems = [
-          { id: 'overview',        label: 'Visão Geral' },
-          { id: 'gallery',         label: 'Álbum de Lembranças' },
-          { id: 'calendar',        label: 'Calendário & Ações' },
-          { id: 'admins',          label: 'Administradores' },
-          { id: 'cadastrar-admin', label: 'Cadastrar Adm.' },
-          { id: 'sponsors',        label: 'Patrocinadores & Apoio' },
-          { id: 'testimonials',    label: 'Depoimentos' },
-          { id: 'settings',        label: 'Configurações' },
+          { id: 'overview',        label: 'Visão Geral',         icon: LayoutGrid,    badge: null },
+          { id: 'gallery',         label: 'Álbum de Lembranças', icon: Image,         badge: { text: '5 fotos', type: 'purple' } },
+          { id: 'calendar',        label: 'Calendário & Ações',  icon: Calendar,      badge: { text: '10', type: 'gray' } },
+          { id: 'admins',          label: 'Administradores',     icon: Users,         badge: null },
+          { id: 'cadastrar-admin', label: 'Cadastrar Adm.',      icon: UserPlus,      badge: null },
+          { id: 'sponsors',        label: 'Patrocinadores & Apoio', icon: Building2,   badge: { text: '6', type: 'gray' } },
+          { id: 'testimonials',    label: 'Depoimentos',         icon: Heart,         badge: null },
+          { id: 'settings',        label: 'Configurações',       icon: Settings,      badge: null },
         ];
 
     const tabs = [
@@ -1812,8 +1812,11 @@ export default function AdminPage({ onClose }) {
                                                       {/* Header do Drawer */}
                                                       <div className="admin-mobile-drawer-header">
                                                         <div className="admin-mobile-drawer-brand">
-                                                          <div className="admin-mobile-drawer-badge">M</div>
-                                                          <span className="admin-mobile-drawer-title">Melhor Idade</span>
+                                                          <div className="admin-mobile-drawer-brand-badge">M</div>
+                                                          <div className="admin-mobile-drawer-brand-text">
+                                                            <span className="admin-mobile-drawer-brand-title">Melhor Idade</span>
+                                                            <span className="admin-mobile-drawer-brand-subtitle">PAINEL ADMINISTRATIVO</span>
+                                                          </div>
                                                         </div>
                                                         <button className="admin-mobile-drawer-close" onClick={() => setMobileDrawerOpen(false)} aria-label="Fechar menu">
                                                           <X size={24} />
@@ -1831,7 +1834,11 @@ export default function AdminPage({ onClose }) {
                                                               className={`admin-mobile-nav-item ${isActive ? 'active' : ''}`}
                                                               onClick={() => { setActiveTab(item.id); setMobileDrawerOpen(false); }}
                                                             >
+                                                              <Icon className="nav-icon" size={20} />
                                                               <span>{item.label}</span>
+                                                              {item.badge && (
+                                                                <span className={`nav-badge ${item.badge.type}`}>{item.badge.text}</span>
+                                                              )}
                                                             </button>
                                                           );
                                                         })}
@@ -1839,18 +1846,26 @@ export default function AdminPage({ onClose }) {
 
                                                       <hr className="admin-mobile-drawer-divider" />
 
-                                                      <button 
-                                                        className="admin-mobile-drawer-footer-btn"
-                                                        onClick={() => { setMobileDrawerOpen(false); onClose(); }}
-                                                      >
-                                                        <ExternalLink size={18} /> Ver Site Público
-                                                      </button>
-                                                      <button 
-                                                        className="admin-mobile-drawer-footer-btn"
-                                                        onClick={handleLogout}
-                                                      >
-                                                        <LogOut size={18} /> Sair
-                                                      </button>
+                                                      <div className="admin-mobile-drawer-footer">
+                                                        <button 
+                                                          className="admin-mobile-drawer-view-site"
+                                                          onClick={() => { setMobileDrawerOpen(false); onClose(); }}
+                                                        >
+                                                          <ExternalLink size={18} /> Ver Site Público
+                                                        </button>
+                                                        <div className="admin-mobile-drawer-status-row">
+                                                          <div className="admin-mobile-drawer-status">
+                                                            <span className="admin-mobile-drawer-status-dot" aria-hidden="true"></span>
+                                                            <span>Modo Local Ativo</span>
+                                                          </div>
+                                                          <button 
+                                                            className="admin-mobile-drawer-logout"
+                                                            onClick={handleLogout}
+                                                          >
+                                                            <LogOut size={18} /> Sair
+                                                          </button>
+                                                        </div>
+                                                      </div>
                                                     </div>
                                                   </div>
                                                 )}
