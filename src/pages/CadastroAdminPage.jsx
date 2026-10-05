@@ -164,26 +164,15 @@ export default function CadastroAdminPage({ onVoltar }) {
   }
 
   return (
-    <div style={styles.pageWrapper}>
-      {/* Cabeçalho da página */}
-      <div style={styles.pageHeader}>
-        {onVoltar && (
-          <button onClick={onVoltar} style={styles.backBtn} title="Voltar ao painel">
-            <ArrowLeft size={16} /> Voltar
-          </button>
-        )}
-
-        <div style={styles.headerCenter}>
-          <div style={styles.headerIcon}>
-            <Shield size={24} color="#fff" />
-          </div>
-          <div>
-            <h1 style={styles.pageTitle}>Cadastro de Administrador</h1>
-            <p style={styles.pageSubtitle}>Crie uma nova conta com acesso ao painel administrativo</p>
-          </div>
+      <div className="admin-register-page-wrapper" style={styles.pageWrapper}>
+        {/* Cabeçalho da página - padrão igual às outras páginas */}
+        <div className="page-header" style={styles.pageHeader}>
+          <h1 className="page-title" style={styles.pageTitle}>Cadastro de Administrador</h1>
+          <p className="page-subtitle" style={styles.pageSubtitle}>Crie uma nova conta com acesso ao painel administrativo</p>
         </div>
 
-        <div style={{
+        {/* Status badge */}
+        <div className="admin-register-status-badge" style={{
           ...styles.statusBadge,
           background: backendConnected ? '#ECFDF5' : '#FFFBEB',
           color: backendConnected ? '#065F46' : '#92400E',
@@ -196,222 +185,223 @@ export default function CadastroAdminPage({ onVoltar }) {
           }} />
           {backendConnected ? 'Backend Conectado' : 'Backend Offline'}
         </div>
-      </div>
 
-      {/* Alerta se backend offline */}
-      {!backendConnected && (
-        <div style={styles.alertWarning}>
-          <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
-          <div>
-            <strong>Backend offline.</strong> O cadastro de administradores requer conexão com o servidor.
-            Inicie o backend na porta 3000 e tente novamente.
-          </div>
-        </div>
-      )}
-
-      {/* Card do formulário */}
-      <div style={styles.card}>
-        <div style={styles.cardHeader}>
-          <div style={styles.cardIconWrap}>
-            <UserPlus size={20} color="var(--primary)" />
-          </div>
-          <div>
-            <h2 style={styles.cardTitle}>Novo Administrador</h2>
-            <p style={styles.cardSubtitle}>Preencha os dados abaixo para criar a conta</p>
-          </div>
-        </div>
-
-        {status === 'error' && (
-          <div style={styles.alertError}>
+        {/* Alerta se backend offline */}
+        {!backendConnected && (
+          <div className="admin-register-alert-warning" style={styles.alertWarning}>
             <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
-            <span>{errorMsg}</span>
+            <div>
+              <strong>Backend offline.</strong> O cadastro de administradores requer conexão com o servidor.
+              Inicie o backend na porta 3000 e tente novamente.
+            </div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} noValidate>
-
-          {/* Nome de Usuário */}
-          <FormField
-            label="Nome de Usuário / Login *"
-            id="cadastro-username"
-            error={errors.username}
-            hint="Será usado para entrar no painel. Ex: coord.maria, joao.silva"
-          >
-            <div style={styles.inputWrapper}>
-              <User size={16} style={styles.inputIcon} />
-              <input
-                id="cadastro-username"
-                type="text"
-                className="form-input"
-                style={{ paddingLeft: 40, width: '100%', boxSizing: 'border-box' }}
-                placeholder="Ex: coord.maria"
-                value={form.username}
-                onChange={handleChange('username')}
-                autoComplete="username"
-                autoFocus
-                disabled={!backendConnected || status === 'loading'}
-              />
+        {/* Card do formulário */}
+        <div className="admin-register-card" style={styles.card}>
+          <div className="admin-register-card-header" style={styles.cardHeader}>
+            <div className="admin-register-card-icon-wrap" style={styles.cardIconWrap}>
+              <UserPlus size={20} color="var(--primary)" />
             </div>
-          </FormField>
-
-          {/* CPF */}
-          <FormField
-            label="CPF *"
-            id="cadastro-cpf"
-            error={errors.cpf}
-            hint="Se nenhuma senha for definida, os 8 primeiros dígitos do CPF serão a senha padrão."
-          >
-            <div style={styles.inputWrapper}>
-              <CreditCard size={16} style={styles.inputIcon} />
-              <input
-                id="cadastro-cpf"
-                type="text"
-                className="form-input"
-                style={{ paddingLeft: 40, width: '100%', boxSizing: 'border-box' }}
-                placeholder="000.000.000-00"
-                value={form.cpf}
-                onChange={handleChangeCPF}
-                inputMode="numeric"
-                maxLength={14}
-                autoComplete="off"
-                disabled={!backendConnected || status === 'loading'}
-              />
-            </div>
-          </FormField>
-
-          {/* Divisor */}
-          <div style={{ textAlign: 'center', margin: '8px 0 20px', position: 'relative' }}>
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border-light)', margin: 0 }} />
-            <span style={{
-              position: 'absolute', top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-              background: '#fff', padding: '0 12px',
-              fontSize: '0.75rem', color: 'var(--text-subtle)',
-              fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
-            }}>
-              Senha (opcional)
-            </span>
-          </div>
-
-          {/* Senha */}
-          <FormField
-            label="Senha de Acesso"
-            id="cadastro-senha"
-            error={errors.senha}
-            hint="Mínimo 6 caracteres. Se deixar em branco, os 8 primeiros dígitos do CPF serão usados."
-          >
-            <div style={styles.inputWrapper}>
-              <Lock size={16} style={styles.inputIcon} />
-              <input
-                id="cadastro-senha"
-                type={showSenha ? 'text' : 'password'}
-                className="form-input"
-                style={{ paddingLeft: 40, paddingRight: 44, width: '100%', boxSizing: 'border-box' }}
-                placeholder="Mínimo 6 caracteres"
-                value={form.senha}
-                onChange={handleChange('senha')}
-                autoComplete="new-password"
-                disabled={!backendConnected || status === 'loading'}
-              />
-              <button
-                type="button"
-                onClick={() => setShowSenha(p => !p)}
-                style={styles.eyeBtn}
-                tabIndex={-1}
-                title={showSenha ? 'Ocultar senha' : 'Mostrar senha'}
-              >
-                {showSenha ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            </div>
-          </FormField>
-
-          {/* Confirmar Senha */}
-          <FormField
-            label="Confirmar Senha"
-            id="cadastro-confirmar-senha"
-            error={errors.confirmarSenha}
-          >
-            <div style={styles.inputWrapper}>
-              <Lock size={16} style={styles.inputIcon} />
-              <input
-                id="cadastro-confirmar-senha"
-                type={showConfirmar ? 'text' : 'password'}
-                className="form-input"
-                style={{
-                  paddingLeft: 40, paddingRight: 44,
-                  width: '100%', boxSizing: 'border-box',
-                  borderColor: form.confirmarSenha && form.senha !== form.confirmarSenha ? '#DC2626' : undefined,
-                }}
-                placeholder="Repita a senha"
-                value={form.confirmarSenha}
-                onChange={handleChange('confirmarSenha')}
-                autoComplete="new-password"
-                disabled={!backendConnected || status === 'loading'}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmar(p => !p)}
-                style={styles.eyeBtn}
-                tabIndex={-1}
-                title={showConfirmar ? 'Ocultar senha' : 'Mostrar senha'}
-              >
-                {showConfirmar ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            </div>
-          </FormField>
-
-          {/* Caixa de informações */}
-          <div style={styles.infoBox}>
-            <div style={styles.infoRow}>
-              <ChevronRight size={14} color="var(--primary)" style={{ flexShrink: 0, marginTop: 2 }} />
-              <span>O administrador terá acesso a <strong>todas as funcionalidades</strong> do painel.</span>
-            </div>
-            <div style={styles.infoRow}>
-              <ChevronRight size={14} color="var(--primary)" style={{ flexShrink: 0, marginTop: 2 }} />
-              <span>O login é feito com <strong>usuário + senha</strong> na tela do painel administrativo.</span>
-            </div>
-            <div style={styles.infoRow}>
-              <ChevronRight size={14} color="var(--primary)" style={{ flexShrink: 0, marginTop: 2 }} />
-              <span>A autenticação utiliza <strong>JWT</strong> com expiração gerenciada pelo servidor.</span>
+            <div>
+              <h2 className="admin-register-card-title" style={styles.cardTitle}>Novo Administrador</h2>
+              <p className="admin-register-card-subtitle" style={styles.cardSubtitle}>Preencha os dados abaixo para criar a conta</p>
             </div>
           </div>
 
-          {/* Botões */}
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 28, flexWrap: 'wrap' }}>
-            {onVoltar && (
-              <button
-                type="button"
-                className="btn btn-pill"
-                style={styles.btnSecondary}
-                onClick={onVoltar}
-                disabled={status === 'loading'}
-              >
-                <ArrowLeft size={15} /> Cancelar
-              </button>
-            )}
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{
-                ...styles.btnPrimary,
-                opacity: !backendConnected || status === 'loading' ? 0.65 : 1,
-                cursor: !backendConnected || status === 'loading' ? 'not-allowed' : 'pointer',
-              }}
-              disabled={!backendConnected || status === 'loading'}
+          {status === 'error' && (
+            <div className="admin-register-alert-error" style={styles.alertError}>
+              <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate>
+
+            {/* Nome de Usuário */}
+            <FormField
+              label="Nome de Usuário / Login *"
+              id="cadastro-username"
+              error={errors.username}
+              hint="Será usado para entrar no painel. Ex: coord.maria, joao.silva"
             >
-              {status === 'loading' ? 'Cadastrando...' : (
-                <><UserPlus size={16} /> Cadastrar Administrador</>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
+              <div className="admin-register-input-wrapper" style={styles.inputWrapper}>
+                <User size={16} className="admin-register-input-icon" style={styles.inputIcon} />
+                <input
+                  id="cadastro-username"
+                  type="text"
+                  className="form-input admin-register-input"
+                  style={{ paddingLeft: 40, width: '100%', boxSizing: 'border-box' }}
+                  placeholder="Ex: coord.maria"
+                  value={form.username}
+                  onChange={handleChange('username')}
+                  autoComplete="username"
+                  autoFocus
+                  disabled={!backendConnected || status === 'loading'}
+                />
+              </div>
+            </FormField>
 
-      <p style={{ textAlign: 'center', color: 'var(--text-subtle)', fontSize: '0.8rem', marginTop: 20 }}>
-        Associação Melhor Idade · Área Restrita · Apenas pessoal autorizado
-      </p>
-    </div>
-  );
+            {/* CPF */}
+            <FormField
+              label="CPF *"
+              id="cadastro-cpf"
+              error={errors.cpf}
+              hint="Se nenhuma senha for definida, os 8 primeiros dígitos do CPF serão a senha padrão."
+            >
+              <div className="admin-register-input-wrapper" style={styles.inputWrapper}>
+                <CreditCard size={16} className="admin-register-input-icon" style={styles.inputIcon} />
+                <input
+                  id="cadastro-cpf"
+                  type="text"
+                  className="form-input admin-register-input"
+                  style={{ paddingLeft: 40, width: '100%', boxSizing: 'border-box' }}
+                  placeholder="000.000.000-00"
+                  value={form.cpf}
+                  onChange={handleChangeCPF}
+                  inputMode="numeric"
+                  maxLength={14}
+                  autoComplete="off"
+                  disabled={!backendConnected || status === 'loading'}
+                />
+              </div>
+            </FormField>
+
+            {/* Divisor */}
+            <div style={{ textAlign: 'center', margin: '8px 0 20px', position: 'relative' }}>
+              <hr style={{ border: 'none', borderTop: '1px solid var(--border-light)', margin: 0 }} />
+              <span style={{
+                position: 'absolute', top: '50%', left: '50%',
+                transform: 'translate(-50%, -50%)',
+                background: '#fff', padding: '0 12px',
+                fontSize: '0.75rem', color: 'var(--text-subtle)',
+                fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
+              }}>
+                Senha (opcional)
+              </span>
+            </div>
+
+            {/* Senha */}
+            <FormField
+              label="Senha de Acesso"
+              id="cadastro-senha"
+              error={errors.senha}
+              hint="Mínimo 6 caracteres. Se deixar em branco, os 8 primeiros dígitos do CPF serão usados."
+            >
+              <div className="admin-register-input-wrapper" style={styles.inputWrapper}>
+                <Lock size={16} className="admin-register-input-icon" style={styles.inputIcon} />
+                <input
+                  id="cadastro-senha"
+                  type={showSenha ? 'text' : 'password'}
+                  className="form-input admin-register-input"
+                  style={{ paddingLeft: 40, paddingRight: 44, width: '100%', boxSizing: 'border-box' }}
+                  placeholder="Mínimo 6 caracteres"
+                  value={form.senha}
+                  onChange={handleChange('senha')}
+                  autoComplete="new-password"
+                  disabled={!backendConnected || status === 'loading'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSenha(p => !p)}
+                  className="admin-register-eye-btn"
+                  style={styles.eyeBtn}
+                  tabIndex={-1}
+                  title={showSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {showSenha ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </FormField>
+
+            {/* Confirmar Senha */}
+            <FormField
+              label="Confirmar Senha"
+              id="cadastro-confirmar-senha"
+              error={errors.confirmarSenha}
+            >
+              <div className="admin-register-input-wrapper" style={styles.inputWrapper}>
+                <Lock size={16} className="admin-register-input-icon" style={styles.inputIcon} />
+                <input
+                  id="cadastro-confirmar-senha"
+                  type={showConfirmar ? 'text' : 'password'}
+                  className="form-input admin-register-input"
+                  style={{
+                    paddingLeft: 40, paddingRight: 44,
+                    width: '100%', boxSizing: 'border-box',
+                    borderColor: form.confirmarSenha && form.senha !== form.confirmarSenha ? '#DC2626' : undefined,
+                  }}
+                  placeholder="Repita a senha"
+                  value={form.confirmarSenha}
+                  onChange={handleChange('confirmarSenha')}
+                  autoComplete="new-password"
+                  disabled={!backendConnected || status === 'loading'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmar(p => !p)}
+                  className="admin-register-eye-btn"
+                  style={styles.eyeBtn}
+                  tabIndex={-1}
+                  title={showConfirmar ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {showConfirmar ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </FormField>
+
+            {/* Caixa de informações */}
+            <div className="admin-register-info-box" style={styles.infoBox}>
+              <div className="admin-register-info-row" style={styles.infoRow}>
+                <ChevronRight size={14} color="var(--primary)" style={{ flexShrink: 0, marginTop: 2 }} />
+                <span>O administrador terá acesso a <strong>todas as funcionalidades</strong> do painel.</span>
+              </div>
+              <div className="admin-register-info-row" style={styles.infoRow}>
+                <ChevronRight size={14} color="var(--primary)" style={{ flexShrink: 0, marginTop: 2 }} />
+                <span>O login é feito com <strong>usuário + senha</strong> na tela do painel administrativo.</span>
+              </div>
+              <div className="admin-register-info-row" style={styles.infoRow}>
+                <ChevronRight size={14} color="var(--primary)" style={{ flexShrink: 0, marginTop: 2 }} />
+                <span>A autenticação utiliza <strong>JWT</strong> com expiração gerenciada pelo servidor.</span>
+              </div>
+            </div>
+
+            {/* Botões */}
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 28, flexWrap: 'wrap' }}>
+              {onVoltar && (
+                <button
+                  type="button"
+                  className="btn btn-pill"
+                  style={styles.btnSecondary}
+                  onClick={onVoltar}
+                  disabled={status === 'loading'}
+                >
+                  <ArrowLeft size={15} /> Cancelar
+                </button>
+              )}
+              <button
+                type="submit"
+                className="btn btn-primary"
+                style={{
+                  ...styles.btnPrimary,
+                  opacity: !backendConnected || status === 'loading' ? 0.65 : 1,
+                  cursor: !backendConnected || status === 'loading' ? 'not-allowed' : 'pointer',
+                }}
+                disabled={!backendConnected || status === 'loading'}
+              >
+                {status === 'loading' ? 'Cadastrando...' : (
+                  <><UserPlus size={16} /> Cadastrar Administrador</>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <p style={{ textAlign: 'center', color: 'var(--text-subtle)', fontSize: '0.8rem', marginTop: 20 }}>
+          Associação Melhor Idade · Área Restrita · Apenas pessoal autorizado
+        </p>
+      </div>
+    );
 }
 
 // ── Estilos ─────────────────────────────────────────────────────────────
