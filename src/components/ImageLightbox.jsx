@@ -2,9 +2,7 @@ import React, { useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function ImageLightbox({ photo, photosList, onClose, onSelectPhoto }) {
-  if (!photo) return null;
-
-  const currentIndex = photosList.findIndex((p) => p.id === photo.id);
+  const currentIndex = photo && photosList ? photosList.findIndex((p) => p.id === photo.id) : -1;
   const isInList = currentIndex >= 0;
 
   const handlePrev = (e) => {
@@ -28,6 +26,7 @@ export default function ImageLightbox({ photo, photosList, onClose, onSelectPhot
   };
 
   useEffect(() => {
+    if (!photo) return;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
       if (!isInList) return;
@@ -36,7 +35,9 @@ export default function ImageLightbox({ photo, photosList, onClose, onSelectPhot
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, photosList, isInList]);
+  }, [photo, currentIndex, photosList, isInList]);
+
+  if (!photo) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">

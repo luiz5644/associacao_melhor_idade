@@ -1,5 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { siteData } from '../data/mockData';
+import {
+  adminApi,
+  atividadeApi,
+  checkBackendHealth,
+  adaptAtividadeToFrontend,
+  adaptAtividadeToBackend,
+} from '../services/api';
 
 const STORAGE_KEY_GALLERY = 'ami_gallery_items_v1';
 const STORAGE_KEY_CALENDAR = 'ami_calendar_events_v1';
@@ -21,11 +28,20 @@ function seedCalendarEvents() {
     category: ev.category,
     desc: ev.desc,
     location: 'Sede da Associação',
-    isHighlight: index < 3
+    isHighlight: index < 3,
+    status: 'ativo',
   }));
 }
 
 export function DataProvider({ children }) {
+  // Estado de conexão com backend
+  const [backendConnected, setBackendConnected] = useState(false);
+  const [backendLoading, setBackendLoading] = useState(true);
+
+  // Administradores (do backend)
+  const [admins, setAdmins] = useState([]);
+
+  // Dados com persistência local (fallback / entidades não implementadas no backend)
   const [galleryItems, setGalleryItems] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_GALLERY);
@@ -76,11 +92,12 @@ export function DataProvider({ children }) {
 
   const [toast, setToast] = useState(null);
 
-  const showToast = (message, type = 'success') => {
+  const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type, id: Date.now() });
     setTimeout(() => setToast(null), 4000);
-  };
+  }, []);
 
+  // ── Salvar caches locais ───────────────────────────────────────────
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY_GALLERY, JSON.stringify(galleryItems)); } catch (_) {}
   }, [galleryItems]);
@@ -105,7 +122,111 @@ export function DataProvider({ children }) {
     try { localStorage.setItem(STORAGE_KEY_TESTIMONIALS, JSON.stringify(testimonials)); } catch (_) {}
   }, [testimonials]);
 
-  // ── CRUD: Álbum de Lembranças ──────────────────────────────────────
+  // ── Sincronização inicial com o Backend (se ativo na porta 3000) ────
+  const checkAndSyncBackend = useCallback(async (silent = false) => {
+    setBackendLoading(true);
+    try {
+      const isOnline = await checkBackendHealth();
+      setBackendConnected(isOnline);
+
+      if (isOnline) {
+        // Carrega atividades do calendário do backend
+        try {
+          const ativsData = await atividadeApi.list();
+          if (Array.isArray(ativsData) && ativsData.length > 0) {
+            const adapted = ativsData.map(a => adaptAtividadeToFrontend(a));
+            setCalendarEvents(adapted);
+
+            // Atualiza highlights
+            const hl = adapted.filter(a => a.isHighlight).map(a => ({
+              id: `hl-${a.id}`,
+              dateLabel: `${a.day} de Outubro - ${a.time}`,
+              category: a.category,
+              title: a.title,
+              description: a.desc,
+              color: '#2A5C66',
+            }));
+            if (hl.length > 0) setCalendarHighlights(hl);
+          }
+        } catch (err) {
+          console.warn('[Backend] Erro ao carregar atividades:', err);
+        }
+
+        if (!silent) {
+          showToast('Conectado com sucesso ao backend (porta 3000)!', 'success');
+        }
+      } else {
+        if (!silent) {
+          showToast('Backend offline. Operando em modo de dados locais.', 'info');
+        }
+      }
+    } catch (err) {
+      setBackendConnected(false);
+      if (!silent) {
+        showToast('Backend inacessível. Usando armazenamento local.', 'info');
+      }
+    } finally {
+      setBackendLoading(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => {
+    checkAndSyncBackend(true);
+  }, []);
+
+  // ── Gestão de Administradores (Backend) ────────────────────────────
+  const fetchAdmins = async () => {
+    if (!backendConnected) return [];
+    try {
+      const data = await adminApi.list();
+      setAdmins(data);
+      return data;
+    } catch (err) {
+      console.warn('Erro ao listar administradores:', err);
+      return [];
+    }
+  };
+
+  const addAdmin = async (data) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível cadastrar admin no banco.', 'warning');
+      return;
+    }
+    try {
+      await adminApi.create(data);
+      await fetchAdmins();
+      showToast('Administrador cadastrado com sucesso!', 'success');
+    } catch (err) {
+      showToast(err.message || 'Erro ao cadastrar administrador', 'warning');
+      throw err;
+    }
+  };
+
+  const updateAdmin = async (id, data) => {
+    if (!backendConnected) return;
+    try {
+      await adminApi.update(id, data);
+      await fetchAdmins();
+      showToast('Administrador atualizado com sucesso!', 'info');
+    } catch (err) {
+      showToast(err.message || 'Erro ao atualizar administrador', 'warning');
+      throw err;
+    }
+  };
+
+  const deleteAdmin = async (id) => {
+    if (!backendConnected) return;
+    try {
+      await adminApi.delete(id);
+      await fetchAdmins();
+      showToast('Administrador removido com sucesso!', 'warning');
+    } catch (err) {
+      showToast(err.message || 'Erro ao remover administrador', 'warning');
+      throw err;
+    }
+  };
+
+  // ── CRUD: Álbum de Lembranças (Galeria) ─────────────────────────────
   const addGalleryItem = (itemData) => {
     const photos = Array.isArray(itemData.photos) && itemData.photos.length > 0
       ? itemData.photos
@@ -148,12 +269,12 @@ export function DataProvider({ children }) {
     showToast('Lembrança removida do álbum.', 'warning');
   };
 
-  // ── CRUD: Calendário de Atividades ────────────────────────────────
+  // ── CRUD: Calendário de Atividades (Integrado com Backend) ──────────
   const MONTH_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
   const CAT_COLORS = { Música: '#E8A87C', Coral: '#2A5C66', Lazer: '#3D6058', Artes: '#7B5EA7', Saúde: '#4A9B6F' };
 
-  const addCalendarEvent = (eventData) => {
-    const newEvent = {
+  const addCalendarEvent = async (eventData) => {
+    let newEvent = {
       id: `cal-${Date.now()}`,
       createdAt: new Date().toISOString(),
       year: parseInt(eventData.year || 2026, 10),
@@ -164,8 +285,27 @@ export function DataProvider({ children }) {
       category: eventData.category || 'Lazer',
       desc: eventData.desc || '',
       location: eventData.location || 'Sede da Associação',
-      isHighlight: Boolean(eventData.isHighlight)
+      isHighlight: Boolean(eventData.isHighlight),
+      status: eventData.status || 'ativo',
     };
+
+    if (backendConnected) {
+      try {
+        const payload = adaptAtividadeToBackend(newEvent);
+        await atividadeApi.create(payload);
+        const ativs = await atividadeApi.list();
+        if (Array.isArray(ativs) && ativs.length > 0) {
+          const adapted = ativs.map(a => adaptAtividadeToFrontend(a));
+          setCalendarEvents(adapted);
+          showToast('Atividade salva com sucesso no banco de dados!', 'success');
+          return;
+        }
+      } catch (err) {
+        console.error('Erro ao salvar atividade no backend:', err);
+        showToast('Erro no backend ao agendar. Salvo em armazenamento local.', 'warning');
+      }
+    }
+
     setCalendarEvents(prev => [...prev, newEvent]);
 
     if (newEvent.isHighlight) {
@@ -183,7 +323,26 @@ export function DataProvider({ children }) {
     return newEvent;
   };
 
-  const updateCalendarEvent = (id, updatedData) => {
+  const updateCalendarEvent = async (id, updatedData) => {
+    // Tenta atualizar no backend se tiver ID numérico
+    if (backendConnected) {
+      const numericId = typeof id === 'number' ? id : parseInt(String(id).replace('cal-', ''), 10);
+      if (!isNaN(numericId) && numericId > 0 && !String(id).includes('seed')) {
+        try {
+          const payload = adaptAtividadeToBackend({ ...updatedData, id: numericId });
+          await atividadeApi.update(numericId, payload);
+          const ativs = await atividadeApi.list();
+          const adapted = ativs.map(a => adaptAtividadeToFrontend(a));
+          setCalendarEvents(adapted);
+          showToast('Atividade atualizada com sucesso no backend!', 'info');
+          return;
+        } catch (err) {
+          console.error('Erro ao atualizar no backend:', err);
+          showToast('Erro no backend. Atualizando localmente.', 'warning');
+        }
+      }
+    }
+
     setCalendarEvents(prev => prev.map(ev => {
       if (ev.id !== id) return ev;
       return {
@@ -198,7 +357,25 @@ export function DataProvider({ children }) {
     showToast('Atividade do calendário atualizada!', 'info');
   };
 
-  const deleteCalendarEvent = (id) => {
+  const deleteCalendarEvent = async (id) => {
+    if (backendConnected) {
+      const numericId = typeof id === 'number' ? id : parseInt(String(id).replace('cal-', ''), 10);
+      if (!isNaN(numericId) && numericId > 0 && !String(id).includes('seed')) {
+        try {
+          await atividadeApi.delete(numericId);
+          const ativs = await atividadeApi.list();
+          const adapted = ativs.map(a => adaptAtividadeToFrontend(a));
+          setCalendarEvents(adapted);
+          setCalendarHighlights(prev => prev.filter(hl => hl.id !== `hl-${id}`));
+          showToast('Atividade excluída com sucesso do backend!', 'warning');
+          return;
+        } catch (err) {
+          console.error('Erro ao deletar no backend:', err);
+          showToast('Erro ao remover no backend. Removendo localmente.', 'warning');
+        }
+      }
+    }
+
     setCalendarEvents(prev => prev.filter(ev => ev.id !== id));
     setCalendarHighlights(prev => prev.filter(hl => hl.id !== `hl-${id}`));
     showToast('Atividade removida do calendário.', 'warning');
@@ -296,6 +473,19 @@ export function DataProvider({ children }) {
 
   return (
     <DataContext.Provider value={{
+      // Status Backend
+      backendConnected,
+      backendLoading,
+      checkBackendConnection: checkAndSyncBackend,
+
+      // Administradores
+      admins,
+      fetchAdmins,
+      addAdmin,
+      updateAdmin,
+      deleteAdmin,
+
+      // Entidades
       galleryItems, calendarEvents, calendarHighlights, brandInfo, sponsors, testimonials, toast,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
       addCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
