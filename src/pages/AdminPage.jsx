@@ -1489,12 +1489,9 @@ function TabAdmins({ onNavigateToCreate }) {
         <div style={{ textAlign:'center', padding:'48px 20px', background:'#fff', border:'1px solid #DCE7E5', borderRadius:14 }}>
           <UserCheck size={36} color="#8E9696" style={{ margin:'0 auto 12px', display:'block' }} />
           <h4 style={{ fontWeight:700, fontSize:'1rem', marginBottom:6 }}>Nenhum administrador listado no momento</h4>
-          <p style={{ fontSize:'0.85rem', color:'var(--text-subtle)', marginBottom:16 }}>
+          <p style={{ fontSize:'0.85rem', color:'var(--text-subtle)', marginBottom:0 }}>
             {backendConnected ? 'Você pode cadastrar o primeiro administrador da associação clicando no botão acima.' : 'Conecte o backend para carregar os administradores do banco de dados.'}
           </p>
-          <button className="btn btn-primary" onClick={handleOpenCreate} style={{ margin:'0 auto' }}>
-            <Plus size={16} /> Cadastrar Administrador
-          </button>
         </div>
       ) : (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:14 }}>
