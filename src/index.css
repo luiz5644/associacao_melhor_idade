@@ -142,12 +142,12 @@ h1, h2, h3, h4, .font-serif {
 }
 
 /* Título de Página */
-.page-header {
+.admin-content .page-header {
   padding: 24px 0 16px;
   text-align: left;
 }
 
-.page-title {
+.admin-content .page-title {
   font-size: clamp(2rem, 3.8vw, 3rem);
   font-weight: 700;
   color: var(--text-main);
@@ -155,7 +155,7 @@ h1, h2, h3, h4, .font-serif {
   letter-spacing: -0.015em;
 }
 
-.page-subtitle {
+.admin-content .page-subtitle {
   font-size: clamp(1rem, 1.3vw, 1.15rem);
   color: var(--text-body);
   max-width: 820px;
@@ -1798,7 +1798,7 @@ h1, h2, h3, h4, .font-serif {
 
   /* Justificar textos no mobile para melhor leitura */
   .hero-desc,
-  .page-subtitle,
+  .admin-content .page-subtitle,
   .timeline-text,
   .cta-desc,
   .memory-description,
@@ -2988,11 +2988,11 @@ h1, h2, h3, h4, .font-serif {
     height: 240px;
   }
 
-  .page-title {
+  .admin-content .page-title {
     font-size: 1.6rem;
   }
 
-  .page-subtitle {
+  .admin-content .page-subtitle {
     font-size: 0.92rem;
   }
 
@@ -3435,7 +3435,7 @@ h1, h2, h3, h4, .font-serif {
      --------------------------------------------------------- */
   @media (max-width: 640px) {
     /* Cabeçalho da página - padrão igual às outras páginas */
-    .page-header {
+    .admin-content.page-header {
       display: flex !important;
       flex-direction: column !important;
       align-items: flex-start !important;
@@ -3443,7 +3443,7 @@ h1, h2, h3, h4, .font-serif {
       margin-bottom: 16px !important;
     }
 
-    .page-title {
+    .admin-content .page-title {
       font-size: 1.4rem !important;
       font-weight: 700 !important;
       line-height: 1.2 !important;
@@ -3451,7 +3451,7 @@ h1, h2, h3, h4, .font-serif {
       white-space: normal !important;
     }
 
-    .page-subtitle {
+    .admin-content .page-subtitle {
       font-size: 0.85rem !important;
       color: var(--text-subtle) !important;
       margin: 0 !important;
@@ -3577,4 +3577,179 @@ h1, h2, h3, h4, .font-serif {
       font-size: 0.85rem !important;
     }
   }
+  
+Admin drawer estilo publico · CSS
+/* =========================================================
+   MENU LATERAL DO ADMIN (DRAWER) — mesmo estilo do site público
+   >>> COLE NO FINAL DO SEU CSS (depois de tudo) <<<
+ 
+   Reaproveita as regras do menu público (.mobile-nav-content e
+   .nav-link-btn): mesma sombra e animação, mesmo hover (texto
+   na cor primária + fundo menta + sublinhado que cresce),
+   mesma fonte e mesmo item ativo discreto.
+   ========================================================= */
+ 
+/* ─── Container ─────────────────────────────────────────── */
+.admin-mobile-drawer {
+  background: #FFFFFF;
+  box-shadow: -8px 0 30px rgba(0, 0, 0, 0.18);
+  font-family: var(--font-sans);
+}
+ 
+/* ─── Cabeçalho ─────────────────────────────────────────── */
+.admin-mobile-drawer-header {
+  border-bottom: 1px solid var(--border-light);
+}
+ 
+.admin-mobile-drawer-brand-badge {
+  background: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+ 
+.admin-mobile-drawer-brand-title {
+  color: var(--text-main);
+  font-weight: 700;
+}
+ 
+.admin-mobile-drawer-brand-subtitle {
+  color: var(--text-subtle);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+ 
+/* botão X igual ao dos modais do site */
+.admin-mobile-drawer-close {
+  background: var(--bg-pill);
+  color: var(--text-main);
+  border-radius: 50%;
+}
+ 
+.admin-mobile-drawer-close:hover {
+  background: var(--bg-pill-hover);
+  color: var(--text-main);
+}
+ 
+/* ─── Itens do menu (igual .nav-link-btn) ───────────────── */
+.admin-mobile-nav-item {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-main);
+  background: none;
+  border-radius: 6px;
+  padding: 11px 14px;
+  text-align: left;
+  transform: none;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+ 
+.admin-mobile-nav-item .nav-icon {
+  color: inherit;
+}
+ 
+/* sublinhado animado (mesmo do .nav-link-btn::after) */
+.admin-mobile-nav-item::after {
+  content: '';
+  position: absolute;
+  top: auto;
+  right: auto;
+  bottom: 4px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 0;
+  transition: width 0.25s ease, left 0.25s ease;
+}
+ 
+/* hover só em dispositivos com mouse (no toque não "gruda") */
+@media (hover: hover) {
+  .admin-mobile-nav-item:hover,
+  .admin-mobile-nav-item.active:hover {
+    color: var(--accent);
+    background-color: var(--bg-light);
+    transform: none;
+  }
+ 
+  .admin-mobile-nav-item:hover .nav-icon {
+    color: var(--accent);
+  }
+ 
+  .admin-mobile-nav-item:hover::after {
+    width: 60%;
+    left: 20%;
+  }
+}
+ 
+/* feedback ao tocar: mesma cor do hover, sem encolher o botão */
+.admin-mobile-nav-item:active {
+  color: var(--accent);
+  background-color: var(--bg-light);
+  transform: none;
+}
+ 
+/* item ativo = igual ao normal, como no menu público */
+.admin-mobile-nav-item.active {
+  color: var(--text-main);
+  font-weight: 500;
+  background: none;
+}
+ 
+.admin-mobile-nav-item.active .nav-icon {
+  color: inherit;
+}
+ 
+.admin-mobile-nav-item.active::after {
+  top: auto;
+  right: auto;
+  bottom: 4px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 0;
+}
+ 
+.admin-mobile-nav-item:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+ 
+/* ─── Contadores (mesma cor das tags do site) ───────────── */
+.admin-mobile-nav-item .nav-badge,
+.admin-mobile-nav-item .nav-badge.purple,
+.admin-mobile-nav-item .nav-badge.gray {
+  background: var(--bg-pill);
+  color: #1F454D;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+ 
+/* ─── Rodapé do menu ────────────────────────────────────── */
+.admin-mobile-drawer-divider {
+  border-top-color: var(--border-light);
+}
+ 
+.admin-mobile-drawer-view-site {
+  color: var(--primary);
+  border-color: var(--primary);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+ 
+.admin-mobile-drawer-view-site:hover {
+  background: var(--primary);
+  color: #FFFFFF;
+}
+ 
+.admin-mobile-drawer-status {
+  color: var(--text-subtle);
+}
+ 
+.admin-mobile-drawer-logout {
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+ 
+
  
