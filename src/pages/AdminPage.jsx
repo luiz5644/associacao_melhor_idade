@@ -5,7 +5,7 @@ import {
   HeartHandshake, Camera, Upload, Link, Clock, MapPin, Star,
   ChevronRight, Search, AlertTriangle,
   Building2, ExternalLink, Globe, UserCheck, RefreshCw,
-  Menu, LayoutGrid, Image, Calendar, UserPlus, Heart
+  Menu, LayoutGrid, Image, Calendar, Heart
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { adminApi } from '../services/api';
@@ -1408,7 +1408,7 @@ function TabSettings() {
 }
 
 // ── PAINEL: ADMINISTRADORES (INTEGRADO AO BACKEND) ─────────────────────────────
-function TabAdmins() {
+function TabAdmins({ onNavigateToCreate }) {
   const { admins, fetchAdmins, addAdmin, updateAdmin, deleteAdmin, backendConnected } = useData();
   const [showModal, setShowModal] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState(null);
@@ -1423,9 +1423,13 @@ function TabAdmins() {
   }, [backendConnected]);
 
   const handleOpenCreate = () => {
-    setEditingAdmin(null);
-    setForm({ username: '', cpf: '', senha: '' });
-    setShowModal(true);
+    if (onNavigateToCreate) {
+      onNavigateToCreate();
+    } else {
+      setEditingAdmin(null);
+      setForm({ username: '', cpf: '', senha: '' });
+      setShowModal(true);
+    }
   };
 
   const handleOpenEdit = (admin) => {
@@ -1469,7 +1473,7 @@ function TabAdmins() {
             Gerenciamento de contas com permissão de acesso à área administrativa (via rota /admin).
           </p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenCreate} disabled={!backendConnected}>
+        <button className="btn btn-primary" onClick={handleOpenCreate}>
           <Plus size={16} /> Novo Administrador
         </button>
       </div>
@@ -1488,6 +1492,9 @@ function TabAdmins() {
           <p style={{ fontSize:'0.85rem', color:'var(--text-subtle)', marginBottom:16 }}>
             {backendConnected ? 'Você pode cadastrar o primeiro administrador da associação clicando no botão acima.' : 'Conecte o backend para carregar os administradores do banco de dados.'}
           </p>
+          <button className="btn btn-primary" onClick={handleOpenCreate} style={{ margin:'0 auto' }}>
+            <Plus size={16} /> Cadastrar Administrador
+          </button>
         </div>
       ) : (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:14 }}>
@@ -1593,7 +1600,6 @@ export default function AdminPage({ onClose }) {
           { id: 'gallery',         label: 'Álbum de Lembranças', icon: Image,         badge: { text: '5 fotos', type: 'purple' } },
           { id: 'calendar',        label: 'Calendário & Ações',  icon: Calendar,      badge: { text: '10', type: 'gray' } },
           { id: 'admins',          label: 'Administradores',     icon: Users,         badge: null },
-          { id: 'cadastrar-admin', label: 'Cadastrar Adm.',      icon: UserPlus,      badge: null },
           { id: 'sponsors',        label: 'Patrocinadores & Apoio', icon: Building2,   badge: { text: '6', type: 'gray' } },
           { id: 'testimonials',    label: 'Depoimentos',         icon: Heart,         badge: null },
           { id: 'settings',        label: 'Configurações',       icon: Settings,      badge: null },
@@ -1604,7 +1610,6 @@ export default function AdminPage({ onClose }) {
         { id: 'gallery',         label: 'Álbum de Lembranças',      icon: <Images size={17} /> },
         { id: 'calendar',        label: 'Calendário & Ações',       icon: <CalendarDays size={17} /> },
         { id: 'admins',          label: 'Administradores',          icon: <UserCheck size={17} /> },
-        { id: 'cadastrar-admin', label: 'Cadastrar Adm.',           icon: <Users size={17} /> },
         { id: 'sponsors',        label: 'Patrocinadores & Apoio',   icon: <Building2 size={17} /> },
         { id: 'testimonials',    label: 'Depoimentos',              icon: <HeartHandshake size={17} /> },
         { id: 'settings',        label: 'Configurações',            icon: <Settings size={17} /> },
@@ -1795,7 +1800,7 @@ export default function AdminPage({ onClose }) {
                   {activeTab === 'overview' && <TabOverview setActiveTab={setActiveTab} />}
                   {activeTab === 'gallery' && <TabGallery />}
                   {activeTab === 'calendar' && <TabCalendar />}
-                  {activeTab === 'admins' && <TabAdmins />}
+                  {activeTab === 'admins' && <TabAdmins onNavigateToCreate={() => setActiveTab('cadastrar-admin')} />}
                   {activeTab === 'cadastrar-admin' && (
                     <CadastroAdminPage onVoltar={() => setActiveTab('admins')} />
                   )}

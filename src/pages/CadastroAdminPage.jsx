@@ -167,8 +167,21 @@ export default function CadastroAdminPage({ onVoltar }) {
       <div className="admin-register-page-wrapper" style={styles.pageWrapper}>
         {/* Cabeçalho da página - padrão igual às outras páginas */}
         <div className="page-header" style={styles.pageHeader}>
-          <h1 className="page-title" style={styles.pageTitle}>Cadastro de Administrador</h1>
-          <p className="page-subtitle" style={styles.pageSubtitle}>Crie uma nova conta com acesso ao painel administrativo</p>
+          {onVoltar && (
+            <button
+              type="button"
+              className="btn"
+              style={styles.backBtn}
+              onClick={onVoltar}
+              aria-label="Voltar para lista de administradores"
+            >
+              <ArrowLeft size={16} /> Voltar
+            </button>
+          )}
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <h1 className="page-title" style={styles.pageTitle}>Cadastro de Administrador</h1>
+            <p className="page-subtitle" style={styles.pageSubtitle}>Crie uma nova conta com acesso ao painel administrativo</p>
+          </div>
         </div>
 
         {/* Status badge */}
