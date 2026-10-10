@@ -48,12 +48,7 @@ export class Admin{
     public get id(){
         return this.props.id
     }
-    public toJSON() {
-        return {
-            id: this.props.id,
-            username: this.props.username,
-            cpf: this.props.cpf
-        };
-    }
+    
+
 }
  

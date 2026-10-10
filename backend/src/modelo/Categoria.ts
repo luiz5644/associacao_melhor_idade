@@ -32,11 +32,6 @@ export class Categoria {
     public get nome(){
         return this.props.nome
     }
-    public toJSON() {
-        return {
-            id: this.props.id,
-            nome: this.props.nome
-        };
-    }
+
 }
     

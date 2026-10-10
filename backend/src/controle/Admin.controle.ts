@@ -2,7 +2,7 @@ import { plainToInstance } from "class-transformer";
 import { AdminDao } from "../dao/Admin.dao";
 import { adminCreateDto,adminUpdateDto } from "../dto/Admin.dto";
 import { Request,Response } from "express";
-import { validate, Validate } from "class-validator";
+import { validate } from "class-validator";
 import { adminServico } from "../servico/Admin.servico";
 import bcrypt from "bcrypt";
 import { Admin } from "../modelo/Admin";
@@ -116,22 +116,20 @@ export class AdminControle{
             return res.status(400).json(erros)
         }
 
-        let senhaHash: string | undefined = undefined;
-        if (adminDto.senha && adminDto.senha.trim() !== "") {
-            senhaHash = await bcrypt.hash(adminDto.senha, 10);
-        }
-
         const admin = Admin.reconstruir({
-            id: idNumber,
+            id:idNumber,
             username: adminDto.username,
             cpf: "",
-            senha: senhaHash
-        });
+            senha: adminDto.senha
+        }
+        
+        
 
-        await this.adminServico.atualizar(admin);
+        )
+        await this.adminServico.atualizar(admin)
         return res.json({
-            message: "Admin atualizado com sucesso"
-        });
+            mesage:"Admin Atualizado com sucesso"
+        })
 
         }
         catch(error){

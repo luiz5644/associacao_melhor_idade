@@ -8,7 +8,6 @@ export type propsAtividades = {
     local: string;
     is_highlight: boolean;
     status: string;
-    categoria_nome?: string;
 };
 
 export class Atividades {
@@ -83,22 +82,5 @@ export class Atividades {
     }
     public get status() {
         return this.props.status;
-    }
-    public get categoria_nome() {
-        return this.props.categoria_nome;
-    }
-    public toJSON() {
-        return {
-            id: this.props.id,
-            categoria_id: this.props.categoria_id,
-            titulo: this.props.titulo,
-            desc: this.props.desc,
-            data_completa: this.props.data_completa,
-            horario: this.props.horario,
-            local: this.props.local,
-            is_highlight: this.props.is_highlight,
-            status: this.props.status,
-            categoria_nome: this.props.categoria_nome
-        };
     }
 }

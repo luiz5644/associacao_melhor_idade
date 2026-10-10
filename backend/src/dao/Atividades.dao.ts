@@ -27,13 +27,7 @@ export class AtividadesDao {
     public async buscarporId(id: number): Promise<Atividades | null> {
         try {
             const [rows]: any = await conexao.query(
-                `SELECT 
-                    a.*,
-                    c.nome AS categoria_nome
-                FROM atividades a
-                LEFT JOIN categorias_calendario c
-                    ON a.categoria_id = c.id
-                WHERE a.id = ?`,
+                'SELECT * FROM atividades WHERE id = ?',
                 [id]
             );
             if (rows.length === 0) {
@@ -52,12 +46,7 @@ export class AtividadesDao {
     public async listar(): Promise<Atividades[]> {
         try {
             const [rows]: any = await conexao.query(
-                `SELECT 
-                    a.*,
-                    c.nome AS categoria_nome
-                FROM atividades a
-                LEFT JOIN categorias_calendario c
-                    ON a.categoria_id = c.id`
+                'SELECT * FROM atividades'
             );
             return rows.map((r: any) => Atividades.reconstruir({
                 ...r,
