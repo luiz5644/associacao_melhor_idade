@@ -5,8 +5,8 @@ export class AlbumDao {
     public async salvar (album:Album): Promise <void>{
         try{
             const [rows]: any = await conexao.query(
-            'insert into albuns_lembrancas (categoria_id, titulo,description,date) values (?,?,?,?) ',
-            [album.categoria_id,album.titulo,album.description,album.date]
+            'insert into albuns_lembrancas (titulo,description,date) values (?,?,?) ',
+            [album.titulo,album.description,album.date]
         )
         
         }
@@ -50,8 +50,8 @@ export class AlbumDao {
     public async atualizar(album:Album): Promise<void>{
         try{
              const [result]: any = await conexao.query(
-            'update albuns_lembrancas set categoria_id = ?, titulo= ?, description= ?,date =? where id =? ',
-            [album.categoria_id,album.titulo,album.description,album.date, album.id]
+            'update albuns_lembrancas set titulo= ?, description= ?,date =? where id =? ',
+            [album.titulo,album.description,album.date, album.id]
             )
 
             if(result.affectedRows===0){

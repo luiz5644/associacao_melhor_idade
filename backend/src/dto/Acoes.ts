@@ -1,24 +1,19 @@
 import { IsNotEmpty, IsString, IsNumber, IsOptional, IsBoolean } from "class-validator";
 import { Type } from "class-transformer";
 
-export class AtividadeDto {
+export class AcoesDto {
     constructor(
         public id: number,
         public nome: string,
-        public status: string
+       
     ) {}
 }
 
-export class AtividadeCreateDto {
+export class AcoesCreateDto {
     @IsOptional()
     @IsNumber()
     @Type(() => Number)
     id?: number;
-
-    @IsNumber()
-    @IsNotEmpty()
-    @Type(() => Number)
-    categoria_id!: number;
 
     @IsString()
     @IsNotEmpty()
@@ -49,16 +44,11 @@ export class AtividadeCreateDto {
     status!: string;
 }
 
-export class AtividadeUpdateDto {
+export class AcoesUpdateDto {
     @IsNotEmpty()
     @IsNumber()
     @Type(() => Number)
     id!: number;
-
-    @IsOptional()
-    @IsNumber()
-    @Type(() => Number)
-    categoria_id?: number;
 
     @IsOptional()
     @IsString()

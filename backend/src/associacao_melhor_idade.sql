@@ -1,3 +1,5 @@
+use defaultdb
+
 USE associacao_melhor_idade;
 
 CREATE TABLE administradores (
@@ -98,3 +100,22 @@ CREATE TABLE patrocinadores (
     description TEXT,
     active BOOLEAN NOT NULL DEFAULT TRUE
 ) ENGINE=InnoDB;
+
+select * from administradores
+select * from categorias_calendario 
+delete from categorias_calendario where id = 2
+select * from categorias_galeria 
+delete from categorias_galeria where id = 1
+
+drop table categorias_galeria
+
+ALTER TABLE albuns_lembrancas DROP FOREIGN KEY fk_albuns_categoria;
+alter table atividades drop foreign key fk_atividades_categoria
+drop table categorias_calendario
+alter table atividades drop column categoria_id
+alter table albuns_lembrancas drop column categoria_id
+
+rename table atividades to acoes
+
+select * from acoes
+select * from albuns_lembrancas

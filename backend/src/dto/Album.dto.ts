@@ -22,10 +22,6 @@ export class AlbumCreateDto{
     @Type(()=> Number)
     id?:number
 
-    @IsNumber()
-    @IsNotEmpty()
-    categoria_id: number
-
     @IsString()
     @IsNotEmpty()
     titulo:string
@@ -43,10 +39,6 @@ export class AlbumUpdateDto{
      @IsOptional()
     @IsNumber()
     id?:number
-
-    @IsNumber()
-    @IsNotEmpty()
-    categoria_id: number
 
     @IsString()
     @IsNotEmpty()

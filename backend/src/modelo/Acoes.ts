@@ -1,6 +1,5 @@
-export type propsAtividades = {
+export type propsAcoes = {
     id?: number;
-    categoria_id: number;
     titulo: string;
     desc: string;
     data_completa: string;
@@ -10,12 +9,11 @@ export type propsAtividades = {
     status: string;
 };
 
-export class Atividades {
-    private constructor(private props: propsAtividades) {}
+export class Acoes {
+    private constructor(private props: propsAcoes) {}
 
     public static construir(
         id: number | undefined,
-        categoria_id: number,
         titulo: string,
         desc: string,
         data_completa: string,
@@ -23,10 +21,9 @@ export class Atividades {
         local: string,
         is_highlight: boolean,
         status: string
-    ): Atividades {
+    ): Acoes {
         // Validação corrigida: verifica se is_highlight foi fornecido sem bloquear 'false'
         if (
-            !categoria_id ||
             !titulo ||
             !desc ||
             !data_completa ||
@@ -37,9 +34,8 @@ export class Atividades {
             throw new Error("Campos obrigatórios ausentes");
         }
 
-        const props: propsAtividades = {
+        const props: propsAcoes = {
             id,
-            categoria_id,
             titulo,
             desc,
             data_completa,
@@ -49,18 +45,15 @@ export class Atividades {
             status
         };
 
-        return new Atividades(props);
+        return new Acoes(props);
     }
 
-    public static reconstruir(props: propsAtividades): Atividades {
-        return new Atividades(props);
+    public static reconstruir(props: propsAcoes): Acoes{
+        return new Acoes(props);
     }
 
     public get id() {
         return this.props.id;
-    }
-    public get categoria_id() {
-        return this.props.categoria_id;
     }
     public get titulo() {
         return this.props.titulo;

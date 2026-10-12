@@ -23,7 +23,6 @@ export class AlbumControle {
 
             const album = Album.construir(
                 albumDto.id?? undefined,
-                albumDto.categoria_id,
                 albumDto.titulo,
                 albumDto.description,
                 albumDto.date
@@ -87,7 +86,6 @@ export class AlbumControle {
             }
             const album = Album.reconstruir({
                 id: idNumber,
-                categoria_id: albumDto.categoria_id,
                 titulo:albumDto.titulo,
                 description:albumDto.description,
                 date:albumDto.date
