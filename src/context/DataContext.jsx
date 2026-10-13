@@ -9,28 +9,11 @@ import {
 } from '../services/api';
 
 const STORAGE_KEY_GALLERY = 'ami_gallery_items_v1';
-const STORAGE_KEY_CALENDAR = 'ami_calendar_events_v1';
-const STORAGE_KEY_HIGHLIGHTS = 'ami_calendar_highlights_v1';
 const STORAGE_KEY_BRAND = 'ami_brand_info_v1';
 const STORAGE_KEY_SPONSORS = 'ami_sponsors_v1';
 const STORAGE_KEY_TESTIMONIALS = 'ami_testimonials_v1';
 
 const DataContext = createContext(null);
-
-function seedCalendarEvents() {
-  return siteData.calendar.eventsOctober2026.map((ev, index) => ({
-    id: `cal-seed-${index + 1}`,
-    year: 2026,
-    month: 9,
-    day: ev.day,
-    time: ev.time,
-    title: ev.title,
-    desc: ev.desc,
-    location: 'Sede da Associação',
-    isHighlight: index < 3,
-    status: 'ativo',
-  }));
-}
 
 export function DataProvider({ children }) {
   // Estado de conexão com backend
@@ -49,21 +32,7 @@ export function DataProvider({ children }) {
     return siteData.gallery.items;
   });
 
-  const [calendarEvents, setCalendarEvents] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_CALENDAR);
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
-    return seedCalendarEvents();
-  });
-
-  const [calendarHighlights, setCalendarHighlights] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_HIGHLIGHTS);
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
-    return siteData.calendar.highlights;
-  });
+  const [calendarEvents, setCalendarEvents] = useState([]);
 
   const [brandInfo, setBrandInfo] = useState(() => {
     try {
@@ -102,12 +71,9 @@ export function DataProvider({ children }) {
   }, [galleryItems]);
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_CALENDAR, JSON.stringify(calendarEvents)); } catch (_) {}
-  }, [calendarEvents]);
-
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_HIGHLIGHTS, JSON.stringify(calendarHighlights)); } catch (_) {}
-  }, [calendarHighlights]);
+    localStorage.removeItem('ami_calendar_events_v1');
+    localStorage.removeItem('ami_calendar_highlights_v1');
+  }, []);
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY_BRAND, JSON.stringify(brandInfo)); } catch (_) {}
@@ -132,21 +98,9 @@ export function DataProvider({ children }) {
         // Carrega ações do calendário do backend
         try {
           const acoesData = await acoesApi.list();
-          if (Array.isArray(acoesData) && acoesData.length > 0) {
-            const adapted = acoesData.map(a => adaptAcaoToFrontend(a));
-            setCalendarEvents(adapted);
-
-            // Atualiza highlights
-            const hl = adapted.filter(a => a.isHighlight).map(a => ({
-              id: `hl-${a.id}`,
-              dateLabel: `${a.day} de Outubro - ${a.time}`,
-              title: a.title,
-              description: a.desc,
-              color: '#2A5C66',
-            }));
-            if (hl.length > 0) setCalendarHighlights(hl);
-          }
+          setCalendarEvents(Array.isArray(acoesData) ? acoesData.map(a => adaptAcaoToFrontend(a)) : []);
         } catch (err) {
+          setCalendarEvents([]);
           console.warn('[Backend] Erro ao carregar ações:', err);
         }
 
@@ -154,12 +108,14 @@ export function DataProvider({ children }) {
           showToast('Conectado com sucesso ao backend (porta 3000)!', 'success');
         }
       } else {
+        setCalendarEvents([]);
         if (!silent) {
           showToast('Backend offline. Operando em modo de dados locais.', 'info');
         }
       }
     } catch (err) {
       setBackendConnected(false);
+      setCalendarEvents([]);
       if (!silent) {
         showToast('Backend inacessível. Usando armazenamento local.', 'info');
       }
@@ -267,12 +223,12 @@ export function DataProvider({ children }) {
   };
 
   // ── CRUD: Calendário de Ações (Integrado com Backend) ──────────
-  const MONTH_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-
   const addCalendarEvent = async (eventData) => {
-    let newEvent = {
-      id: `cal-${Date.now()}`,
-      createdAt: new Date().toISOString(),
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível cadastrar ação no banco.', 'warning');
+      return;
+    }
+    const newEvent = {
       year: parseInt(eventData.year || 2026, 10),
       month: parseInt(eventData.month !== undefined ? eventData.month : 9, 10),
       day: parseInt(eventData.day || 1, 10),
@@ -284,95 +240,50 @@ export function DataProvider({ children }) {
       status: eventData.status || 'ativo',
     };
 
-    if (backendConnected) {
-      try {
-        const payload = adaptAcaoToBackend(newEvent);
-        await acoesApi.create(payload);
-        const acoes = await acoesApi.list();
-        if (Array.isArray(acoes) && acoes.length > 0) {
-          const adapted = acoes.map(a => adaptAcaoToFrontend(a));
-          setCalendarEvents(adapted);
-          showToast('Ação salva com sucesso no banco de dados!', 'success');
-          return;
-        }
-      } catch (err) {
-        console.error('Erro ao salvar ação no backend:', err);
-        showToast('Erro no backend ao agendar. Salvo em armazenamento local.', 'warning');
-      }
+    try {
+      await acoesApi.create(adaptAcaoToBackend(newEvent));
+      const acoes = await acoesApi.list();
+      setCalendarEvents(Array.isArray(acoes) ? acoes.map(a => adaptAcaoToFrontend(a)) : []);
+      showToast('Ação salva com sucesso no banco de dados!', 'success');
+    } catch (err) {
+      showToast(err.message || 'Erro ao cadastrar ação no backend.', 'warning');
     }
-
-    setCalendarEvents(prev => [...prev, newEvent]);
-
-    if (newEvent.isHighlight) {
-      const newHighlight = {
-        id: `hl-${newEvent.id}`,
-        dateLabel: `${newEvent.day} de ${MONTH_SHORT[newEvent.month]} - ${newEvent.time}`,
-        title: newEvent.title,
-        description: newEvent.desc,
-        color: '#2A5C66'
-      };
-      setCalendarHighlights(prev => [newHighlight, ...prev]);
-    }
-    showToast('Ação agendada no calendário com sucesso!', 'success');
-    return newEvent;
   };
 
   const updateCalendarEvent = async (id, updatedData) => {
-    // Tenta atualizar no backend se tiver ID numérico
-    if (backendConnected) {
-      const numericId = typeof id === 'number' ? id : parseInt(String(id).replace('cal-', ''), 10);
-      if (!isNaN(numericId) && numericId > 0 && !String(id).includes('seed')) {
-        try {
-          const payload = adaptAcaoToBackend({ ...updatedData, id: numericId });
-          await acoesApi.update(numericId, payload);
-          const acoes = await acoesApi.list();
-          const adapted = acoes.map(a => adaptAcaoToFrontend(a));
-          setCalendarEvents(adapted);
-          showToast('Ação atualizada com sucesso no backend!', 'info');
-          return;
-        } catch (err) {
-          console.error('Erro ao atualizar no backend:', err);
-          showToast('Erro no backend. Atualizando localmente.', 'warning');
-        }
-      }
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível atualizar ação no banco.', 'warning');
+      return;
     }
-
-    setCalendarEvents(prev => prev.map(ev => {
-      if (ev.id !== id) return ev;
-      return {
-        ...ev,
-        ...updatedData,
-        year: parseInt(updatedData.year !== undefined ? updatedData.year : ev.year, 10),
-        month: parseInt(updatedData.month !== undefined ? updatedData.month : ev.month, 10),
-        day: parseInt(updatedData.day !== undefined ? updatedData.day : ev.day, 10),
-        updatedAt: new Date().toISOString()
-      };
-    }));
-    showToast('Ação do calendário atualizada!', 'info');
+    const event = calendarEvents.find(item => item.id === id || item.apiId === id);
+    const numericId = Number(event?.apiId ?? id);
+    if (!Number.isInteger(numericId) || numericId <= 0) return;
+    try {
+      await acoesApi.update(numericId, adaptAcaoToBackend({ ...event, ...updatedData, id: numericId }));
+      const acoes = await acoesApi.list();
+      setCalendarEvents(Array.isArray(acoes) ? acoes.map(a => adaptAcaoToFrontend(a)) : []);
+      showToast('Ação atualizada com sucesso no backend!', 'info');
+    } catch (err) {
+      showToast(err.message || 'Erro ao atualizar ação no backend.', 'warning');
+    }
   };
 
   const deleteCalendarEvent = async (id) => {
-    if (backendConnected) {
-      const numericId = typeof id === 'number' ? id : parseInt(String(id).replace('cal-', ''), 10);
-      if (!isNaN(numericId) && numericId > 0 && !String(id).includes('seed')) {
-        try {
-          await acoesApi.delete(numericId);
-          const acoes = await acoesApi.list();
-          const adapted = acoes.map(a => adaptAcaoToFrontend(a));
-          setCalendarEvents(adapted);
-          setCalendarHighlights(prev => prev.filter(hl => hl.id !== `hl-${id}`));
-          showToast('Ação excluída com sucesso do backend!', 'warning');
-          return;
-        } catch (err) {
-          console.error('Erro ao deletar no backend:', err);
-          showToast('Erro ao remover no backend. Removendo localmente.', 'warning');
-        }
-      }
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível remover ação do banco.', 'warning');
+      return;
     }
-
-    setCalendarEvents(prev => prev.filter(ev => ev.id !== id));
-    setCalendarHighlights(prev => prev.filter(hl => hl.id !== `hl-${id}`));
-    showToast('Ação removida do calendário.', 'warning');
+    const event = calendarEvents.find(item => item.id === id || item.apiId === id);
+    const numericId = Number(event?.apiId ?? id);
+    if (!Number.isInteger(numericId) || numericId <= 0) return;
+    try {
+      await acoesApi.delete(numericId);
+      const acoes = await acoesApi.list();
+      setCalendarEvents(Array.isArray(acoes) ? acoes.map(a => adaptAcaoToFrontend(a)) : []);
+      showToast('Ação excluída com sucesso do backend!', 'warning');
+    } catch (err) {
+      showToast(err.message || 'Erro ao remover ação do backend.', 'warning');
+    }
   };
 
   // ── CRUD: Patrocinadores & Parceiros ─────────────────────────────
@@ -453,11 +364,10 @@ export function DataProvider({ children }) {
   };
 
   const resetToDefaultData = () => {
-    [STORAGE_KEY_GALLERY, STORAGE_KEY_CALENDAR, STORAGE_KEY_HIGHLIGHTS, STORAGE_KEY_BRAND, STORAGE_KEY_SPONSORS, STORAGE_KEY_TESTIMONIALS]
+    [STORAGE_KEY_GALLERY, STORAGE_KEY_BRAND, STORAGE_KEY_SPONSORS, STORAGE_KEY_TESTIMONIALS]
       .forEach(k => localStorage.removeItem(k));
     setGalleryItems(siteData.gallery.items);
-    setCalendarEvents(seedCalendarEvents());
-    setCalendarHighlights(siteData.calendar.highlights);
+    setCalendarEvents([]);
     setBrandInfo(siteData.brand);
     setSponsors(siteData.sponsors || []);
     setTestimonials(siteData.testimonials.items);
@@ -479,7 +389,7 @@ export function DataProvider({ children }) {
       deleteAdmin,
 
       // Entidades
-      galleryItems, calendarEvents, calendarHighlights, brandInfo, sponsors, testimonials, toast,
+      galleryItems, calendarEvents, brandInfo, sponsors, testimonials, toast,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
       addCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
       addSponsor, updateSponsor, deleteSponsor,

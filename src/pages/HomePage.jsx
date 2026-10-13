@@ -1,10 +1,45 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { siteData } from '../data/mockData';
 import SponsorsCarousel from '../components/SponsorsCarousel';
+import { useData } from '../context/DataContext';
 
 export default function HomePage({ onNavigate, onOpenDonation, onOpenSponsorModal, onSelectPhoto }) {
   const { home } = siteData;
+  const { calendarEvents, backendConnected, backendLoading } = useData();
+  const upcomingEvents = useMemo(() => {
+    if (!backendConnected || backendLoading) return [];
+
+    const now = new Date();
+    const events = calendarEvents
+      .filter(event => event.apiId && event.status === 'ativo')
+      .map(event => ({
+        event,
+        date: new Date(
+          Number(event.year),
+          Number(event.month),
+          Number(event.day),
+          ...String(event.time || '00:00').split(':').map(Number)
+        )
+      }))
+      .filter(({ date }) => !Number.isNaN(date.getTime()) && date >= now)
+      .sort((a, b) => a.date - b.date);
+
+    const highlighted = events.filter(({ event }) => event.isHighlight === true);
+    const regular = events.filter(({ event }) => event.isHighlight !== true);
+    const selected = [
+      ...highlighted.slice(0, 3),
+      ...regular.slice(0, Math.max(0, 3 - highlighted.length))
+    ].slice(0, 3);
+    const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+    return selected.map(({ event, date }) => ({
+      id: event.id,
+      day: `${weekdays[date.getDay()]}, ${event.time}`,
+      title: event.title,
+      description: event.desc
+    }));
+  }, [calendarEvents, backendConnected, backendLoading]);
 
   return (
     <div className="home-page">
@@ -38,7 +73,9 @@ export default function HomePage({ onNavigate, onOpenDonation, onOpenSponsorModa
           </div>
 
           <div className="cards-grid-3">
-            {home.upcoming.items.map((item) => (
+            {upcomingEvents.length === 0 ? (
+              <p>Nenhuma ação programada no momento.</p>
+            ) : upcomingEvents.map((item) => (
               <div 
                 key={item.id} 
                 className="upcoming-card"

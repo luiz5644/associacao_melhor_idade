@@ -19,12 +19,12 @@ function getStartDayOffset(year, month) {
 
 export default function CalendarPage() {
   const { calendar } = siteData;
-  const { calendarEvents, calendarHighlights } = useData();
+  const { calendarEvents } = useData();
 
   const today = new Date();
   const [selectedDay, setSelectedDay] = useState(today.getDate());
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonthIndex, setCurrentMonthIndex] = useState(9); // Outubro
+  const [currentYear, setCurrentYear] = useState(today.getFullYear());
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(today.getMonth());
 
   const handlePrevMonth = () => {
     if (currentMonthIndex === 0) {
@@ -48,16 +48,28 @@ export default function CalendarPage() {
 
   // Eventos do mês/ano atual
   const filteredEvents = calendarEvents.filter(ev => {
-    return ev.year === currentYear && ev.month === currentMonthIndex;
+    return ev.year === currentYear && ev.month === currentMonthIndex && ev.status !== 'cancelado';
   });
 
-  const eventsForSelectedDay = filteredEvents.filter(e => e.day === selectedDay);
+  const eventsForSelectedDay = filteredEvents
+    .filter(e => e.day === selectedDay)
+    .sort((a, b) => a.time.localeCompare(b.time));
 
   const startDayOffset = getStartDayOffset(currentYear, currentMonthIndex);
   const totalDays = getDaysInMonth(currentYear, currentMonthIndex);
 
   // Destaques dinâmicos: máx. 3 mostrados
-  const highlights = calendarHighlights.slice(0, 3);
+  const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const highlights = filteredEvents
+    .filter(event => event.isHighlight === true)
+    .sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
+    .slice(0, 3)
+    .map((event, index) => ({
+      dateLabel: `${weekdays[new Date(event.year, event.month, event.day).getDay()]}, ${String(event.day).padStart(2, '0')} - ${event.time}`,
+      title: event.title,
+      description: event.desc,
+      color: ['#2A5C66', '#E8A87C', '#3D6058'][index]
+    }));
 
   return (
     <div className="calendar-page">

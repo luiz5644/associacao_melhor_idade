@@ -24,26 +24,6 @@ export const siteData = {
         tag: "CALENDÁRIO DO IDOSO",
         title: "Próximos Encontros",
         subtitle: "Fique por dentro das ações de destaque desta semana e participe com a gente!",
-        items: [
-          {
-            id: "forro-1",
-            day: "Sex, 14:00",
-            title: "Forró da Melhor Idade",
-            description: "Nossa tarde mais animada com música ao vivo, comidinhas típicas e muito arrasta-pé."
-          },
-          {
-            id: "coral-1",
-            day: "Ter, 09:00",
-            title: "Ensaio Geral do Coral",
-            description: "Afinando as vozes e corações para as apresentações festivas de fim de ano."
-          },
-          {
-            id: "caminhada-1",
-            day: "Quinta, 08:30",
-            title: "Caminhada Ecológica",
-            description: "Passeio leve pelo parque local acompanhado por um instrutor físico."
-          }
-        ]
       },
     historyTeaser: {
       tag: "HISTÓRIA",
@@ -218,42 +198,6 @@ export const siteData = {
       tag: "CALENDÁRIO DO IDOSO",
       title: "Nossa Programação",
       subtitle: "Datas claras e de fácil leitura para você programar seus dias de diversão e aprendizado.",
-      // Destaques fixos do mês (conforme imagem do Figma)
-      highlights: [
-        {
-          dateLabel: "Terça, 01 - 09:00",
-          title: "Canto Coral",
-          description: "Aprimorando voz e postura com o maestro Roberto.",
-          color: "#2A5C66"
-        },
-        {
-          dateLabel: "Sexta, 04 - 14:00",
-          title: "Tarde do Forró Comunitário",
-          description: "Baile especial com sanfoneiro ao vivo.",
-          color: "#E8A87C"
-        },
-        {
-          dateLabel: "Quarta, 08 - 14:00",
-          title: "Oficina de Pintura em Tela",
-          description: "Traga avental, tintas inclusas.",
-          color: "#3D6058"
-        }
-      ],
-      // Eventos distribuídos nos dias de Outubro 2026
-            eventsOctober2026: [
-            { day: 1, title: "Canto Coral", time: "09:00", desc: "Aprimorando voz e postura com o maestro Roberto." },
-            { day: 4, title: "Tarde do Forró Comunitário", time: "14:00", desc: "Baile especial com sanfoneiro ao vivo e mesa de bolos." },
-            { day: 6, title: "Café com Poesia", time: "15:00", desc: "Leitura de poemas e contação de causos." },
-            { day: 8, title: "Oficina de Pintura em Tela", time: "14:00", desc: "Técnica de aquarela e óleo sobre tela. Tintas inclusas." },
-            { day: 11, title: "Forró Semanal da Saudade", time: "14:00", desc: "Músicas de Luiz Gonzaga, Dominguinhos e Trio Nordestino." },
-            { day: 14, title: "Aula de Ioga e Respiração", time: "08:30", desc: "Alongamento suave na grama do jardim." },
-            { day: 15, title: "Ensaio Geral do Coral", time: "09:00", desc: "Preparação para o festival de corais da cidade." },
-            { day: 18, title: "Forró com Concurso de Dança", time: "14:00", desc: "Premiação simbólica para o casal mais animado." },
-            { day: 22, title: "Oficina de Modelagem em Cerâmica", time: "14:00", desc: "Criação de vasos decorativos com argila natural." },
-            { day: 25, title: "Excursão Campos do Jordão", time: "07:00", desc: "Passeio pelo teleférico, feira de malhas e chocolate artesanal." },
-            { day: 28, title: "Canto Coral & Harmonia", time: "09:00", desc: "Repertório natalino e clássicos da MPB." },
-            { day: 31, title: "Baile das Máscaras & Aniversariantes", time: "16:00", desc: "Grande celebração com bolo de aniversário comunitário!" }
-          ]
   },
 
   // 5. TELA GALERIA DE FOTOS

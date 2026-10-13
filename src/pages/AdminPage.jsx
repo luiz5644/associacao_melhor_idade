@@ -947,7 +947,7 @@ function TabCalendar() {
         </div>
       )}
 
-      <CalendarFormModal isOpen={showForm} item={editingEvent}
+      <CalendarFormModal key={showForm ? (editingEvent?.id ?? 'new') : 'closed'} isOpen={showForm} item={editingEvent}
         onSave={handleSave} onClose={() => { setShowForm(false); setEditingEvent(null); }} />
 
       <ConfirmDeleteModal isOpen={!!deleteTarget}
