@@ -27,9 +27,10 @@ export class FotosControle{
                 fotosDto.data_upload?? undefined
             )
 
-            this.fotosServico.salvar(foto)
-            return res.status(200).json({
-                message: "Foto salva com sucesso"
+            const id = await this.fotosServico.salvar(foto)
+            return res.status(201).json({
+                message: "Foto salva com sucesso",
+                id
             })
         }
         catch(error){

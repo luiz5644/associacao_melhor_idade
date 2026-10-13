@@ -1,5 +1,3 @@
-import { propsAdmin } from "./Admin"
-
 export type PropsAlbum = {
     id?: number,
     titulo: string,
@@ -17,15 +15,15 @@ export class Album{
     public static construir(
         id: number|undefined,
         titulo: string,
-        description:string,
+        description:string | undefined,
         date:string
     ){
-        if(!titulo||!date||!description){
+        if(!titulo||!date){
             throw new Error("Campus Obrigatórios")
         }
         const props:PropsAlbum = {
             id,
-            description,
+            description: description || '',
             titulo,
             date,
 

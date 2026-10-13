@@ -8,7 +8,7 @@ import {
   Menu, LayoutGrid, Image, Calendar, Heart
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import { adminApi } from '../services/api';
+import { adminApi, uploadApi, resolveImageUrl } from '../services/api';
 import CadastroAdminPage from './CadastroAdminPage';
 
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -37,6 +37,7 @@ function ConfirmDeleteModal({ isOpen, onConfirm, onCancel, title, subtitle }) {
 // ── Formulário de Lembrança (Álbum) — suporte a múltiplas fotos ──────────────
 function GalleryFormModal({ isOpen, item, onSave, onClose }) {
   const fileRef = useRef(null);
+  const { backendConnected, showToast } = useData();
   const [form, setForm] = useState({
     title: item?.title || '',
     description: item?.description || '',
@@ -58,26 +59,35 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
   };
 
   // Adiciona uma ou várias fotos por upload de arquivo(s)
-  const handleFilesChange = (e) => {
-    const files = Array.from(e.target.files);
+  const handleFilesChange = async (e) => {
+    const input = e.currentTarget;
+    const files = Array.from(input.files || []);
+    input.value = '';
     if (!files.length) return;
+    const invalidFile = files.find(file => !file.type.startsWith('image/') || file.size > 5 * 1024 * 1024);
+    if (invalidFile) {
+      showToast(invalidFile.size > 5 * 1024 * 1024
+        ? 'Cada imagem deve ter no máximo 5 MB.'
+        : 'Selecione apenas arquivos de imagem.', 'warning');
+      return;
+    }
+    if (!backendConnected) {
+      showToast('Backend offline. Não foi possível enviar as imagens.', 'warning');
+      return;
+    }
+
     setUploading(true);
-    let loaded = 0;
-    const newPhotos = [];
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        newPhotos.push(ev.target.result);
-        loaded++;
-        if (loaded === files.length) {
-          setField('photos', [...form.photos, ...newPhotos]);
-          setUploading(false);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-    // reset input para permitir reenvio do mesmo arquivo
-    e.target.value = '';
+    try {
+      const uploadedUrls = [];
+      for (const file of files) {
+        uploadedUrls.push(resolveImageUrl(await uploadApi.upload(file)));
+      }
+      setForm(current => ({ ...current, photos: [...current.photos, ...uploadedUrls] }));
+    } catch (error) {
+      showToast(error.message || 'Erro ao enviar imagem.', 'warning');
+    } finally {
+      setUploading(false);
+    }
   };
 
   // Remove foto pelo índice

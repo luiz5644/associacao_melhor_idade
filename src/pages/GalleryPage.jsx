@@ -163,6 +163,7 @@ function MemoryDetailModal({ memory, onClose }) {
 export default function GalleryPage({ onSelectPhoto }) {
   const { gallery } = siteData;
   const { galleryItems } = useData();
+  const publicGalleryItems = galleryItems.filter(item => item.photos?.length > 0);
   const [selectedMemory, setSelectedMemory] = useState(null);
 
   return (
@@ -175,20 +176,14 @@ export default function GalleryPage({ onSelectPhoto }) {
           <p className="page-subtitle">{gallery.subtitle}</p>
         </div>
 
-        {/* Contador */}
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-subtle)', marginBottom: 20 }}>
-          {galleryItems.length} {galleryItems.length === 1 ? 'lembrança' : 'lembranças'}
-        </p>
-
         {/* Photos Grid */}
-        {galleryItems.length === 0 ? (
+        {publicGalleryItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-subtle)' }}>
-            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Nenhuma lembrança cadastrada ainda.</p>
-            <p style={{ fontSize: '0.9rem', marginTop: 8 }}>O administrador pode adicionar fotos no painel de gestão.</p>
+            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Em breve, novas lembranças estarão por aqui.</p>
           </div>
         ) : (
           <div className="gallery-grid">
-            {galleryItems.map((photo) => {
+            {publicGalleryItems.map((photo) => {
               const photoCount = photo.photos?.length || (photo.image ? 1 : 0);
               return (
                 <div

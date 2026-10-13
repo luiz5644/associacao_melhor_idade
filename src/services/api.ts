@@ -204,6 +204,76 @@ export const acoesApi = {
   },
 };
 
+export const albumApi = {
+  list: async () => unpackList<any>(await fetchApi<any[]>('/album')),
+  create: async (data: { titulo: string; description: string; date: string }) =>
+    fetchApi<{ message: string; id: number }>('/album', { method: 'POST', body: JSON.stringify(data) }),
+  update: async (id: number, data: { titulo: string; description: string; date: string }) =>
+    fetchApi<{ message: string }>(`/album/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: async (id: number) => fetchApi<{ message: string }>(`/album/${id}`, { method: 'DELETE' }),
+};
+
+export const fotosApi = {
+  list: async () => unpackList<any>(await fetchApi<any[]>('/fotos')),
+  create: async (data: { album_id: number; url_imagem: string; eh_capa: boolean }) =>
+    fetchApi<{ message: string; id: number }>('/fotos', { method: 'POST', body: JSON.stringify(data) }),
+  update: async (id: number, data: { album_id: number; url_imagem: string; eh_capa: boolean }) =>
+    fetchApi<{ message: string }>(`/fotos/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: async (id: number) => fetchApi<{ message: string }>(`/fotos/${id}`, { method: 'DELETE' }),
+};
+
+export const uploadApi = {
+  upload: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('imagem', file);
+    const token = localStorage.getItem('admin_token');
+    const response = await fetch(`${API_BASE}/upload`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new ApiError(response.status, data.message || 'Erro ao enviar imagem.', data);
+    return data.url;
+  },
+};
+
+export function resolveImageUrl(url: string): string {
+  return url?.startsWith('/uploads/') ? `${API_BASE}${url}` : (url || '');
+}
+
+export function toStoredUrl(url: string): string {
+  const uploadsPrefix = `${API_BASE}/uploads/`;
+  return url?.startsWith(uploadsPrefix) ? url.slice(API_BASE.length) : (url || '');
+}
+
+export function adaptAlbumToFrontend(albumInput: any, fotosInput: any[] = []) {
+  const album = unpackProps<any>(albumInput);
+  const date = String(album.date || '').slice(0, 10);
+  const [year, month] = date.split('-').map(Number);
+  const monthName = Number.isInteger(month) && month >= 1 && month <= 12
+    ? ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][month - 1]
+    : '';
+  const subtitle = monthName && Number.isInteger(year) ? `${monthName} de ${year}` : 'Lembrança Especial';
+  const photoRecords = fotosInput
+    .map(unpackProps<any>)
+    .sort((a, b) => Number(Boolean(b.eh_capa)) - Number(Boolean(a.eh_capa)) || Number(a.id) - Number(b.id))
+    .map(photo => ({ id: Number(photo.id), url: photo.url_imagem, isCover: Boolean(photo.eh_capa) }));
+  const photos = photoRecords.map(photo => resolveImageUrl(photo.url));
+
+  return {
+    id: `alb-${album.id}`,
+    apiId: Number(album.id),
+    title: album.titulo || '',
+    description: album.description || '',
+    date,
+    subtitle,
+    photos,
+    image: photos[0] || '',
+    photoRecords,
+  };
+}
+
 // ============================================
 // ADAPTADORES FRONTEND <-> BACKEND
 // ============================================

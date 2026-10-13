@@ -7,18 +7,16 @@ export function authMiddleware(
     next: NextFunction
 ){
     const authHeader = req.headers.authorization;
-    console.log("AUTH HEADER:", authHeader)
     if(!authHeader){
         return res.status(401).json({
-            mesage:"Token não informado"
+            message:"Token não informado"
         })
     }
     const [, token] = authHeader.split(" ");
-    console.log("TOKEN:", token);
 
     if(!token){
         return res.status(401).json({
-            mesage: 'Token não informado ou mal formatado'
+            message: 'Token não informado ou mal formatado'
         })
     }
     try{
@@ -29,9 +27,8 @@ export function authMiddleware(
         next()
     }
     catch(error){
-        console.log(error)
         return res.status(401).json({
-            mesage:"Token Invalido"
+            message:"Token Invalido"
         })
     }
 }

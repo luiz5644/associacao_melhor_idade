@@ -13,9 +13,11 @@ import DonationModal from './components/DonationModal';
 import ScheduleModal from './components/ScheduleModal';
 import ImageLightbox from './components/ImageLightbox';
 import { siteData } from './data/mockData';
+import { useData } from './context/DataContext';
 
 function AppContent() {
   const [activePage, setActivePage] = useState('home');
+  const { galleryItems } = useData();
 
   // Modals state
   const [donationModal, setDonationModal] = useState({ isOpen: false, mode: 'pix' });
@@ -122,7 +124,7 @@ function AppContent() {
 
       <ImageLightbox 
         photo={selectedPhoto}
-        photosList={siteData.gallery.items}
+        photosList={galleryItems}
         onClose={() => setSelectedPhoto(null)}
         onSelectPhoto={setSelectedPhoto}
       />

@@ -205,50 +205,6 @@ export const siteData = {
       tag: "GALERIA DE FOTOS",
       title: "Álbum de Lembranças",
       subtitle: "Cada fotografia guarda um sorriso, uma história e o orgulho de pertencer à nossa grande família.",
-      items: [
-      {
-              id: "gal-1",
-              title: "Nossa Quadrilha de São João",
-              subtitle: "Junho de 2026",
-              image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=900&auto=format&fit=crop",
-              description: "Mais de 150 participantes vestidos a caráter celebrando o São João da comunidade com muito carinho e comidas típicas."
-            },
-            {
-              id: "gal-2",
-              title: "Coral Cantando na Praça",
-        subtitle: "Apresentação de Primavera",
-        image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=900&auto=format&fit=crop",
-        description: "Concerto ao ar livre sob a sombra das árvores na Praça das Flores, emocionando moradores e visitantes."
-      },
-      {
-              id: "gal-3",
-              title: "Passeio em Ubatuba",
-              subtitle: "Pé na areia e muita brisa",
-              image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=900&auto=format&fit=crop",
-              description: "Final de semana inesquecível no litoral norte, com banho de mar assistido, caminhadas na areia e peixe fresco."
-            },
-            {
-              id: "gal-4",
-              title: "Baile do Forró Semanal",
-              subtitle: "Todas as sextas com alegria",
-              image: "https://images.unsplash.com/photo-1545232979-fbf6c1417ca9?q=80&w=900&auto=format&fit=crop",
-              description: "O momento mais aguardado da semana: nossos idosos preenchem o salão com vitalidade, passos ensaiados e muita amizade."
-            },
-            {
-              id: "gal-5",
-              title: "Festa de Fim de Ano",
-              subtitle: "Jantar comunitário",
-              image: "https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?q=80&w=900&auto=format&fit=crop",
-              description: "Banquete de confraternização comemorando as conquistas do ano, homenageando associados e compartilhando votos de paz."
-            },
-            {
-              id: "gal-6",
-              title: "Oficina de Cerâmica",
-              subtitle: "Nossos artesãos orgulhosos",
-              image: "https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?q=80&w=900&auto=format&fit=crop",
-              description: "Exposição final das peças produzidas no semestre: vasos pintados à mão, esculturas em argila e toalhas bordadas."
-            }
-    ]
   },
 
   // 6. DEPOIMENTOS

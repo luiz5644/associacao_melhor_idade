@@ -26,9 +26,9 @@ export class AlbumCreateDto{
     @IsNotEmpty()
     titulo:string
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
-    description: string
+    description?: string
 
     @IsString()
     @IsNotEmpty()
@@ -44,9 +44,9 @@ export class AlbumUpdateDto{
     @IsNotEmpty()
     titulo:string
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
-    description: string
+    description?: string
 
     @IsString()
     @IsNotEmpty()

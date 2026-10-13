@@ -2,13 +2,13 @@ import { conexao } from "../util/conexao";
 import { Album } from "../modelo/Album";
 
 export class AlbumDao {
-    public async salvar (album:Album): Promise <void>{
+    public async salvar (album:Album): Promise <number>{
         try{
-            const [rows]: any = await conexao.query(
+            const [result]: any = await conexao.query(
             'insert into albuns_lembrancas (titulo,description,date) values (?,?,?) ',
             [album.titulo,album.description,album.date]
         )
-        
+            return result.insertId;
         }
         catch(error){
             console.log("Erro: ", error)
@@ -20,7 +20,7 @@ export class AlbumDao {
     public async buscarporId(id:number): Promise <Album|null>{
         try{
             const [rows]: any = await conexao.query(
-                'select * from albuns_lembrancas where id = ?',
+                "select id, titulo, description, DATE_FORMAT(date, '%Y-%m-%d') AS date from albuns_lembrancas where id = ?",
                 [id]
             )
             if(rows.length===0){
@@ -38,7 +38,7 @@ export class AlbumDao {
     public async listar(): Promise <Album[]>{
         try{
             const [rows]: any = await conexao.query(
-                'select * from albuns_lembrancas'
+                "select id, titulo, description, DATE_FORMAT(date, '%Y-%m-%d') AS date from albuns_lembrancas"
             )
             return rows.map((r:any) => Album.reconstruir(r))
         }

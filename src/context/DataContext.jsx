@@ -3,12 +3,15 @@ import { siteData } from '../data/mockData';
 import {
   adminApi,
   acoesApi,
+  albumApi,
+  fotosApi,
   checkBackendHealth,
   adaptAcaoToFrontend,
   adaptAcaoToBackend,
+  adaptAlbumToFrontend,
+  toStoredUrl,
 } from '../services/api';
 
-const STORAGE_KEY_GALLERY = 'ami_gallery_items_v1';
 const STORAGE_KEY_BRAND = 'ami_brand_info_v1';
 const STORAGE_KEY_SPONSORS = 'ami_sponsors_v1';
 const STORAGE_KEY_TESTIMONIALS = 'ami_testimonials_v1';
@@ -23,14 +26,7 @@ export function DataProvider({ children }) {
   // Administradores (do backend)
   const [admins, setAdmins] = useState([]);
 
-  // Dados com persistência local (fallback / entidades não implementadas no backend)
-  const [galleryItems, setGalleryItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_GALLERY);
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
-    return siteData.gallery.items;
-  });
+  const [galleryItems, setGalleryItems] = useState([]);
 
   const [calendarEvents, setCalendarEvents] = useState([]);
 
@@ -65,10 +61,37 @@ export function DataProvider({ children }) {
     setTimeout(() => setToast(null), 4000);
   }, []);
 
-  // ── Salvar caches locais ───────────────────────────────────────────
+  // Limpa os exemplos de galeria salvos por versões anteriores.
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_GALLERY, JSON.stringify(galleryItems)); } catch (_) {}
-  }, [galleryItems]);
+    localStorage.removeItem('ami_gallery_items_v1');
+  }, []);
+
+  const loadGalleryFromBackend = useCallback(async () => {
+    const [albums, photos] = await Promise.all([albumApi.list(), fotosApi.list()]);
+    const photosByAlbum = new Map();
+    photos.forEach(photo => {
+      const albumId = Number(photo.album_id);
+      photosByAlbum.set(albumId, [...(photosByAlbum.get(albumId) || []), photo]);
+    });
+    return albums
+      .map(album => adaptAlbumToFrontend(album, photosByAlbum.get(Number(album.id)) || []))
+      .sort((a, b) => b.date.localeCompare(a.date) || b.apiId - a.apiId);
+  }, []);
+
+  const reloadGallery = useCallback(async () => {
+    if (!backendConnected) {
+      setGalleryItems([]);
+      return [];
+    }
+    try {
+      const items = await loadGalleryFromBackend();
+      setGalleryItems(items);
+      return items;
+    } catch (error) {
+      setGalleryItems([]);
+      throw error;
+    }
+  }, [backendConnected, loadGalleryFromBackend]);
 
   useEffect(() => {
     localStorage.removeItem('ami_calendar_events_v1');
@@ -95,6 +118,13 @@ export function DataProvider({ children }) {
       setBackendConnected(isOnline);
 
       if (isOnline) {
+        try {
+          setGalleryItems(await loadGalleryFromBackend());
+        } catch (err) {
+          setGalleryItems([]);
+          console.warn('[Backend] Erro ao carregar álbuns e fotos:', err);
+        }
+
         // Carrega ações do calendário do backend
         try {
           const acoesData = await acoesApi.list();
@@ -108,6 +138,7 @@ export function DataProvider({ children }) {
           showToast('Conectado com sucesso ao backend (porta 3000)!', 'success');
         }
       } else {
+        setGalleryItems([]);
         setCalendarEvents([]);
         if (!silent) {
           showToast('Backend offline. Operando em modo de dados locais.', 'info');
@@ -115,6 +146,7 @@ export function DataProvider({ children }) {
       }
     } catch (err) {
       setBackendConnected(false);
+      setGalleryItems([]);
       setCalendarEvents([]);
       if (!silent) {
         showToast('Backend inacessível. Usando armazenamento local.', 'info');
@@ -122,7 +154,7 @@ export function DataProvider({ children }) {
     } finally {
       setBackendLoading(false);
     }
-  }, [showToast]);
+  }, [loadGalleryFromBackend, showToast]);
 
   useEffect(() => {
     checkAndSyncBackend(true);
@@ -181,45 +213,113 @@ export function DataProvider({ children }) {
   };
 
   // ── CRUD: Álbum de Lembranças (Galeria) ─────────────────────────────
-  const addGalleryItem = (itemData) => {
-      const photos = Array.isArray(itemData.photos) && itemData.photos.length > 0
-        ? itemData.photos
-        : [itemData.image].filter(Boolean);
-      const newItem = {
-        id: `gal-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        photos,
-        image: photos[0] || 'https://images.unsplash.com/photo-1516307365426-bea591f05011?q=80&w=900',
-        title: itemData.title.trim(),
-        subtitle: itemData.date || 'Lembrança Especial',
-        date: itemData.date || new Date().toISOString().split('T')[0],
+  const addGalleryItem = async (itemData) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível salvar lembranças no banco.', 'warning');
+      return;
+    }
+    const today = new Date();
+    const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const photos = Array.isArray(itemData.photos) && itemData.photos.length > 0
+      ? itemData.photos
+      : [itemData.image].filter(Boolean);
+    let albumId;
+    const createdPhotoIds = [];
+    try {
+      const createdAlbum = await albumApi.create({
+        titulo: itemData.title.trim(),
         description: itemData.description || '',
-      };
-      setGalleryItems(prev => [newItem, ...prev]);
+        date: itemData.date || localDate,
+      });
+      albumId = Number(createdAlbum.id);
+      if (!Number.isInteger(albumId) || albumId <= 0) throw new Error('O backend não retornou o ID do álbum.');
+
+      for (const [index, url] of photos.entries()) {
+        const createdPhoto = await fotosApi.create({
+          album_id: albumId,
+          url_imagem: toStoredUrl(url),
+          eh_capa: index === 0,
+        });
+        createdPhotoIds.push(Number(createdPhoto.id));
+      }
+      await reloadGallery();
       showToast('Lembrança adicionada ao álbum com sucesso!', 'success');
-      return newItem;
-    };
+    } catch (error) {
+      for (const photoId of createdPhotoIds) {
+        if (Number.isInteger(photoId) && photoId > 0) {
+          try { await fotosApi.delete(photoId); } catch (_) {}
+        }
+      }
+      if (albumId) {
+        try { await albumApi.delete(albumId); } catch (_) {}
+      }
+      try { await reloadGallery(); } catch (_) { setGalleryItems([]); }
+      showToast(error.message || 'Erro ao salvar lembrança no backend.', 'warning');
+    }
+  };
 
-    const updateGalleryItem = (id, updatedData) => {
-      setGalleryItems(prev => prev.map(item => {
-        if (item.id !== id) return item;
-        const photos = Array.isArray(updatedData.photos) && updatedData.photos.length > 0
-          ? updatedData.photos : [updatedData.image || item.image];
-        return {
-          ...item,
-          ...updatedData,
-          photos,
-          image: photos[0] || item.image,
-          subtitle: updatedData.date || item.subtitle,
-          updatedAt: new Date().toISOString()
-        };
-      }));
+  const updateGalleryItem = async (id, updatedData) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível atualizar lembranças no banco.', 'warning');
+      return;
+    }
+    const item = galleryItems.find(entry => entry.id === id || entry.apiId === id);
+    const albumId = Number(item?.apiId ?? String(id).replace(/^alb-/, ''));
+    if (!item || !Number.isInteger(albumId) || albumId <= 0) return;
+
+    const photos = Array.isArray(updatedData.photos) && updatedData.photos.length > 0
+      ? updatedData.photos
+      : [updatedData.image].filter(Boolean);
+    const desiredUrls = photos.map(toStoredUrl);
+    const unusedRecords = new Set((item.photoRecords || []).map(record => record.id));
+    try {
+      await albumApi.update(albumId, {
+        titulo: updatedData.title.trim(),
+        description: updatedData.description || '',
+        date: updatedData.date || item.date,
+      });
+
+      for (const [index, url] of desiredUrls.entries()) {
+        const matchingRecord = (item.photoRecords || []).find(record =>
+          unusedRecords.has(record.id) && record.url === url
+        );
+        const isCover = index === 0;
+        if (matchingRecord) {
+          unusedRecords.delete(matchingRecord.id);
+          if (matchingRecord.isCover !== isCover) {
+            await fotosApi.update(matchingRecord.id, { album_id: albumId, url_imagem: url, eh_capa: isCover });
+          }
+        } else {
+          await fotosApi.create({ album_id: albumId, url_imagem: url, eh_capa: isCover });
+        }
+      }
+
+      for (const recordId of unusedRecords) await fotosApi.delete(recordId);
+      await reloadGallery();
       showToast('Lembrança atualizada com sucesso!', 'info');
-    };
+    } catch (error) {
+      try { await reloadGallery(); } catch (_) { setGalleryItems([]); }
+      showToast(error.message || 'Erro ao atualizar lembrança no backend.', 'warning');
+    }
+  };
 
-  const deleteGalleryItem = (id) => {
-    setGalleryItems(prev => prev.filter(item => item.id !== id));
-    showToast('Lembrança removida do álbum.', 'warning');
+  const deleteGalleryItem = async (id) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível remover lembranças do banco.', 'warning');
+      return;
+    }
+    const item = galleryItems.find(entry => entry.id === id || entry.apiId === id);
+    const albumId = Number(item?.apiId ?? String(id).replace(/^alb-/, ''));
+    if (!item || !Number.isInteger(albumId) || albumId <= 0) return;
+    try {
+      for (const record of item.photoRecords || []) await fotosApi.delete(record.id);
+      await albumApi.delete(albumId);
+      await reloadGallery();
+      showToast('Lembrança removida do álbum.', 'warning');
+    } catch (error) {
+      try { await reloadGallery(); } catch (_) { setGalleryItems([]); }
+      showToast(error.message || 'Erro ao remover lembrança do backend.', 'warning');
+    }
   };
 
   // ── CRUD: Calendário de Ações (Integrado com Backend) ──────────
@@ -364,9 +464,8 @@ export function DataProvider({ children }) {
   };
 
   const resetToDefaultData = () => {
-    [STORAGE_KEY_GALLERY, STORAGE_KEY_BRAND, STORAGE_KEY_SPONSORS, STORAGE_KEY_TESTIMONIALS]
+    [STORAGE_KEY_BRAND, STORAGE_KEY_SPONSORS, STORAGE_KEY_TESTIMONIALS]
       .forEach(k => localStorage.removeItem(k));
-    setGalleryItems(siteData.gallery.items);
     setCalendarEvents([]);
     setBrandInfo(siteData.brand);
     setSponsors(siteData.sponsors || []);
@@ -390,6 +489,7 @@ export function DataProvider({ children }) {
 
       // Entidades
       galleryItems, calendarEvents, brandInfo, sponsors, testimonials, toast,
+      reloadGallery,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
       addCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
       addSponsor, updateSponsor, deleteSponsor,

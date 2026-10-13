@@ -28,15 +28,16 @@ export class AlbumControle {
                 albumDto.date
 
             )
-             await this.albumServico.salvar(album)
+             const id = await this.albumServico.salvar(album)
              return res.status(201).json({
-                mesage:"Album Salvo com Sucesso"
+                message:"Album Salvo com Sucesso",
+                id
              })
         }
         catch(error){
             console.log("Erro: ", error)
             return res.status(500).json({
-                mesage:"Erro ao salvar Album"
+                message:"Erro ao salvar Album"
             })
         }
 
@@ -48,13 +49,13 @@ export class AlbumControle {
             const idNumber = Number(id)
 
             const usuario = await this.albumServico.buscarporId(idNumber)
-            return res.status(201).json(usuario)
+            return res.status(200).json(usuario)
         }
         catch(error){
             console.log("Erro: ", error)
             return res.status(500).json(
                 {
-                    mesage:"Erro ao listar Album"
+                    message:"Erro ao listar Album"
                 }
             )
         }
@@ -62,13 +63,13 @@ export class AlbumControle {
     public async listar(req:Request, res:Response){
         try{
             const albuns = await this.albumServico.listar()
-            return res.status(201).json(albuns)
+            return res.status(200).json(albuns)
         }
         catch(error){
             console.log("Erro: ", error)
              return res.status(500).json(
                 {
-                    mesage:"Erro ao listar Albuns"
+                    message:"Erro ao listar Albuns"
                 }
             )
         }
@@ -87,7 +88,7 @@ export class AlbumControle {
             const album = Album.reconstruir({
                 id: idNumber,
                 titulo:albumDto.titulo,
-                description:albumDto.description,
+                description:albumDto.description || '',
                 date:albumDto.date
             })
 
@@ -100,7 +101,7 @@ export class AlbumControle {
         catch(error){
             console.log("Erro: ", error)
             return res.status(500).json({
-                mesage: "Erro ao atulizar Album"
+                message: "Erro ao atualizar Album"
             })
         }
     }
@@ -110,14 +111,14 @@ export class AlbumControle {
             const idNumber = Number(id)
 
             await this.albumServico.deletar(idNumber)
-            return res.status(201).json({
-                mesage:"Album excluido com Sucesso"
+            return res.status(200).json({
+                message:"Album excluido com Sucesso"
             })
         }
         catch(error){
             console.log("Erro: ", error)
             res.status(500).json({
-                mesage:"Erro ao excluir Album"
+                message:"Erro ao excluir Album"
             })
         }
     }

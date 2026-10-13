@@ -17,7 +17,7 @@ export class Fotos{
         data_upload:string|undefined
 
     ){
-        if(!album_id||!url_imagem||!eh_capa){
+        if(!album_id||!url_imagem||eh_capa === undefined){
             throw new Error("Campos Obrigatórios")
         }
         const props: PropsFotos = {
@@ -56,7 +56,7 @@ export class Fotos{
             album_id: this.props.album_id,
             url_imagem: this.props.url_imagem,
             eh_capa: this.props.eh_capa,
-            data_upload: this.props 
+            data_upload: this.props.data_upload
         }
     }
 }

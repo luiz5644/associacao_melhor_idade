@@ -2,12 +2,13 @@ import { conexao } from "../util/conexao";
 import { Fotos } from "../modelo/Fotos";
 
 export class FotosDao{
-    public async salvar(fotos:Fotos): Promise<void>{
+    public async salvar(fotos:Fotos): Promise<number>{
         try{
-            const [rows]: any = await conexao.query(
+            const [result]: any = await conexao.query(
                 'insert into fotos_lembranca (album_id,url_imagem,eh_capa) values (?,?,?)',
                 [fotos.album_id,fotos.url_imagem,fotos.eh_capa]
             )
+            return result.insertId;
         }
         catch(error){
             console.log("Erro: ", error)
