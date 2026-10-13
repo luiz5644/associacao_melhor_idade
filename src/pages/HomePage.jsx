@@ -6,7 +6,7 @@ import { useData } from '../context/DataContext';
 
 export default function HomePage({ onNavigate, onOpenDonation, onOpenSponsorModal, onSelectPhoto }) {
   const { home } = siteData;
-  const { calendarEvents, backendConnected, backendLoading } = useData();
+  const { calendarEvents, galleryItems, backendConnected, backendLoading } = useData();
   const upcomingEvents = useMemo(() => {
     if (!backendConnected || backendLoading) return [];
 
@@ -40,6 +40,14 @@ export default function HomePage({ onNavigate, onOpenDonation, onOpenSponsorModa
       description: event.desc
     }));
   }, [calendarEvents, backendConnected, backendLoading]);
+  const recentMomentItems = useMemo(() => {
+    if (!backendConnected || backendLoading) return [];
+
+    return galleryItems
+      .filter(item => item.image && item.photos?.length > 0)
+      .sort((a, b) => b.date.localeCompare(a.date) || Number(b.apiId) - Number(a.apiId))
+      .slice(0, 3);
+  }, [galleryItems, backendConnected, backendLoading]);
 
   return (
     <div className="home-page">
@@ -133,7 +141,9 @@ export default function HomePage({ onNavigate, onOpenDonation, onOpenSponsorModa
           </div>
 
           <div className="cards-grid-3">
-            {home.recentMoments.items.map((item) => (
+            {recentMomentItems.length === 0 ? (
+              <p>Nenhum momento cadastrado ainda.</p>
+            ) : recentMomentItems.map((item) => (
               <div 
                 key={item.id} 
                 className="moment-card"

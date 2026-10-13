@@ -238,6 +238,47 @@ export const uploadApi = {
   },
 };
 
+const DEFAULT_SPONSOR_LOGO = 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop';
+
+export const patrocinadoresApi = {
+  list: async () => unpackList<any>(await fetchApi<any[]>('/patrocinadores')),
+  create: async (data: any) => fetchApi<{ message: string; id: number }>('/patrocinadores', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  getById: async (id: number) => unpackProps<any>(await fetchApi<any>(`/patrocinadores/${id}`)),
+  update: async (id: number, data: any) => fetchApi<{ message: string }>(`/patrocinadores/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  delete: async (id: number) => fetchApi<{ message: string }>(`/patrocinadores/${id}`, { method: 'DELETE' }),
+};
+
+export function adaptSponsorToFrontend(input: any) {
+  const row = unpackProps<any>(input);
+  return {
+    id: `spn-${row.id}`,
+    apiId: Number(row.id),
+    name: row.nome || '',
+    logo: row.logo ? resolveImageUrl(row.logo) : DEFAULT_SPONSOR_LOGO,
+    websiteUrl: row.websiteUrl || '',
+    description: row.description || '',
+    active: Boolean(row.active),
+  };
+}
+
+export function adaptSponsorToBackend(front: any) {
+  const logo = front.logo && front.logo !== DEFAULT_SPONSOR_LOGO ? toStoredUrl(front.logo) : null;
+  return {
+    nome: front.name ? front.name.trim() : '',
+    logo,
+    category: null,
+    websiteUrl: front.websiteUrl || null,
+    description: front.description ? front.description.trim() : null,
+    active: front.active !== undefined ? Boolean(front.active) : true,
+  };
+}
+
 export function resolveImageUrl(url: string): string {
   return url?.startsWith('/uploads/') ? `${API_BASE}${url}` : (url || '');
 }

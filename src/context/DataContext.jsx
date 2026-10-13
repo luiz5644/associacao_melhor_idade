@@ -9,11 +9,13 @@ import {
   adaptAcaoToFrontend,
   adaptAcaoToBackend,
   adaptAlbumToFrontend,
+  patrocinadoresApi,
+  adaptSponsorToFrontend,
+  adaptSponsorToBackend,
   toStoredUrl,
 } from '../services/api';
 
 const STORAGE_KEY_BRAND = 'ami_brand_info_v1';
-const STORAGE_KEY_SPONSORS = 'ami_sponsors_v1';
 const STORAGE_KEY_TESTIMONIALS = 'ami_testimonials_v1';
 
 const DataContext = createContext(null);
@@ -38,13 +40,7 @@ export function DataProvider({ children }) {
     return siteData.brand;
   });
 
-  const [sponsors, setSponsors] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_SPONSORS);
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
-    return siteData.sponsors || [];
-  });
+  const [sponsors, setSponsors] = useState([]);
 
   const [testimonials, setTestimonials] = useState(() => {
     try {
@@ -64,6 +60,7 @@ export function DataProvider({ children }) {
   // Limpa os exemplos de galeria salvos por versões anteriores.
   useEffect(() => {
     localStorage.removeItem('ami_gallery_items_v1');
+    localStorage.removeItem('ami_sponsors_v1');
   }, []);
 
   const loadGalleryFromBackend = useCallback(async () => {
@@ -93,6 +90,26 @@ export function DataProvider({ children }) {
     }
   }, [backendConnected, loadGalleryFromBackend]);
 
+  const loadSponsorsFromBackend = useCallback(async () => {
+    const records = await patrocinadoresApi.list();
+    return records.map(adaptSponsorToFrontend);
+  }, []);
+
+  const reloadSponsors = useCallback(async () => {
+    if (!backendConnected) {
+      setSponsors([]);
+      return [];
+    }
+    try {
+      const records = await loadSponsorsFromBackend();
+      setSponsors(records);
+      return records;
+    } catch (error) {
+      setSponsors([]);
+      throw error;
+    }
+  }, [backendConnected, loadSponsorsFromBackend]);
+
   useEffect(() => {
     localStorage.removeItem('ami_calendar_events_v1');
     localStorage.removeItem('ami_calendar_highlights_v1');
@@ -101,10 +118,6 @@ export function DataProvider({ children }) {
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY_BRAND, JSON.stringify(brandInfo)); } catch (_) {}
   }, [brandInfo]);
-
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(sponsors)); } catch (_) {}
-  }, [sponsors]);
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY_TESTIMONIALS, JSON.stringify(testimonials)); } catch (_) {}
@@ -125,6 +138,13 @@ export function DataProvider({ children }) {
           console.warn('[Backend] Erro ao carregar álbuns e fotos:', err);
         }
 
+        try {
+          setSponsors(await loadSponsorsFromBackend());
+        } catch (err) {
+          setSponsors([]);
+          console.warn('[Backend] Erro ao carregar patrocinadores:', err);
+        }
+
         // Carrega ações do calendário do backend
         try {
           const acoesData = await acoesApi.list();
@@ -140,6 +160,7 @@ export function DataProvider({ children }) {
       } else {
         setGalleryItems([]);
         setCalendarEvents([]);
+        setSponsors([]);
         if (!silent) {
           showToast('Backend offline. Operando em modo de dados locais.', 'info');
         }
@@ -148,13 +169,14 @@ export function DataProvider({ children }) {
       setBackendConnected(false);
       setGalleryItems([]);
       setCalendarEvents([]);
+      setSponsors([]);
       if (!silent) {
         showToast('Backend inacessível. Usando armazenamento local.', 'info');
       }
     } finally {
       setBackendLoading(false);
     }
-  }, [loadGalleryFromBackend, showToast]);
+  }, [loadGalleryFromBackend, loadSponsorsFromBackend, showToast]);
 
   useEffect(() => {
     checkAndSyncBackend(true);
@@ -387,39 +409,67 @@ export function DataProvider({ children }) {
   };
 
   // ── CRUD: Patrocinadores & Parceiros ─────────────────────────────
-  const addSponsor = (sponsorData) => {
-      const newSponsor = {
-        id: `sp-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        name: sponsorData.name.trim(),
-        logo: sponsorData.logo || 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop',
-        websiteUrl: sponsorData.websiteUrl ? (sponsorData.websiteUrl.startsWith('http') ? sponsorData.websiteUrl : `https://${sponsorData.websiteUrl}`) : '',
-        description: sponsorData.description ? sponsorData.description.trim() : '',
-        active: sponsorData.active !== undefined ? Boolean(sponsorData.active) : true
-      };
-      setSponsors(prev => [newSponsor, ...prev]);
-      showToast(`Patrocinador "${newSponsor.name}" cadastrado com sucesso!`, 'success');
-      return newSponsor;
+  const addSponsor = async (sponsorData) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível cadastrar patrocinador no banco.', 'warning');
+      return;
+    }
+    const normalized = {
+      ...sponsorData,
+      name: sponsorData.name.trim(),
+      websiteUrl: sponsorData.websiteUrl ? (sponsorData.websiteUrl.startsWith('http') ? sponsorData.websiteUrl : `https://${sponsorData.websiteUrl}`) : '',
+      description: sponsorData.description ? sponsorData.description.trim() : '',
+      active: sponsorData.active !== undefined ? Boolean(sponsorData.active) : true,
     };
+    try {
+      await patrocinadoresApi.create(adaptSponsorToBackend(normalized));
+      await reloadSponsors();
+      showToast(`Patrocinador "${normalized.name}" cadastrado com sucesso!`, 'success');
+    } catch (error) {
+      showToast(error.message || 'Erro ao cadastrar patrocinador no backend.', 'warning');
+    }
+  };
 
-    const updateSponsor = (id, updatedData) => {
-      setSponsors(prev => prev.map(sp => {
-        if (sp.id !== id) return sp;
-        return {
-          ...sp,
-          ...updatedData,
-          name: updatedData.name ? updatedData.name.trim() : sp.name,
-          websiteUrl: updatedData.websiteUrl ? (updatedData.websiteUrl.startsWith('http') ? updatedData.websiteUrl : `https://${updatedData.websiteUrl}`) : '',
-          description: updatedData.description !== undefined ? updatedData.description.trim() : sp.description,
-          updatedAt: new Date().toISOString()
-        };
-      }));
+  const updateSponsor = async (id, updatedData) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível atualizar patrocinador no banco.', 'warning');
+      return;
+    }
+    const current = sponsors.find(sponsor => sponsor.id === id || sponsor.apiId === id);
+    const apiId = Number(current?.apiId ?? String(id).replace(/^spn-/, ''));
+    if (!current || !Number.isInteger(apiId) || apiId <= 0) return;
+    const normalized = {
+      ...current,
+      ...updatedData,
+      name: updatedData.name ? updatedData.name.trim() : current.name,
+      websiteUrl: updatedData.websiteUrl ? (updatedData.websiteUrl.startsWith('http') ? updatedData.websiteUrl : `https://${updatedData.websiteUrl}`) : '',
+      description: updatedData.description !== undefined ? updatedData.description.trim() : current.description,
+      active: updatedData.active !== undefined ? Boolean(updatedData.active) : current.active,
+    };
+    try {
+      await patrocinadoresApi.update(apiId, adaptSponsorToBackend(normalized));
+      await reloadSponsors();
       showToast('Dados do patrocinador atualizados com sucesso!', 'info');
-    };
+    } catch (error) {
+      showToast(error.message || 'Erro ao atualizar patrocinador no backend.', 'warning');
+    }
+  };
 
-  const deleteSponsor = (id) => {
-    setSponsors(prev => prev.filter(sp => sp.id !== id));
-    showToast('Patrocinador removido com sucesso.', 'warning');
+  const deleteSponsor = async (id) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível remover patrocinador do banco.', 'warning');
+      return;
+    }
+    const current = sponsors.find(sponsor => sponsor.id === id || sponsor.apiId === id);
+    const apiId = Number(current?.apiId ?? String(id).replace(/^spn-/, ''));
+    if (!current || !Number.isInteger(apiId) || apiId <= 0) return;
+    try {
+      await patrocinadoresApi.delete(apiId);
+      await reloadSponsors();
+      showToast('Patrocinador removido com sucesso.', 'warning');
+    } catch (error) {
+      showToast(error.message || 'Erro ao remover patrocinador do backend.', 'warning');
+    }
   };
 
   // ── CRUD: Depoimentos ─────────────────────────────────────────────
@@ -464,11 +514,10 @@ export function DataProvider({ children }) {
   };
 
   const resetToDefaultData = () => {
-    [STORAGE_KEY_BRAND, STORAGE_KEY_SPONSORS, STORAGE_KEY_TESTIMONIALS]
+    [STORAGE_KEY_BRAND, STORAGE_KEY_TESTIMONIALS]
       .forEach(k => localStorage.removeItem(k));
     setCalendarEvents([]);
     setBrandInfo(siteData.brand);
-    setSponsors(siteData.sponsors || []);
     setTestimonials(siteData.testimonials.items);
     showToast('Dados restaurados para o padrão original!', 'info');
   };

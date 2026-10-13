@@ -39,26 +39,6 @@ export const siteData = {
       tag: "GALERIA",
       title: "Momentos Recentes",
       subtitle: "Espie a alegria que contagia nossas tardes de encontro, festividades e excursões.",
-      items: [
-        {
-          id: "rec-1",
-          image: "https://images.unsplash.com/photo-1545232979-fbf6c1417ca9?q=80&w=800&auto=format&fit=crop", // Baile forró idosos
-          title: "Forró da Melhor Idade",
-          subtitle: "Casais dançando sorridentes"
-        },
-        {
-          id: "rec-2",
-          image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop", // Coral / canto
-          title: "Nosso Coral do Bairro",
-          subtitle: "Apresentação no teatro municipal"
-        },
-        {
-          id: "rec-3",
-          image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=800&auto=format&fit=crop", // Viagem em grupo montanhas
-          title: "Viagem para Campos do Jordão",
-          subtitle: "Excursão de inverno divertida"
-        }
-      ]
     },
     cta: {
       title: "Ajude-nos a manter essa chama acesa!",
@@ -236,43 +216,4 @@ export const siteData = {
       }
     ]
   },
-
-  // 7. PATROCINADORES & PARCEIROS
-    sponsors: [
-      {
-        id: "sp-1",
-        name: "Farmácia São Lucas",
-        websiteUrl: "https://farmaciasaolucas.com.br",
-        logo: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=400&auto=format&fit=crop",
-        description: "Apoio com aferição de pressão e medicamentos essenciais para nossos encontros semanais."
-      },
-      {
-        id: "sp-2",
-        name: "Clínica Longevidade Ativa",
-        websiteUrl: "https://clinicalongevidade.med.br",
-        logo: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=400&auto=format&fit=crop",
-        description: "Oferece palestras preventivas sobre mobilidade, fisioterapia e saúde mental."
-      },
-      {
-        id: "sp-3",
-        name: "Supermercado Central das Flores",
-        websiteUrl: "https://centraldasflores.com.br",
-        logo: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?q=80&w=400&auto=format&fit=crop",
-        description: "Doação semanal de frutas frescas e insumos para o nosso café da tarde comunitário."
-      },
-      {
-        id: "sp-4",
-        name: "Padaria Pão & Afeto",
-        websiteUrl: "https://paoeafeto.com.br",
-        logo: "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop",
-        description: "Fornecedora dos quitutes, pães artesanais e bolos das nossas festividades e forrós."
-      },
-      {
-        id: "sp-5",
-        name: "Ótica & Saúde Visual",
-        websiteUrl: "https://oticavisaoreal.com.br",
-        logo: "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?q=80&w=400&auto=format&fit=crop",
-        description: "Parceria em exames visuais periódicos e condições especiais para nossos associados."
-      }
-    ]
-  };
+};

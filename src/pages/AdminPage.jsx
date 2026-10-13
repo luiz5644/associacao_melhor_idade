@@ -404,6 +404,7 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
 
 // ── Formulário de Patrocinador (Modal) ──────────────────────────────────────
 function SponsorFormModal({ isOpen, item, onSave, onClose }) {
+  const { backendConnected, showToast } = useData();
   const fileRef = useRef(null);
   const [form, setForm] = useState({
     name: '',
@@ -441,14 +442,30 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
 
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setField('logo', ev.target.result);
-    };
-    reader.readAsDataURL(file);
+    if (!file.type.startsWith('image/')) {
+      showToast('Selecione um arquivo de imagem válido.', 'warning');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('A imagem deve ter no máximo 5 MB.', 'warning');
+      e.target.value = '';
+      return;
+    }
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível enviar a logo agora.', 'warning');
+      e.target.value = '';
+      return;
+    }
+    try {
+      const url = await uploadApi.upload(file);
+      setField('logo', resolveImageUrl(url));
+    } catch (error) {
+      showToast(error.message || 'Não foi possível enviar a logo.', 'warning');
+    }
     e.target.value = '';
   };
 
