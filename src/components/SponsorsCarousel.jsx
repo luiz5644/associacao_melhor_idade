@@ -137,9 +137,9 @@ export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation })
             </span>
             <h2 className="page-title">Empresas que Abraçam a Nossa Causa</h2>
             <p className="page-subtitle">
-              Agradecemos de coração às empresas e comércios amigos que investem no bem-estar, 
-              alimentação e atividades culturais dos nossos idosos.
-            </p>
+                          Agradecemos de coração às empresas e comércios amigos que investem no bem-estar, 
+                          alimentação e ações culturais dos nossos idosos.
+                        </p>
           </div>
         </div>
 

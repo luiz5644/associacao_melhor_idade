@@ -18,8 +18,8 @@ export class AcoesDao {
                 ]
             );
         } catch (error) {
-            console.log("Erro ao salvar Atividade:", error);
-            throw new Error("Erro ao salvar atividade");
+            console.log("Erro ao salvar ação:", error);
+            throw new Error("Erro ao salvar ação");
         }
     }
 
@@ -37,8 +37,8 @@ export class AcoesDao {
                 is_highlight: Boolean(rows[0].is_highlight)
             });
         } catch (error) {
-            console.log("Erro ao buscar atividade:", error);
-            throw new Error("Erro ao buscar Atividade");
+            console.log("Erro ao buscar ação:", error);
+            throw new Error("Erro ao buscar ação");
         }
     }
 
@@ -52,8 +52,8 @@ export class AcoesDao {
                 is_highlight: Boolean(r.is_highlight)
             }));
         } catch (error) {
-            console.log("Erro ao listar atividades:", error);
-            throw new Error("Erro ao listar atividades");
+            console.log("Erro ao listar ações:", error);
+            throw new Error("Erro ao listar ações");
         }
     }
 
@@ -74,11 +74,11 @@ export class AcoesDao {
                 ]
             );
             if (result.affectedRows === 0) {
-                throw new Error("Atividade não encontrada");
+                throw new Error("Ação não encontrada");
             }
         } catch (error) {
-            console.log("Erro ao atualizar atividade:", error);
-            throw new Error("Erro ao atualizar atividade");
+            console.log("Erro ao atualizar ação:", error);
+            throw new Error("Erro ao atualizar ação");
         }
     }
 
@@ -89,14 +89,11 @@ export class AcoesDao {
                 [id]
             );
             if (result.affectedRows === 0) {
-                throw new Error("Atividade não encontrada");
+                throw new Error("Ação não encontrada");
             }
         } catch (error) {
-            console.log("Erro ao deletar Atividade:", error);
-            throw new Error("Erro ao deletar Atividade");
+            console.log("Erro ao deletar ação:", error);
+            throw new Error("Erro ao deletar ação");
         }
     }
-
-    // Corrigido para retornar instâncias de Atividades[]
-
 }

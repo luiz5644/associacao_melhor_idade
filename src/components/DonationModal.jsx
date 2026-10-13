@@ -257,7 +257,7 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
                     <option value="Patrocinador Ouro">Patrocinador Ouro (Apoio Master)</option>
                     <option value="Patrocinador Prata">Patrocinador Prata (Apoio Mensal)</option>
                     <option value="Apoiador Comunitário">Apoiador Comunitário (Lanches & Quitutes)</option>
-                    <option value="Parceiro Saúde">Parceiro Saúde / Atividades Físicas</option>
+                    <option value="Parceiro Saúde">Parceiro Saúde / Ações Físicas</option>
                   </select>
                 </div>
 

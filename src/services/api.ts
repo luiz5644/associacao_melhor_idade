@@ -42,7 +42,7 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    let errorMsg = data.message || data.mesage;
+    let errorMsg = data.message;
     if (!errorMsg && Array.isArray(data)) {
       errorMsg = data
         .map((e: any) => Object.values(e.constraints || {}).join(', '))
@@ -62,7 +62,7 @@ export async function checkBackendHealth(): Promise<boolean> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2500);
-    const res = await fetch(`${API_BASE}/categoria`, {
+    const res = await fetch(`${API_BASE}/health`, {
       method: 'GET',
       signal: controller.signal,
     });
@@ -138,51 +138,10 @@ export const adminApi = {
 };
 
 // ============================================
-// CATEGORIAS CALENDÁRIO
+// AÇÕES (CALENDÁRIO)
 // ============================================
-export interface CategoriaCalendario {
+export interface Acao {
   id: number;
-  nome: string;
-}
-
-export const categoriaApi = {
-  list: async (): Promise<CategoriaCalendario[]> => {
-    const data = await fetchApi<any[]>('/categoria');
-    return unpackList<CategoriaCalendario>(data);
-  },
-
-  create: async (nome: string): Promise<{ message: string }> => {
-    return fetchApi('/categoria', {
-      method: 'POST',
-      body: JSON.stringify({ nome }),
-    });
-  },
-
-  getById: async (id: number): Promise<CategoriaCalendario> => {
-    const data = await fetchApi<any>(`/categoria/${id}`);
-    return unpackProps<CategoriaCalendario>(data);
-  },
-
-  update: async (id: number, nome: string): Promise<{ message: string }> => {
-    return fetchApi(`/categoria/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ nome }),
-    });
-  },
-
-  delete: async (id: number): Promise<{ message: string }> => {
-    return fetchApi(`/categoria/${id}`, {
-      method: 'DELETE',
-    });
-  },
-};
-
-// ============================================
-// ATIVIDADES (CALENDÁRIO)
-// ============================================
-export interface Atividade {
-  id: number;
-  categoria_id: number;
   titulo: string;
   desc: string;
   data_completa: string; // YYYY-MM-DD
@@ -190,11 +149,9 @@ export interface Atividade {
   local: string;
   is_highlight: boolean;
   status: 'ativo' | 'cancelado' | string;
-  categoria_nome?: string;
 }
 
-export interface AtividadeCreate {
-  categoria_id: number;
+export interface AcaoCreate {
   titulo: string;
   desc: string;
   data_completa: string;
@@ -204,9 +161,8 @@ export interface AtividadeCreate {
   status: string;
 }
 
-export interface AtividadeUpdate {
+export interface AcaoUpdate {
   id: number;
-  categoria_id?: number;
   titulo?: string;
   desc?: string;
   data_completa?: string;
@@ -216,40 +172,35 @@ export interface AtividadeUpdate {
   status?: string;
 }
 
-export const atividadeApi = {
-  list: async (): Promise<Atividade[]> => {
-    const data = await fetchApi<any[]>('/atividades');
-    return unpackList<Atividade>(data);
+export const acoesApi = {
+  list: async (): Promise<Acao[]> => {
+    const data = await fetchApi<any[]>('/acoes');
+    return unpackList<Acao>(data);
   },
 
-  create: async (data: AtividadeCreate): Promise<{ message: string }> => {
-    return fetchApi('/atividades', {
+  create: async (data: AcaoCreate): Promise<{ message: string }> => {
+    return fetchApi('/acoes', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  getById: async (id: number): Promise<Atividade> => {
-    const data = await fetchApi<any>(`/atividades/${id}`);
-    return unpackProps<Atividade>(data);
+  getById: async (id: number): Promise<Acao> => {
+    const data = await fetchApi<any>(`/acoes/${id}`);
+    return unpackProps<Acao>(data);
   },
 
-  update: async (id: number, data: Partial<AtividadeUpdate>): Promise<{ message: string }> => {
-    return fetchApi(`/atividades/${id}`, {
+  update: async (id: number, data: Partial<AcaoUpdate>): Promise<{ message: string }> => {
+    return fetchApi(`/acoes/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ ...data, id }),
     });
   },
 
   delete: async (id: number): Promise<{ message: string }> => {
-    return fetchApi(`/atividades/${id}`, {
+    return fetchApi(`/acoes/${id}`, {
       method: 'DELETE',
     });
-  },
-
-  listByCategoria: async (categoriaId: number): Promise<Atividade[]> => {
-    const data = await fetchApi<any[]>(`/atividades/categoria/${categoriaId}`);
-    return unpackList<Atividade>(data);
   },
 };
 
@@ -257,8 +208,8 @@ export const atividadeApi = {
 // ADAPTADORES FRONTEND <-> BACKEND
 // ============================================
 
-export function adaptAtividadeToFrontend(raw: any, categories: CategoriaCalendario[] = []): any {
-  const api = unpackProps<Atividade>(raw);
+export function adaptAcaoToFrontend(raw: any): any {
+  const api = unpackProps<Acao>(raw);
   let year = 2026;
   let month = 9;
   let day = 1;
@@ -272,22 +223,14 @@ export function adaptAtividadeToFrontend(raw: any, categories: CategoriaCalendar
     }
   }
 
-  let categoryName = api.categoria_nome;
-  if (!categoryName && categories.length > 0) {
-    const found = categories.find(c => c.id === api.categoria_id);
-    if (found) categoryName = found.nome;
-  }
-
   return {
     id: `cal-${api.id}`,
     apiId: api.id,
-    categoria_id: api.categoria_id,
     year,
     month,
     day,
     time: api.horario ? String(api.horario).substring(0, 5) : '14:00',
     title: api.titulo || '',
-    category: categoryName || 'Lazer',
     desc: api.desc || '',
     location: api.local || 'Sede da Associação',
     isHighlight: Boolean(api.is_highlight),
@@ -295,30 +238,14 @@ export function adaptAtividadeToFrontend(raw: any, categories: CategoriaCalendar
   };
 }
 
-export function adaptAtividadeToBackend(front: any, categories: CategoriaCalendario[] = []): AtividadeCreate {
+export function adaptAcaoToBackend(front: any): AcaoCreate {
   const month = (front.month !== undefined ? parseInt(front.month, 10) : 9) + 1; // 0-11 -> 1-12
   const day = parseInt(front.day, 10) || 1;
   const year = parseInt(front.year, 10) || 2026;
   const data_completa = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
-  let categoria_id = typeof front.categoria_id === 'number' ? front.categoria_id : undefined;
-
-  if (!categoria_id && front.category) {
-    const match = categories.find(
-      c => c.nome.toLowerCase() === String(front.category).toLowerCase()
-    );
-    if (match) {
-      categoria_id = match.id;
-    }
-  }
-
-  if (!categoria_id) {
-    categoria_id = categories.length > 0 && categories[0]?.id ? categories[0].id : 1;
-  }
-
   return {
-    categoria_id,
-    titulo: front.title ? front.title.trim() : 'Atividade Comunitária',
+    titulo: front.title ? front.title.trim() : 'Ação Comunitária',
     desc: front.desc ? front.desc.trim() : '',
     data_completa,
     horario: front.time ? front.time.substring(0, 5) : '14:00',

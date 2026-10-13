@@ -13,41 +13,38 @@ export const siteData = {
   },
 
   // 1. TELA INÍCIO
-  home: {
-    hero: {
-      tag: "SEJA BEM-VINDO(A) À NOSSA CASA",
-      title: "A vida recomeça todos os dias com afeto e amizade.",
-      description: "A Associação Melhor Idade é um espaço acolhedor e vibrante em nossa comunidade, promovendo encontros, atividades saudáveis e resgatando histórias de vida.",
-      image: "https://images.unsplash.com/photo-1516307365426-bea591f05011?q=80&w=1200&auto=format&fit=crop" // Idosos felizes em parque celebrando
-    },
-    upcoming: {
-      tag: "CALENDÁRIO DO IDOSO",
-      title: "Próximos Encontros",
-      subtitle: "Fique por dentro das atividades de destaque desta semana e participe com a gente!",
-      items: [
-        {
-          id: "forro-1",
-          day: "Sex, 14:00",
-          category: "Música",
-          title: "Forró da Melhor Idade",
-          description: "Nossa tarde mais animada com música ao vivo, comidinhas típicas e muito arrasta-pé."
-        },
-        {
-          id: "coral-1",
-          day: "Ter, 09:00",
-          category: "Coral",
-          title: "Ensaio Geral do Coral",
-          description: "Afinando as vozes e corações para as apresentações festivas de fim de ano."
-        },
-        {
-          id: "caminhada-1",
-          day: "Quinta, 08:30",
-          category: "Saúde",
-          title: "Caminhada Ecológica",
-          description: "Passeio leve pelo parque local acompanhado por um instrutor físico."
-        }
-      ]
-    },
+    home: {
+      hero: {
+        tag: "SEJA BEM-VINDO(A) À NOSSA CASA",
+        title: "A vida recomeça todos os dias com afeto e amizade.",
+        description: "A Associação Melhor Idade é um espaço acolhedor e vibrante em nossa comunidade, promovendo encontros, atividades saudáveis e resgatando histórias de vida.",
+        image: "https://images.unsplash.com/photo-1516307365426-bea591f05011?q=80&w=1200&auto=format&fit=crop" // Idosos felizes em parque celebrando
+      },
+      upcoming: {
+        tag: "CALENDÁRIO DO IDOSO",
+        title: "Próximos Encontros",
+        subtitle: "Fique por dentro das ações de destaque desta semana e participe com a gente!",
+        items: [
+          {
+            id: "forro-1",
+            day: "Sex, 14:00",
+            title: "Forró da Melhor Idade",
+            description: "Nossa tarde mais animada com música ao vivo, comidinhas típicas e muito arrasta-pé."
+          },
+          {
+            id: "coral-1",
+            day: "Ter, 09:00",
+            title: "Ensaio Geral do Coral",
+            description: "Afinando as vozes e corações para as apresentações festivas de fim de ano."
+          },
+          {
+            id: "caminhada-1",
+            day: "Quinta, 08:30",
+            title: "Caminhada Ecológica",
+            description: "Passeio leve pelo parque local acompanhado por um instrutor físico."
+          }
+        ]
+      },
     historyTeaser: {
       tag: "HISTÓRIA",
       title: "Nossa Caminhada",
@@ -341,46 +338,41 @@ export const siteData = {
   },
 
   // 7. PATROCINADORES & PARCEIROS
-  sponsors: [
-    {
-      id: "sp-1",
-      name: "Farmácia São Lucas",
-      category: "Patrocinador Ouro",
-      websiteUrl: "https://farmaciasaolucas.com.br",
-      logo: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=400&auto=format&fit=crop",
-      description: "Apoio com aferição de pressão e medicamentos essenciais para nossos encontros semanais."
-    },
-    {
-      id: "sp-2",
-      name: "Clínica Longevidade Ativa",
-      category: "Parceiro Saúde",
-      websiteUrl: "https://clinicalongevidade.med.br",
-      logo: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=400&auto=format&fit=crop",
-      description: "Oferece palestras preventivas sobre mobilidade, fisioterapia e saúde mental."
-    },
-    {
-      id: "sp-3",
-      name: "Supermercado Central das Flores",
-      category: "Patrocinador Prata",
-      websiteUrl: "https://centraldasflores.com.br",
-      logo: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?q=80&w=400&auto=format&fit=crop",
-      description: "Doação semanal de frutas frescas e insumos para o nosso café da tarde comunitário."
-    },
-    {
-      id: "sp-4",
-      name: "Padaria Pão & Afeto",
-      category: "Apoiador Comunitário",
-      websiteUrl: "https://paoeafeto.com.br",
-      logo: "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop",
-      description: "Fornecedora dos quitutes, pães artesanais e bolos das nossas festividades e forrós."
-    },
-    {
-      id: "sp-5",
-      name: "Ótica & Saúde Visual",
-      category: "Apoiador Local",
-      websiteUrl: "https://oticavisaoreal.com.br",
-      logo: "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?q=80&w=400&auto=format&fit=crop",
-      description: "Parceria em exames visuais periódicos e condições especiais para nossos associados."
-    }
-  ]
-};
+    sponsors: [
+      {
+        id: "sp-1",
+        name: "Farmácia São Lucas",
+        websiteUrl: "https://farmaciasaolucas.com.br",
+        logo: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=400&auto=format&fit=crop",
+        description: "Apoio com aferição de pressão e medicamentos essenciais para nossos encontros semanais."
+      },
+      {
+        id: "sp-2",
+        name: "Clínica Longevidade Ativa",
+        websiteUrl: "https://clinicalongevidade.med.br",
+        logo: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=400&auto=format&fit=crop",
+        description: "Oferece palestras preventivas sobre mobilidade, fisioterapia e saúde mental."
+      },
+      {
+        id: "sp-3",
+        name: "Supermercado Central das Flores",
+        websiteUrl: "https://centraldasflores.com.br",
+        logo: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?q=80&w=400&auto=format&fit=crop",
+        description: "Doação semanal de frutas frescas e insumos para o nosso café da tarde comunitário."
+      },
+      {
+        id: "sp-4",
+        name: "Padaria Pão & Afeto",
+        websiteUrl: "https://paoeafeto.com.br",
+        logo: "https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=400&auto=format&fit=crop",
+        description: "Fornecedora dos quitutes, pães artesanais e bolos das nossas festividades e forrós."
+      },
+      {
+        id: "sp-5",
+        name: "Ótica & Saúde Visual",
+        websiteUrl: "https://oticavisaoreal.com.br",
+        logo: "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?q=80&w=400&auto=format&fit=crop",
+        description: "Parceria em exames visuais periódicos e condições especiais para nossos associados."
+      }
+    ]
+  };

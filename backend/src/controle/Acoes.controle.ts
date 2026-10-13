@@ -21,7 +21,7 @@ export class AcoesControle{
             if(erros.length>0){
                 return res.status(400).json(erros)
             }
-           const atividade = Acoes.construir(
+           const acao = Acoes.construir(
                acoesDto.id,
                acoesDto.titulo,
                acoesDto.desc,
@@ -32,42 +32,42 @@ export class AcoesControle{
                acoesDto.status
             );
 
-            await this.acoesServico.salvar(atividade)
-            return res.status(201).json({ mensage: "Ação salva com sucesso!" });
+            await this.acoesServico.salvar(acao)
+            return res.status(201).json({ message: "Ação salva com sucesso!" });
         }
         catch (error){
             console.log("Erro ao salvar Ação", error)
-            return res.status(400).json({mensage: "Erro ao salvar Ação"})
+            return res.status(500).json({ message: "Erro ao salvar ação" })
         }
     }
+
     public async buscarporId(req: Request, res: Response){
         try{
             const id = req.params.id
             const idNumber = Number(id)
-            const acao= await this.acoesServico.buscarPorId(idNumber)
-            return res.status(201).json(acao)
-
+            const acao = await this.acoesServico.buscarPorId(idNumber)
+            if (!acao) {
+                return res.status(404).json({ message: "Ação não encontrada" })
+            }
+            return res.status(200).json(acao)
         }
         catch(error){
             console.log("Erro ao buscar Ação", error)
-            return res.status(500).json({
-                mesage: "Erro ao buscar Ação"
-            })
+            return res.status(500).json({ message: "Erro ao buscar ação" })
         }
     }
+
     public async listar(req: Request, res: Response){
         try{
             const acoes = await this.acoesServico.listar()
             return res.status(200).json(acoes)
         }
         catch(error){
-            console.log("Erro ao listar Açoes", error)
-            res.status(500).json({
-                mesage:"Erro ao listar Ações"
-            })
+            console.log("Erro ao listar Ações", error)
+            res.status(500).json({ message: "Erro ao listar ações" })
         }
-        
     }
+
     public async atualizar(req:Request, res:Response){
         try{
             const id = req.params.id
@@ -78,26 +78,22 @@ export class AcoesControle{
                 return res.status(400).json(erros)
             }
 
-            const atividade = Acoes.reconstruir({
-     id: idNumber,
-    titulo: acoesDto.titulo!,
-    desc: acoesDto.desc!,
-    data_completa: acoesDto.data_completa!,
-    horario: acoesDto.horario!,
-    local: acoesDto.local!,
-    is_highlight: acoesDto.is_highlight!,
-    status: acoesDto.status!
-});
-            await this.acoesServico.atualizar(atividade)
-            return res.status(201).json({
-                mesage: "Atividade atualizada com sucesso"
-            })
+            const acao = Acoes.reconstruir({
+                id: idNumber,
+                titulo: acoesDto.titulo!,
+                desc: acoesDto.desc!,
+                data_completa: acoesDto.data_completa!,
+                horario: acoesDto.horario!,
+                local: acoesDto.local!,
+                is_highlight: acoesDto.is_highlight!,
+                status: acoesDto.status!
+            });
+            await this.acoesServico.atualizar(acao)
+            return res.status(200).json({ message: "Ação atualizada com sucesso" })
         }
         catch(error){
-            console.log("Erro ao atualizar Ações")
-              return res.status(500).json({
-                mesage: "Erro ao atualizar Ações"
-            })
+            console.log("Erro ao atualizar Ação")
+            return res.status(500).json({ message: "Erro ao atualizar ação" })
         }
     }
     
@@ -106,20 +102,11 @@ export class AcoesControle{
             const id = req.params.id
             const idNumber = Number(id)
             await this.acoesServico.deletar(idNumber)
-            return res.status(201).json(
-                {
-                    mesage: "Atividade Atualizada com Sucesso"
-                }
-            )
+            return res.status(200).json({ message: "Ação excluída com sucesso" })
         }
         catch(error){
-            console.log("Erro ao excluir atividade", error)
-            return res.status(500).json({
-                mesage:"Erro ao excluir atividade"
-            })
+            console.log("Erro ao excluir ação", error)
+            return res.status(500).json({ message: "Erro ao excluir ação" })
         }
-
     }
-    
-
 }

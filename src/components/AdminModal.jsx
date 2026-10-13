@@ -156,7 +156,7 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
 
               <form onSubmit={handleCreateEvent}>
                 <div className="form-group">
-                  <label className="form-label">Nome da Atividade / Encontro</label>
+                  <label className="form-label">Nome da Ação / Encontro</label>
                   <input 
                     type="text" 
                     className="form-input" 

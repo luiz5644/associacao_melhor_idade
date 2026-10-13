@@ -2,10 +2,10 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { siteData } from '../data/mockData';
 import {
   adminApi,
-  atividadeApi,
+  acoesApi,
   checkBackendHealth,
-  adaptAtividadeToFrontend,
-  adaptAtividadeToBackend,
+  adaptAcaoToFrontend,
+  adaptAcaoToBackend,
 } from '../services/api';
 
 const STORAGE_KEY_GALLERY = 'ami_gallery_items_v1';
@@ -25,7 +25,6 @@ function seedCalendarEvents() {
     day: ev.day,
     time: ev.time,
     title: ev.title,
-    category: ev.category,
     desc: ev.desc,
     location: 'Sede da Associação',
     isHighlight: index < 3,
@@ -130,18 +129,17 @@ export function DataProvider({ children }) {
       setBackendConnected(isOnline);
 
       if (isOnline) {
-        // Carrega atividades do calendário do backend
+        // Carrega ações do calendário do backend
         try {
-          const ativsData = await atividadeApi.list();
-          if (Array.isArray(ativsData) && ativsData.length > 0) {
-            const adapted = ativsData.map(a => adaptAtividadeToFrontend(a));
+          const acoesData = await acoesApi.list();
+          if (Array.isArray(acoesData) && acoesData.length > 0) {
+            const adapted = acoesData.map(a => adaptAcaoToFrontend(a));
             setCalendarEvents(adapted);
 
             // Atualiza highlights
             const hl = adapted.filter(a => a.isHighlight).map(a => ({
               id: `hl-${a.id}`,
               dateLabel: `${a.day} de Outubro - ${a.time}`,
-              category: a.category,
               title: a.title,
               description: a.desc,
               color: '#2A5C66',
@@ -149,7 +147,7 @@ export function DataProvider({ children }) {
             if (hl.length > 0) setCalendarHighlights(hl);
           }
         } catch (err) {
-          console.warn('[Backend] Erro ao carregar atividades:', err);
+          console.warn('[Backend] Erro ao carregar ações:', err);
         }
 
         if (!silent) {
@@ -228,50 +226,48 @@ export function DataProvider({ children }) {
 
   // ── CRUD: Álbum de Lembranças (Galeria) ─────────────────────────────
   const addGalleryItem = (itemData) => {
-    const photos = Array.isArray(itemData.photos) && itemData.photos.length > 0
-      ? itemData.photos
-      : [itemData.image].filter(Boolean);
-    const newItem = {
-      id: `gal-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      photos,
-      image: photos[0] || 'https://images.unsplash.com/photo-1516307365426-bea591f05011?q=80&w=900',
-      title: itemData.title.trim(),
-      subtitle: itemData.date || 'Lembrança Especial',
-      date: itemData.date || new Date().toISOString().split('T')[0],
-      category: itemData.category || 'Celebracoes',
-      description: itemData.description || '',
-    };
-    setGalleryItems(prev => [newItem, ...prev]);
-    showToast('Lembrança adicionada ao álbum com sucesso!', 'success');
-    return newItem;
-  };
-
-  const updateGalleryItem = (id, updatedData) => {
-    setGalleryItems(prev => prev.map(item => {
-      if (item.id !== id) return item;
-      const photos = Array.isArray(updatedData.photos) && updatedData.photos.length > 0
-        ? updatedData.photos : [updatedData.image || item.image];
-      return {
-        ...item,
-        ...updatedData,
+      const photos = Array.isArray(itemData.photos) && itemData.photos.length > 0
+        ? itemData.photos
+        : [itemData.image].filter(Boolean);
+      const newItem = {
+        id: `gal-${Date.now()}`,
+        createdAt: new Date().toISOString(),
         photos,
-        image: photos[0] || item.image,
-        subtitle: updatedData.date || item.subtitle,
-        updatedAt: new Date().toISOString()
+        image: photos[0] || 'https://images.unsplash.com/photo-1516307365426-bea591f05011?q=80&w=900',
+        title: itemData.title.trim(),
+        subtitle: itemData.date || 'Lembrança Especial',
+        date: itemData.date || new Date().toISOString().split('T')[0],
+        description: itemData.description || '',
       };
-    }));
-    showToast('Lembrança atualizada com sucesso!', 'info');
-  };
+      setGalleryItems(prev => [newItem, ...prev]);
+      showToast('Lembrança adicionada ao álbum com sucesso!', 'success');
+      return newItem;
+    };
+
+    const updateGalleryItem = (id, updatedData) => {
+      setGalleryItems(prev => prev.map(item => {
+        if (item.id !== id) return item;
+        const photos = Array.isArray(updatedData.photos) && updatedData.photos.length > 0
+          ? updatedData.photos : [updatedData.image || item.image];
+        return {
+          ...item,
+          ...updatedData,
+          photos,
+          image: photos[0] || item.image,
+          subtitle: updatedData.date || item.subtitle,
+          updatedAt: new Date().toISOString()
+        };
+      }));
+      showToast('Lembrança atualizada com sucesso!', 'info');
+    };
 
   const deleteGalleryItem = (id) => {
     setGalleryItems(prev => prev.filter(item => item.id !== id));
     showToast('Lembrança removida do álbum.', 'warning');
   };
 
-  // ── CRUD: Calendário de Atividades (Integrado com Backend) ──────────
+  // ── CRUD: Calendário de Ações (Integrado com Backend) ──────────
   const MONTH_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-  const CAT_COLORS = { Música: '#E8A87C', Coral: '#2A5C66', Lazer: '#3D6058', Artes: '#7B5EA7', Saúde: '#4A9B6F' };
 
   const addCalendarEvent = async (eventData) => {
     let newEvent = {
@@ -282,7 +278,6 @@ export function DataProvider({ children }) {
       day: parseInt(eventData.day || 1, 10),
       time: eventData.time || '14:00',
       title: eventData.title.trim(),
-      category: eventData.category || 'Lazer',
       desc: eventData.desc || '',
       location: eventData.location || 'Sede da Associação',
       isHighlight: Boolean(eventData.isHighlight),
@@ -291,17 +286,17 @@ export function DataProvider({ children }) {
 
     if (backendConnected) {
       try {
-        const payload = adaptAtividadeToBackend(newEvent);
-        await atividadeApi.create(payload);
-        const ativs = await atividadeApi.list();
-        if (Array.isArray(ativs) && ativs.length > 0) {
-          const adapted = ativs.map(a => adaptAtividadeToFrontend(a));
+        const payload = adaptAcaoToBackend(newEvent);
+        await acoesApi.create(payload);
+        const acoes = await acoesApi.list();
+        if (Array.isArray(acoes) && acoes.length > 0) {
+          const adapted = acoes.map(a => adaptAcaoToFrontend(a));
           setCalendarEvents(adapted);
-          showToast('Atividade salva com sucesso no banco de dados!', 'success');
+          showToast('Ação salva com sucesso no banco de dados!', 'success');
           return;
         }
       } catch (err) {
-        console.error('Erro ao salvar atividade no backend:', err);
+        console.error('Erro ao salvar ação no backend:', err);
         showToast('Erro no backend ao agendar. Salvo em armazenamento local.', 'warning');
       }
     }
@@ -312,14 +307,13 @@ export function DataProvider({ children }) {
       const newHighlight = {
         id: `hl-${newEvent.id}`,
         dateLabel: `${newEvent.day} de ${MONTH_SHORT[newEvent.month]} - ${newEvent.time}`,
-        category: newEvent.category,
         title: newEvent.title,
         description: newEvent.desc,
-        color: CAT_COLORS[newEvent.category] || '#2A5C66'
+        color: '#2A5C66'
       };
       setCalendarHighlights(prev => [newHighlight, ...prev]);
     }
-    showToast('Atividade agendada no calendário com sucesso!', 'success');
+    showToast('Ação agendada no calendário com sucesso!', 'success');
     return newEvent;
   };
 
@@ -329,12 +323,12 @@ export function DataProvider({ children }) {
       const numericId = typeof id === 'number' ? id : parseInt(String(id).replace('cal-', ''), 10);
       if (!isNaN(numericId) && numericId > 0 && !String(id).includes('seed')) {
         try {
-          const payload = adaptAtividadeToBackend({ ...updatedData, id: numericId });
-          await atividadeApi.update(numericId, payload);
-          const ativs = await atividadeApi.list();
-          const adapted = ativs.map(a => adaptAtividadeToFrontend(a));
+          const payload = adaptAcaoToBackend({ ...updatedData, id: numericId });
+          await acoesApi.update(numericId, payload);
+          const acoes = await acoesApi.list();
+          const adapted = acoes.map(a => adaptAcaoToFrontend(a));
           setCalendarEvents(adapted);
-          showToast('Atividade atualizada com sucesso no backend!', 'info');
+          showToast('Ação atualizada com sucesso no backend!', 'info');
           return;
         } catch (err) {
           console.error('Erro ao atualizar no backend:', err);
@@ -354,7 +348,7 @@ export function DataProvider({ children }) {
         updatedAt: new Date().toISOString()
       };
     }));
-    showToast('Atividade do calendário atualizada!', 'info');
+    showToast('Ação do calendário atualizada!', 'info');
   };
 
   const deleteCalendarEvent = async (id) => {
@@ -362,12 +356,12 @@ export function DataProvider({ children }) {
       const numericId = typeof id === 'number' ? id : parseInt(String(id).replace('cal-', ''), 10);
       if (!isNaN(numericId) && numericId > 0 && !String(id).includes('seed')) {
         try {
-          await atividadeApi.delete(numericId);
-          const ativs = await atividadeApi.list();
-          const adapted = ativs.map(a => adaptAtividadeToFrontend(a));
+          await acoesApi.delete(numericId);
+          const acoes = await acoesApi.list();
+          const adapted = acoes.map(a => adaptAcaoToFrontend(a));
           setCalendarEvents(adapted);
           setCalendarHighlights(prev => prev.filter(hl => hl.id !== `hl-${id}`));
-          showToast('Atividade excluída com sucesso do backend!', 'warning');
+          showToast('Ação excluída com sucesso do backend!', 'warning');
           return;
         } catch (err) {
           console.error('Erro ao deletar no backend:', err);
@@ -378,40 +372,39 @@ export function DataProvider({ children }) {
 
     setCalendarEvents(prev => prev.filter(ev => ev.id !== id));
     setCalendarHighlights(prev => prev.filter(hl => hl.id !== `hl-${id}`));
-    showToast('Atividade removida do calendário.', 'warning');
+    showToast('Ação removida do calendário.', 'warning');
   };
 
   // ── CRUD: Patrocinadores & Parceiros ─────────────────────────────
   const addSponsor = (sponsorData) => {
-    const newSponsor = {
-      id: `sp-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      name: sponsorData.name.trim(),
-      logo: sponsorData.logo || 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop',
-      category: sponsorData.category || 'Apoiador Comunitário',
-      websiteUrl: sponsorData.websiteUrl ? (sponsorData.websiteUrl.startsWith('http') ? sponsorData.websiteUrl : `https://${sponsorData.websiteUrl}`) : '',
-      description: sponsorData.description ? sponsorData.description.trim() : '',
-      active: sponsorData.active !== undefined ? Boolean(sponsorData.active) : true
-    };
-    setSponsors(prev => [newSponsor, ...prev]);
-    showToast(`Patrocinador "${newSponsor.name}" cadastrado com sucesso!`, 'success');
-    return newSponsor;
-  };
-
-  const updateSponsor = (id, updatedData) => {
-    setSponsors(prev => prev.map(sp => {
-      if (sp.id !== id) return sp;
-      return {
-        ...sp,
-        ...updatedData,
-        name: updatedData.name ? updatedData.name.trim() : sp.name,
-        websiteUrl: updatedData.websiteUrl ? (updatedData.websiteUrl.startsWith('http') ? updatedData.websiteUrl : `https://${updatedData.websiteUrl}`) : '',
-        description: updatedData.description !== undefined ? updatedData.description.trim() : sp.description,
-        updatedAt: new Date().toISOString()
+      const newSponsor = {
+        id: `sp-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        name: sponsorData.name.trim(),
+        logo: sponsorData.logo || 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop',
+        websiteUrl: sponsorData.websiteUrl ? (sponsorData.websiteUrl.startsWith('http') ? sponsorData.websiteUrl : `https://${sponsorData.websiteUrl}`) : '',
+        description: sponsorData.description ? sponsorData.description.trim() : '',
+        active: sponsorData.active !== undefined ? Boolean(sponsorData.active) : true
       };
-    }));
-    showToast('Dados do patrocinador atualizados com sucesso!', 'info');
-  };
+      setSponsors(prev => [newSponsor, ...prev]);
+      showToast(`Patrocinador "${newSponsor.name}" cadastrado com sucesso!`, 'success');
+      return newSponsor;
+    };
+
+    const updateSponsor = (id, updatedData) => {
+      setSponsors(prev => prev.map(sp => {
+        if (sp.id !== id) return sp;
+        return {
+          ...sp,
+          ...updatedData,
+          name: updatedData.name ? updatedData.name.trim() : sp.name,
+          websiteUrl: updatedData.websiteUrl ? (updatedData.websiteUrl.startsWith('http') ? updatedData.websiteUrl : `https://${updatedData.websiteUrl}`) : '',
+          description: updatedData.description !== undefined ? updatedData.description.trim() : sp.description,
+          updatedAt: new Date().toISOString()
+        };
+      }));
+      showToast('Dados do patrocinador atualizados com sucesso!', 'info');
+    };
 
   const deleteSponsor = (id) => {
     setSponsors(prev => prev.filter(sp => sp.id !== id));

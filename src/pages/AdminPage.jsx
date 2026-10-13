@@ -313,13 +313,13 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
           <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
             <CalendarDays size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Calendário de Ações</span>
           </div>
-          <h3 className="modal-title">{item ? 'Editar Atividade' : 'Nova Atividade'}</h3>
+          <h3 className="modal-title">{item ? 'Editar Ação' : 'Nova Ação'}</h3>
           <p className="modal-subtitle">Cadastre um encontro ou evento para o calendário público.</p>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Título da Atividade <span style={{ color:'#DC2626' }}>*</span></label>
+            <label className="form-label">Título da Ação <span style={{ color:'#DC2626' }}>*</span></label>
             <input className="form-input" type="text" placeholder="Ex: Tarde de Bingo Beneficente"
               required value={form.title} onChange={e => setField('title', e.target.value)} />
           </div>
@@ -354,14 +354,14 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
               <input className="form-input" type="time" value={form.time} onChange={e => setField('time', e.target.value)} />
             </div>
             <div className="form-group">
-              <label className="form-label"><MapPin size={13} style={{ verticalAlign:'middle', marginRight:4 }} />Local da Atividade</label>
+              <label className="form-label"><MapPin size={13} style={{ verticalAlign:'middle', marginRight:4 }} />Local da Ação</label>
               <input className="form-input" type="text" placeholder="Ex: Salão Nobre, Sala de Música, Pátio Externo..."
                 value={form.location} onChange={e => setField('location', e.target.value)} />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Sobre a Atividade</label>
+            <label className="form-label">Sobre a Ação</label>
             <textarea className="form-input" rows={3} placeholder="Descreva detalhes do encontro para os associados..."
               value={form.desc} onChange={e => setField('desc', e.target.value)}
               style={{ resize:'vertical', lineHeight:1.6 }} />
@@ -648,13 +648,13 @@ function TabOverview({ setActiveTab }) {
   ];
 
   const upcomingEvents = [...calendarEvents]
-    .sort((a, b) => { const da = a.year*10000+a.month*100+a.day, db = b.year*10000+b.month*100+b.day; return da-db; })
-    .slice(0, 4);
+      .sort((a, b) => { const da = a.year*10000+a.month*100+a.day, db = b.year*10000+b.month*100+b.day; return da-db; })
+      .slice(0, 4);
 
-  return (
-    <div>
-      <h2 className="admin-section-title">Visão Geral</h2>
-      <p style={{ color:'var(--text-subtle)', marginBottom:28, fontSize:'0.95rem' }}>Resumo da atividade da Associação Melhor Idade.</p>
+    return (
+      <div>
+        <h2 className="admin-section-title">Visão Geral</h2>
+        <p style={{ color:'var(--text-subtle)', marginBottom:28, fontSize:'0.95rem' }}>Resumo das ações da Associação Melhor Idade.</p>
 
       {/* Stats */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:32, width:'100%' }}>
@@ -839,7 +839,7 @@ function TabGallery() {
   );
 }
 
-// ── PAINEL: CALENDÁRIO DE ATIVIDADES ─────────────────────────────────────────
+// ── PAINEL: CALENDÁRIO DE AÇÕES ─────────────────────────────────────────
 function TabCalendar() {
   const { calendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent } = useData();
   const [search, setSearch] = useState('');
@@ -885,7 +885,7 @@ function TabCalendar() {
           <div style={{ position:'relative', flex:'1 1 200px' }}>
             <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
             <input className="form-input" style={{ paddingLeft:36 }} type="text"
-              placeholder="Buscar atividade..." value={search} onChange={e => setSearch(e.target.value)} />
+              placeholder="Buscar ação..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="form-select" style={{ flex:'0 0 auto' }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
             <option value="Todos">Todos os Meses</option>
@@ -896,8 +896,8 @@ function TabCalendar() {
         {filtered.length === 0 ? (
         <div style={{ textAlign:'center', padding:'48px 20px', color:'var(--text-subtle)' }}>
           <CalendarDays size={40} style={{ opacity:0.3, marginBottom:12, display:'block', margin:'0 auto 12px' }} />
-          <p style={{ fontWeight:600 }}>Nenhuma atividade encontrada.</p>
-          <p style={{ fontSize:'0.85rem', marginTop:4 }}>Clique em "Nova Atividade" para agendar.</p>
+          <p style={{ fontWeight:600 }}>Nenhuma ação encontrada.</p>
+          <p style={{ fontSize:'0.85rem', marginTop:4 }}>Clique em "Nova Ação" para agendar.</p>
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
@@ -952,7 +952,7 @@ function TabCalendar() {
 
       <ConfirmDeleteModal isOpen={!!deleteTarget}
         title={deleteTarget?.title}
-        subtitle="Esta atividade será removida do calendário público."
+        subtitle="Esta ação será removida do calendário público."
         onConfirm={() => { deleteCalendarEvent(deleteTarget.id); setDeleteTarget(null); }}
         onCancel={() => setDeleteTarget(null)} />
     </div>

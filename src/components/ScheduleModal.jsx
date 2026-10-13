@@ -12,10 +12,9 @@ export default function ScheduleModal({ activity, onClose }) {
         </button>
 
         <div className="modal-header">
-          <span className="section-tag" style={{ marginBottom: '8px' }}>{activity.categoryTag}</span>
-          <h3 className="modal-title">{activity.title}</h3>
-          <p className="modal-subtitle">{activity.description}</p>
-        </div>
+                  <h3 className="modal-title">{activity.title}</h3>
+                  <p className="modal-subtitle">{activity.description}</p>
+                </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', margin: '20px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#F5F9F8', padding: '12px 16px', borderRadius: '10px' }}>
