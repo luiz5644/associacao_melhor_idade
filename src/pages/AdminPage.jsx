@@ -10,6 +10,15 @@ import {
 import { useData } from '../context/DataContext';
 import { adminApi, uploadApi, resolveImageUrl } from '../services/api';
 import CadastroAdminPage from './CadastroAdminPage';
+import { validateCPF, validateAdminPassword } from '../utils/adminValidation';
+import { toStoredUrl } from '../services/api';
+
+const FieldError = ({ children }) => children ? <p style={{ color:'#DC2626', fontSize:'0.78rem', marginTop:5 }}>{children}</p> : null;
+const focusFirstError = (errors) => {
+  const field = Object.keys(errors)[0];
+  if (field) Array.from(document.querySelectorAll(`[data-field="${field}"]`))
+    .find(element => element.getClientRects().length)?.focus();
+};
 
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
@@ -46,7 +55,22 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
   });
   const [urlInput, setUrlInput] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [uploadMode, setUploadMode] = useState('url'); // 'url' | 'file'
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setForm({
+      title: item?.title || '', description: item?.description || '', date: item?.date || '',
+      photos: item?.photos?.length ? [...item.photos] : (item?.image ? [item.image] : []),
+    });
+    setUrlInput('');
+    setUploading(false);
+    setSaving(false);
+    setUploadMode('url');
+    setErrors({});
+  }, [item, isOpen]);
 
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
@@ -55,6 +79,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
     const url = urlInput.trim();
     if (!url) return;
     setField('photos', [...form.photos, url]);
+    setErrors(p => ({...p, photos:''}));
     setUrlInput('');
   };
 
@@ -83,6 +108,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
         uploadedUrls.push(resolveImageUrl(await uploadApi.upload(file)));
       }
       setForm(current => ({ ...current, photos: [...current.photos, ...uploadedUrls] }));
+      setErrors(current => ({ ...current, photos: '' }));
     } catch (error) {
       showToast(error.message || 'Erro ao enviar imagem.', 'warning');
     } finally {
@@ -102,17 +128,24 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
     setField('photos', reordered);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
-    onSave({
-      title: form.title.trim(),
-      description: form.description,
-      date: form.date,
-      image: form.photos[0] || '',
-      photos: form.photos,
-    });
-    onClose();
+    const nextErrors = {};
+    if (!form.title.trim()) nextErrors.title = 'Título é obrigatório.';
+    if (!form.photos.length) nextErrors.photos = 'Adicione pelo menos uma foto.';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) { focusFirstError(nextErrors); return; }
+    setSaving(true);
+    try {
+      await onSave({
+        title: form.title.trim(),
+        description: form.description,
+        date: form.date,
+        image: form.photos[0] || '',
+        photos: form.photos,
+      });
+      onClose();
+    } finally { setSaving(false); }
   };
 
   if (!isOpen) return null;
@@ -131,12 +164,13 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
           <p className="modal-subtitle">Adicione quantas fotos quiser — a primeira é a capa da lembrança.</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           {/* Dados da Lembrança */}
           <div className="form-group">
                       <label className="form-label">Título <span style={{ color:'#DC2626' }}>*</span></label>
-                      <input className="form-input" type="text" placeholder="Ex: Festa de São João 2026" required
-                        value={form.title} onChange={e => setField('title', e.target.value)} />
+                      <input data-field="title" className="form-input" type="text" placeholder="Ex: Festa de São João 2026"
+                        value={form.title} onChange={e => { setField('title', e.target.value); setErrors(p => ({...p, title:''})); }} />
+                      <FieldError>{errors.title}</FieldError>
                     </div>
 
                     <div className="form-group">
@@ -165,7 +199,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
                 <button type="button"
                   className={`btn ${uploadMode === 'url' ? 'btn-primary' : 'btn-pill'}`}
                   style={{ padding:'5px 12px', fontSize:'0.78rem' }}
-                  onClick={() => setUploadMode('url')}>
+                  data-field="photos" onClick={() => setUploadMode('url')}>
                   <Link size={12} /> URL
                 </button>
                 <button type="button"
@@ -175,6 +209,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
                   <Upload size={12} /> Arquivo
                 </button>
               </div>
+              <FieldError>{errors.photos}</FieldError>
             </div>
 
             {/* Input de URL */}
@@ -267,7 +302,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
 
           <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
             <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn btn-primary" disabled={uploading || saving}>
               <CheckCircle size={15} /> {item ? 'Salvar Alterações' : 'Adicionar ao Álbum'}
             </button>
           </div>
@@ -279,26 +314,41 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
 
 
 function CalendarFormModal({ isOpen, item, onSave, onClose }) {
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    title: item?.title || '',
-    desc: item?.desc || '',
-    day: item?.day || 1,
-    month: item?.month !== undefined ? item.month : 9,
-    year: item?.year || 2026,
-    time: item?.time || '14:00',
-    location: item?.location || 'Sede da Associação',
-    isHighlight: item?.isHighlight || false
+    title: '', desc: '', day: '', month: '', year: '', time: '', location: '', isHighlight: false
   });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setForm(item ? {
+      title: item.title || '', desc: item.desc || '', day: item.day ?? '', month: item.month ?? '',
+      year: item.year ?? '', time: item.time || '', location: item.location || '', isHighlight: Boolean(item.isHighlight),
+    } : { title:'', desc:'', day:'', month:'', year:'', time:'', location:'', isHighlight:false });
+    setErrors({});
+    setSaving(false);
+  }, [item, isOpen]);
 
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
   const daysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
   const numDays = daysInMonth(parseInt(form.month), parseInt(form.year));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
-    onSave({
+    const day = Number(form.day), month = Number(form.month), year = Number(form.year);
+    const date = new Date(year, month, day);
+    const nextErrors = {};
+    if (!form.title.trim()) nextErrors.title = 'Título é obrigatório.';
+    if (!form.day || !form.month || !form.year || date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) nextErrors.date = 'Informe uma data válida.';
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.time)) nextErrors.time = 'Informe um horário válido.';
+    if (!form.location.trim()) nextErrors.location = 'Local é obrigatório.';
+    if (!form.desc.trim()) nextErrors.desc = 'Descrição é obrigatória.';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) { focusFirstError(nextErrors); return; }
+    setSaving(true);
+    try { await onSave({
       title: form.title.trim(),
       desc: form.desc,
       day: parseInt(form.day, 10),
@@ -307,8 +357,8 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
       time: form.time,
       location: form.location,
       isHighlight: form.isHighlight
-    });
-    onClose();
+      ,status: item?.status || 'ativo'
+    }); onClose(); } finally { setSaving(false); }
   };
 
   if (!isOpen) return null;
@@ -327,24 +377,27 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
           <p className="modal-subtitle">Cadastre um encontro ou evento para o calendário público.</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label className="form-label">Título da Ação <span style={{ color:'#DC2626' }}>*</span></label>
             <input className="form-input" type="text" placeholder="Ex: Tarde de Bingo Beneficente"
-              required value={form.title} onChange={e => setField('title', e.target.value)} />
+              data-field="title" value={form.title} onChange={e => { setField('title', e.target.value); setErrors(p => ({...p,title:''})); }} />
+            <FieldError>{errors.title}</FieldError>
           </div>
 
           {/* Data e Horário */}
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12 }}>
             <div className="form-group">
               <label className="form-label">Mês</label>
-              <select className="form-select" value={form.month} onChange={e => { setField('month', e.target.value); setField('day', 1); }}>
+              <select data-field="date" className="form-select" value={form.month} onChange={e => { setField('month', e.target.value); setField('day', ''); setErrors(p => ({...p,date:''})); }}>
+                <option value="">Selecione</option>
                 {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
               </select>
             </div>
             <div className="form-group">
               <label className="form-label">Dia</label>
-              <select className="form-select" value={form.day} onChange={e => setField('day', e.target.value)}>
+              <select className="form-select" value={form.day} onChange={e => {setField('day', e.target.value); setErrors(p => ({...p,date:''}));}}>
+                <option value="">Selecione</option>
                 {Array.from({ length: numDays }, (_, i) => i + 1).map(d => (
                   <option key={d} value={d}>{d}</option>
                 ))}
@@ -352,29 +405,34 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
             </div>
             <div className="form-group">
               <label className="form-label">Ano</label>
-              <select className="form-select" value={form.year} onChange={e => setField('year', e.target.value)}>
+              <select className="form-select" value={form.year} onChange={e => {setField('year', e.target.value); setErrors(p => ({...p,date:''}));}}>
+                <option value="">Selecione</option>
                 {[2026, 2027, 2028].map(y => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
           </div>
+          <FieldError>{errors.date}</FieldError>
 
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
             <div className="form-group">
               <label className="form-label"><Clock size={13} style={{ verticalAlign:'middle', marginRight:4 }} />Horário</label>
-              <input className="form-input" type="time" value={form.time} onChange={e => setField('time', e.target.value)} />
+              <input data-field="time" className="form-input" type="time" value={form.time} onChange={e => {setField('time', e.target.value); setErrors(p => ({...p,time:''}));}} />
+              <FieldError>{errors.time}</FieldError>
             </div>
             <div className="form-group">
               <label className="form-label"><MapPin size={13} style={{ verticalAlign:'middle', marginRight:4 }} />Local da Ação</label>
               <input className="form-input" type="text" placeholder="Ex: Salão Nobre, Sala de Música, Pátio Externo..."
-                value={form.location} onChange={e => setField('location', e.target.value)} />
+                data-field="location" value={form.location} onChange={e => {setField('location', e.target.value); setErrors(p => ({...p,location:''}));}} />
+              <FieldError>{errors.location}</FieldError>
             </div>
           </div>
 
           <div className="form-group">
             <label className="form-label">Sobre a Ação</label>
             <textarea className="form-input" rows={3} placeholder="Descreva detalhes do encontro para os associados..."
-              value={form.desc} onChange={e => setField('desc', e.target.value)}
+              data-field="desc" value={form.desc} onChange={e => {setField('desc', e.target.value); setErrors(p => ({...p,desc:''}));}}
               style={{ resize:'vertical', lineHeight:1.6 }} />
+            <FieldError>{errors.desc}</FieldError>
           </div>
 
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'12px 16px', background:'#F5F9F8', borderRadius:10, border:'1px solid #DCE7E5', cursor:'pointer' }}
@@ -392,8 +450,8 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
 
           <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
             <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">
-              <CheckCircle size={15} /> {item ? 'Salvar Alterações' : 'Agendar no Calendário'}
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              <CheckCircle size={15} /> {saving ? 'Salvando...' : (item ? 'Salvar Alterações' : 'Agendar no Calendário')}
             </button>
           </div>
         </form>
@@ -415,8 +473,12 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
   });
   const [uploadMode, setUploadMode] = useState('file');
   const [urlInput, setUrlInput] = useState('');
+  const [errors, setErrors] = useState({});
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!isOpen) return;
     if (item) {
       setForm({
         name: item.name || '',
@@ -436,6 +498,10 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
       });
       setUrlInput('');
     }
+    setErrors({});
+    setUploading(false);
+    setSaving(false);
+    setUploadMode('file');
   }, [item, isOpen]);
 
   if (!isOpen) return null;
@@ -460,12 +526,14 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
       e.target.value = '';
       return;
     }
+    setUploading(true);
     try {
       const url = await uploadApi.upload(file);
       setField('logo', resolveImageUrl(url));
     } catch (error) {
       showToast(error.message || 'Não foi possível enviar a logo.', 'warning');
     }
+    finally { setUploading(false); }
     e.target.value = '';
   };
 
@@ -475,13 +543,20 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
-    onSave({
+    const websiteUrl = form.websiteUrl.trim() && !/^https?:\/\//i.test(form.websiteUrl.trim()) ? `https://${form.websiteUrl.trim()}` : form.websiteUrl.trim();
+    const nextErrors = {};
+    if (!form.name.trim()) nextErrors.name = 'Nome é obrigatório.';
+    if (websiteUrl && !/^https?:\/\/[^\s.]+(?:\.[^\s.]+)+/i.test(websiteUrl)) nextErrors.websiteUrl = 'Informe um endereço válido.';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) { focusFirstError(nextErrors); return; }
+    setSaving(true);
+    try { await onSave({
       ...form,
+      websiteUrl,
       logo: form.logo.trim() || 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop'
-    });
+    }); } finally { setSaving(false); }
   };
 
   return (
@@ -506,17 +581,18 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="form-group">
               <label className="form-label">Nome da Empresa ou Comércio *</label>
-              <input 
-                className="form-input" 
-                type="text" 
-                required 
+              <input
+                className="form-input"
+                type="text"
                 placeholder="Ex: Farmácia São Lucas, Padaria Central..."
-                value={form.name} 
-                onChange={e => setField('name', e.target.value)} 
+                data-field="name"
+                value={form.name}
+                onChange={e => {setField('name', e.target.value); setErrors(p => ({...p,name:''}));}}
               />
+              <FieldError>{errors.name}</FieldError>
             </div>
 
             <div className="form-group">
@@ -524,13 +600,14 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
                 <Globe size={13} style={{ verticalAlign:'middle', marginRight:4 }} />
                 Website ou Rede Social
               </label>
-              <input 
-                className="form-input" 
-                type="text" 
+              <input
+                className="form-input"
+                type="text"
                 placeholder="Ex: https://instagram.com/empresa"
-                value={form.websiteUrl} 
-                onChange={e => setField('websiteUrl', e.target.value)} 
+                data-field="websiteUrl" value={form.websiteUrl}
+                onChange={e => {setField('websiteUrl', e.target.value); setErrors(p => ({...p,websiteUrl:''}));}}
               />
+              <FieldError>{errors.websiteUrl}</FieldError>
             </div>
 
             <div className="form-group">
@@ -541,7 +618,7 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
 
               {/* Alternar modo Arquivo / URL */}
                             <div style={{ display:'flex', gap:8, marginBottom:10 }}>
-                              <button 
+                              <button
                                 type="button"
                                 className={`btn btn-pill ${uploadMode === 'file' ? 'active' : ''}`}
                                 style={{ fontSize:'0.8rem', padding:'5px 12px' }}
@@ -561,15 +638,15 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
 
             {uploadMode === 'file' ? (
               <div>
-                <input 
-                  type="file" 
-                  ref={fileRef} 
-                  accept="image/*" 
+                <input
+                  type="file"
+                  ref={fileRef}
+                  accept="image/*"
                   style={{ display:'none' }}
-                  onChange={handleFileUpload} 
+                  onChange={handleFileUpload}
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="btn"
                   style={{ width:'100%', background:'#F5F9F8', border:'2px dashed #BED8D3', color:'#2A5C66', padding:'14px', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', gap:8, cursor:'pointer' }}
                   onClick={() => fileRef.current?.click()}
@@ -580,17 +657,17 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
               </div>
             ) : (
               <div style={{ display:'flex', gap:8 }}>
-                <input 
-                  className="form-input" 
-                  type="url" 
+                <input
+                  className="form-input"
+                  type="url"
                   placeholder="https://exemplo.com/logo.png"
-                  value={urlInput} 
-                  onChange={e => setUrlInput(e.target.value)} 
+                  value={urlInput}
+                  onChange={e => setUrlInput(e.target.value)}
                 />
-                <button 
-                  type="button" 
-                  className="btn btn-pill" 
-                  style={{ whiteSpace:'nowrap' }} 
+                <button
+                  type="button"
+                  className="btn btn-pill"
+                  style={{ whiteSpace:'nowrap' }}
                   onClick={handleApplyUrl}
                 >
                   Aplicar
@@ -602,9 +679,9 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
             {form.logo && (
               <div style={{ marginTop:12, padding:14, background:'#FAF7F5', border:'1px solid #DCE7E5', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
                 <div style={{ width:70, height:70, background:'#fff', borderRadius:8, border:'1px solid #E5E7EB', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', padding:6 }}>
-                  <img 
-                    src={form.logo} 
-                    alt="Pré-visualização do logo" 
+                  <img
+                    src={form.logo}
+                    alt="Pré-visualização do logo"
                     style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain' }}
                     onError={(e) => {
                       e.currentTarget.onerror = null;
@@ -615,8 +692,8 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-main)' }}>Prévia do Logo</div>
                   <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)' }}>Esta imagem será exibida no carrossel da página inicial.</div>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setField('logo', '')}
                     style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.75rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}
                   >
@@ -629,17 +706,17 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
 
           <div className="form-group">
             <label className="form-label">Breve Descrição ou Contrapartida (Opcional)</label>
-            <textarea 
-              className="form-input" 
-              rows={2} 
+            <textarea
+              className="form-input"
+              rows={2}
               placeholder="Ex: Apoia nossos cafés comunitários e festividades do forró..."
-              value={form.description} 
+              value={form.description}
               onChange={e => setField('description', e.target.value)}
-              style={{ resize:'vertical', lineHeight:1.5 }} 
+              style={{ resize:'vertical', lineHeight:1.5 }}
             />
           </div>
 
-          <div 
+          <div
             style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'10px 14px', background:'#F5F9F8', borderRadius:10, border:'1px solid #DCE7E5', cursor:'pointer' }}
             onClick={() => setField('active', !form.active)}
           >
@@ -654,7 +731,7 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
 
           <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
             <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn btn-primary" disabled={uploading || saving}>
               <CheckCircle size={15} /> {item ? 'Salvar Alterações' : 'Cadastrar Patrocinador'}
             </button>
           </div>
@@ -779,11 +856,11 @@ function TabGallery() {
     return matchSearch;
   });
 
-  const handleSave = (data) => {
+  const handleSave = async (data) => {
     if (editingItem) {
-      updateGalleryItem(editingItem.id, data);
+      await updateGalleryItem(editingItem.id, data);
     } else {
-      addGalleryItem(data);
+      await addGalleryItem(data);
     }
     setEditingItem(null);
     setShowForm(false);
@@ -885,11 +962,11 @@ function TabCalendar() {
     return da - db;
   });
 
-  const handleSave = (data) => {
+  const handleSave = async (data) => {
     if (editingEvent) {
-      updateCalendarEvent(editingEvent.id, data);
+      await updateCalendarEvent(editingEvent.id, data);
     } else {
-      addCalendarEvent(data);
+      await addCalendarEvent(data);
     }
     setEditingEvent(null);
     setShowForm(false);
@@ -1001,11 +1078,11 @@ function TabSponsors() {
     return matchSearch;
   });
 
-  const handleSave = (data) => {
+  const handleSave = async (data) => {
     if (editingSponsor) {
-      updateSponsor(editingSponsor.id, data);
+      await updateSponsor(editingSponsor.id, data);
     } else {
-      addSponsor(data);
+      await addSponsor(data);
     }
     setShowForm(false);
     setEditingSponsor(null);
@@ -1020,8 +1097,8 @@ function TabSponsors() {
             Cadastre as empresas que apoiam a Associação. Os logos e nomes aparecerão no carrossel da página inicial.
           </p>
         </div>
-        <button 
-          className="btn btn-primary" 
+        <button
+          className="btn btn-primary"
           onClick={() => { setEditingSponsor(null); setShowForm(true); }}
           style={{ display:'flex', alignItems:'center', gap:8 }}
         >
@@ -1033,13 +1110,13 @@ function TabSponsors() {
             <div style={{ display:'flex', gap:12, marginBottom:24, flexWrap:'wrap', alignItems:'center' }}>
               <div style={{ position:'relative', flex:1, minWidth:220 }}>
                 <Search size={16} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'var(--text-subtle)' }} />
-                <input 
-                  className="form-input" 
-                  type="text" 
+                <input
+                  className="form-input"
+                  type="text"
                   placeholder="Buscar por nome da empresa ou descrição..."
-                  value={search} 
-                  onChange={e => setSearch(e.target.value)} 
-                  style={{ paddingLeft:38 }} 
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  style={{ paddingLeft:38 }}
                 />
               </div>
             </div>
@@ -1059,8 +1136,8 @@ function TabSponsors() {
             ) : (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20 }}>
           {filtered.map(sponsor => (
-            <div 
-              key={sponsor.id} 
+            <div
+              key={sponsor.id}
               style={{
                 background: '#fff',
                 border: '1px solid #DCE7E5',
@@ -1101,8 +1178,8 @@ function TabSponsors() {
                   padding: 12,
                   marginBottom: 16
                 }}>
-                  <img 
-                    src={sponsor.logo} 
+                  <img
+                    src={sponsor.logo}
                     alt={sponsor.name}
                     style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                     onError={(e) => {
@@ -1124,9 +1201,9 @@ function TabSponsors() {
                 )}
 
                 {sponsor.websiteUrl && (
-                  <a 
-                    href={sponsor.websiteUrl} 
-                    target="_blank" 
+                  <a
+                    href={sponsor.websiteUrl}
+                    target="_blank"
                     rel="noopener noreferrer"
                     style={{
                       display: 'inline-flex',
@@ -1147,15 +1224,15 @@ function TabSponsors() {
 
               {/* Ações */}
               <div style={{ display:'flex', gap:8, borderTop:'1px solid #F0ECE8', paddingTop:14, marginTop:8, justifyContent:'flex-end' }}>
-                <button 
-                  className="btn btn-pill" 
+                <button
+                  className="btn btn-pill"
                   style={{ padding:'6px 14px', fontSize:'0.8rem' }}
                   onClick={() => { setEditingSponsor(sponsor); setShowForm(true); }}
                 >
                   <Pencil size={12} /> Editar
                 </button>
-                <button 
-                  className="btn" 
+                <button
+                  className="btn"
                   style={{ padding:'6px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }}
                   onClick={() => setDeleteTarget(sponsor)}
                 >
@@ -1168,19 +1245,19 @@ function TabSponsors() {
       )}
 
       {/* Modais */}
-      <SponsorFormModal 
-        isOpen={showForm} 
+      <SponsorFormModal
+        isOpen={showForm}
         item={editingSponsor}
-        onSave={handleSave} 
-        onClose={() => { setShowForm(false); setEditingSponsor(null); }} 
+        onSave={handleSave}
+        onClose={() => { setShowForm(false); setEditingSponsor(null); }}
       />
 
-      <ConfirmDeleteModal 
+      <ConfirmDeleteModal
         isOpen={!!deleteTarget}
         title={deleteTarget?.name}
         subtitle="Esta empresa parceira será removida e deixará de aparecer no carrossel da página inicial."
         onConfirm={() => { deleteSponsor(deleteTarget.id); setDeleteTarget(null); }}
-        onCancel={() => setDeleteTarget(null)} 
+        onCancel={() => setDeleteTarget(null)}
       />
     </div>
   );
@@ -1230,7 +1307,7 @@ function TabTestimonials() {
             >
               <div style={{ height: 150, overflow: 'hidden', background: '#EEE' }}>
                 <img
-                  src={t.avatar}
+                  src={resolveImageUrl(t.avatar)}
                   alt={`Foto de ${t.name}`}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   onError={e => { e.target.style.display = 'none'; }}
@@ -1288,27 +1365,50 @@ function TabTestimonials() {
 
 // ── Modal de Depoimento ───────────────────────────────────────────────────────
 function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
+  const { backendConnected, showToast } = useData();
+  const fileRef = useRef(null);
   const [form, setForm] = useState({ name: '', role: '', avatar: '', text: '' });
+  const [uploadMode, setUploadMode] = useState('file');
+  const [urlInput, setUrlInput] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [errors, setErrors] = useState({});
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
   useEffect(() => {
+    if (!isOpen) return;
     setForm({
       name: item?.name || '',
       role: item?.role || '',
-      avatar: item?.avatar || '',
+      avatar: resolveImageUrl(item?.avatar || ''),
       text: item?.text || ''
     });
+    setErrors({});
+    setUrlInput(item?.avatar || '');
+    setUploadMode('file');
+    setUploading(false);
   }, [item, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.text.trim()) return;
+    const nextErrors = {};
+    if (!form.name.trim()) nextErrors.name = 'Nome é obrigatório.';
+    if (!form.avatar.trim()) nextErrors.avatar = 'Adicione uma foto para o depoimento.';
+    else if (form.avatar.startsWith('data:')) nextErrors.avatar = 'Envie a foto por URL ou arquivo, sem dados incorporados.';
+    else if (!form.avatar.startsWith('/uploads/')) {
+      try {
+        const photoUrl = new URL(form.avatar);
+        if (!['http:', 'https:'].includes(photoUrl.protocol)) nextErrors.avatar = 'Informe um endereço de foto válido.';
+      } catch (_) { nextErrors.avatar = 'Informe um endereço de foto válido.'; }
+    }
+    if (!form.text.trim()) nextErrors.text = 'Depoimento é obrigatório.';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) { focusFirstError(nextErrors); return; }
     onSave({
       name: form.name.trim(),
       role: form.role.trim(),
-      avatar: form.avatar.trim(),
+      avatar: toStoredUrl(form.avatar.trim()),
       text: form.text.trim()
     });
   };
@@ -1335,17 +1435,18 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label className="form-label">Nome <span style={{ color: '#DC2626' }}>*</span></label>
             <input
               className="form-input"
               type="text"
               placeholder="Ex: Dona Alzira, 78 anos"
-              required
+              data-field="name"
               value={form.name}
-              onChange={e => setField('name', e.target.value)}
+              onChange={e => {setField('name', e.target.value); setErrors(p => ({...p,name:''}));}}
             />
+            <FieldError>{errors.name}</FieldError>
           </div>
 
           <div className="form-group">
@@ -1360,14 +1461,36 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Foto (URL)</label>
-            <input
-              className="form-input"
-              type="url"
-              placeholder="https://exemplo.com/foto.jpg"
-              value={form.avatar}
-              onChange={e => setField('avatar', e.target.value)}
-            />
+            <label className="form-label">Foto <span style={{ color:'#DC2626' }}>*</span></label>
+            <div style={{ display:'flex', gap:8, marginBottom:10 }}>
+              <button data-field="avatar" type="button" className="btn btn-pill" onClick={() => setUploadMode('file')}><Upload size={13} /> Enviar do Computador</button>
+              <button type="button" className="btn btn-pill" onClick={() => setUploadMode('url')}><Link size={13} /> Inserir Link (URL)</button>
+            </div>
+            {uploadMode === 'file' ? (
+              <div>
+                <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }} onChange={async e => {
+                  const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
+                  if (!file.type.startsWith('image/')) { setErrors(p => ({...p,avatar:'Selecione um arquivo de imagem válido.'})); return; }
+                  if (file.size > 5 * 1024 * 1024) { setErrors(p => ({...p,avatar:'A imagem deve ter no máximo 5 MB.'})); return; }
+                  if (!backendConnected) { showToast('Backend offline. Envie a foto por URL.', 'warning'); return; }
+                  setUploading(true);
+                  try { setField('avatar', resolveImageUrl(await uploadApi.upload(file))); setErrors(p => ({...p,avatar:''})); }
+                  catch (error) { setErrors(p => ({...p,avatar:error.message || 'Não foi possível enviar a foto.'})); }
+                  finally { setUploading(false); }
+                }} />
+                <button type="button" className="btn" onClick={() => backendConnected ? fileRef.current?.click() : showToast('Backend offline. Envie a foto por URL.', 'warning')} disabled={uploading} style={{ width:'100%', background:'#F5F9F8', border:'2px dashed #BED8D3', color:'#2A5C66', padding:14, borderRadius:10 }}>
+                  <Upload size={18} /> {uploading ? 'Enviando foto...' : 'Escolher arquivo de imagem do computador'}
+                </button>
+              </div>
+            ) : (
+              <div style={{ display:'flex', gap:8 }}>
+                <input data-field="avatar" className="form-input" type="url" placeholder="https://exemplo.com/foto.jpg" value={urlInput} onChange={e => {setUrlInput(e.target.value); setErrors(p => ({...p,avatar:''}));}} />
+                <button type="button" className="btn btn-pill" onClick={() => {setField('avatar',urlInput.trim()); setErrors(p => ({...p,avatar:''}));}}>Aplicar</button>
+              </div>
+            )}
+            {form.avatar && <div style={{ marginTop:12 }}><img src={resolveImageUrl(form.avatar)} alt="Pré-visualização da foto" style={{ width:70, height:70, objectFit:'cover', borderRadius:8 }} /></div>}
+            {!form.avatar && <p style={{ fontSize:'0.78rem', color:'var(--text-subtle)', marginTop:6 }}>Adicione uma foto para o depoimento.</p>}
+            <FieldError>{errors.avatar}</FieldError>
           </div>
 
           <div className="form-group">
@@ -1376,16 +1499,17 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
               className="form-input"
               rows={5}
               placeholder="Conte como a associação impactou a vida desta pessoa..."
-              required
+              data-field="text"
               value={form.text}
-              onChange={e => setField('text', e.target.value)}
+              onChange={e => {setField('text', e.target.value); setErrors(p => ({...p,text:''}));}}
               style={{ resize: 'vertical', lineHeight: 1.6 }}
             />
+            <FieldError>{errors.text}</FieldError>
           </div>
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn btn-primary" disabled={uploading}>
               <CheckCircle size={15} /> {item ? 'Salvar Alterações' : 'Adicionar Depoimento'}
             </button>
           </div>
@@ -1397,9 +1521,34 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
 
 // ── PAINEL: CONFIGURAÇÕES ─────────────────────────────────────────────────────
 function TabSettings() {
-  const { brandInfo, updateBrandInfo } = useData();
+  const { brandInfo, legacyBrandInfo, brandInfoHasRecord, updateBrandInfo } = useData();
   const [form, setForm] = useState({ ...brandInfo });
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    setForm({
+      ...brandInfo,
+      ...(brandInfoHasRecord ? {} : (legacyBrandInfo || {})),
+      name: brandInfo.name || 'Melhor Idade',
+      subtitle: brandInfo.subtitle || '',
+      mission: brandInfo.mission || '',
+      since: brandInfo.since || '',
+    });
+    setErrors({});
+  }, [brandInfo, legacyBrandInfo, brandInfoHasRecord]);
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
+  const handleSave = async (event) => {
+    event?.preventDefault();
+    const next = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email || '')) next.email = 'Informe um e-mail válido.';
+    if ((form.phone || '').replace(/\D/g, '').length < 10) next.phone = 'Informe um telefone com pelo menos 10 dígitos.';
+    if (!form.address?.trim()) next.address = 'Endereço é obrigatório.';
+    if (!form.pixKey?.trim()) next.pixKey = 'Chave PIX é obrigatória.';
+    setErrors(next);
+    if (Object.keys(next).length) { focusFirstError(next); return; }
+    setSaving(true);
+    try { await updateBrandInfo(form); } catch (_) {} finally { setSaving(false); }
+  };
 
   return (
     <div>
@@ -1410,25 +1559,31 @@ function TabSettings() {
         <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.1rem', marginBottom:20, display:'flex', alignItems:'center', gap:8 }}>
           <Settings size={18} color="#2A5C66" /> Informações da Associação
         </h3>
+        <form onSubmit={handleSave} noValidate>
         <div className="form-group">
           <label className="form-label">E-mail de Contato</label>
-          <input className="form-input" type="email" value={form.email || ''} onChange={e => setField('email', e.target.value)} />
+          <input data-field="email" className="form-input" type="email" value={form.email || ''} onChange={e => {setField('email', e.target.value); setErrors(p => ({...p,email:''}));}} />
+          <FieldError>{errors.email}</FieldError>
         </div>
         <div className="form-group">
           <label className="form-label">Telefone</label>
-          <input className="form-input" type="tel" value={form.phone || ''} onChange={e => setField('phone', e.target.value)} />
+          <input data-field="phone" className="form-input" type="tel" value={form.phone || ''} onChange={e => {setField('phone', e.target.value); setErrors(p => ({...p,phone:''}));}} />
+          <FieldError>{errors.phone}</FieldError>
         </div>
         <div className="form-group">
           <label className="form-label">Endereço</label>
-          <input className="form-input" type="text" value={form.address || ''} onChange={e => setField('address', e.target.value)} />
+          <input data-field="address" className="form-input" type="text" value={form.address || ''} onChange={e => {setField('address', e.target.value); setErrors(p => ({...p,address:''}));}} />
+          <FieldError>{errors.address}</FieldError>
         </div>
         <div className="form-group">
           <label className="form-label">Chave PIX para Doações</label>
-          <input className="form-input" type="text" value={form.pixKey || ''} onChange={e => setField('pixKey', e.target.value)} />
+          <input data-field="pixKey" className="form-input" type="text" value={form.pixKey || ''} onChange={e => {setField('pixKey', e.target.value); setErrors(p => ({...p,pixKey:''}));}} />
+          <FieldError>{errors.pixKey}</FieldError>
         </div>
-        <button className="btn btn-primary" onClick={() => updateBrandInfo(form)}>
-          <CheckCircle size={15} /> Salvar Informações
+        <button type="submit" className="btn btn-primary" disabled={saving}>
+          <CheckCircle size={15} /> {saving ? 'Salvando...' : 'Salvar Informações'}
         </button>
+        </form>
       </div>
     </div>
   );
@@ -1442,6 +1597,7 @@ function TabAdmins({ onNavigateToCreate }) {
   const [form, setForm] = useState({ username: '', cpf: '', senha: '' });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (backendConnected) {
@@ -1455,6 +1611,7 @@ function TabAdmins({ onNavigateToCreate }) {
     } else {
       setEditingAdmin(null);
       setForm({ username: '', cpf: '', senha: '' });
+      setErrors({});
       setShowModal(true);
     }
   };
@@ -1462,12 +1619,20 @@ function TabAdmins({ onNavigateToCreate }) {
   const handleOpenEdit = (admin) => {
     setEditingAdmin(admin);
     setForm({ username: admin.username, cpf: admin.cpf || '', senha: '' });
+    setErrors({});
     setShowModal(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.username.trim()) return;
+    const next = {};
+    if (!form.username.trim()) next.username = 'Nome de usuário é obrigatório.';
+    else if (form.username.trim().length < 3 || /\s/.test(form.username.trim())) next.username = 'Informe um usuário válido, sem espaços e com 3 caracteres ou mais.';
+    if (!editingAdmin && !validateCPF(form.cpf)) next.cpf = 'CPF inválido.';
+    if (!editingAdmin && !form.senha) next.senha = 'Senha é obrigatória.';
+    else if (!validateAdminPassword(form.senha)) next.senha = 'A senha deve ter pelo menos 6 caracteres.';
+    setErrors(next);
+    if (Object.keys(next).length) { focusFirstError(next); return; }
     setLoading(true);
     try {
       if (editingAdmin) {
@@ -1558,20 +1723,23 @@ function TabAdmins({ onNavigateToCreate }) {
               </h3>
               <button onClick={() => setShowModal(false)} style={{ background:'none', border:'none', cursor:'pointer' }}><X size={18} /></button>
             </div>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <div className="form-group">
                 <label className="form-label">Nome de Usuário / Login *</label>
-                <input className="form-input" type="text" placeholder="Ex: coord.maria" required value={form.username} onChange={e => setForm(p => ({ ...p, username: e.target.value }))} autoFocus />
+                <input data-field="username" className="form-input" type="text" placeholder="Ex: coord.maria" value={form.username} onChange={e => {setForm(p => ({ ...p, username: e.target.value })); setErrors(p => ({...p,username:''}));}} autoFocus />
+                <FieldError>{errors.username}</FieldError>
               </div>
               {!editingAdmin && (
                 <div className="form-group">
                   <label className="form-label">CPF (com ou sem pontuação) *</label>
-                  <input className="form-input" type="text" placeholder="Ex: 123.456.789-00" required value={form.cpf} onChange={e => setForm(p => ({ ...p, cpf: e.target.value }))} />
+                  <input data-field="cpf" className="form-input" type="text" placeholder="Ex: 123.456.789-00" value={form.cpf} onChange={e => {setForm(p => ({ ...p, cpf: e.target.value })); setErrors(p => ({...p,cpf:''}));}} />
+                  <FieldError>{errors.cpf}</FieldError>
                 </div>
               )}
               <div className="form-group">
                 <label className="form-label">{editingAdmin ? 'Nova Senha (deixe em branco para manter a atual)' : 'Senha de Acesso (opcional - padrão: 8 primeiros dígitos do CPF)'}</label>
-                <input className="form-input" type="password" placeholder="Mínimo 6 caracteres" minLength={6} value={form.senha} onChange={e => setForm(p => ({ ...p, senha: e.target.value }))} />
+                <input data-field="senha" className="form-input" type="password" placeholder="Mínimo 6 caracteres" value={form.senha} onChange={e => {setForm(p => ({ ...p, senha: e.target.value })); setErrors(p => ({...p,senha:''}));}} />
+                <FieldError>{errors.senha}</FieldError>
               </div>
               <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:20 }}>
                 <button type="button" className="btn btn-pill" onClick={() => setShowModal(false)}>Cancelar</button>
@@ -1692,7 +1860,7 @@ export default function AdminPage({ onClose }) {
               <span style={{ width:8, height:8, borderRadius:'50%', background: backendConnected ? '#10B981' : '#F59E0B' }} />
               <span>{backendConnected ? 'Backend Conectado (Porta 3000)' : 'Backend Offline'}</span>
             </div>
-            <button 
+            <button
               onClick={() => checkBackendConnection(false)}
               style={{ background:'none', border:'none', cursor:'pointer', padding:2, color:'inherit', display:'flex', alignItems:'center', gap:4, textDecoration:'underline' }}
               title="Testar conexão com backend"
@@ -1874,7 +2042,7 @@ export default function AdminPage({ onClose }) {
                                                       <hr className="admin-mobile-drawer-divider" />
 
                                                       <div className="admin-mobile-drawer-footer">
-                                                        <button 
+                                                        <button
                                                           className="admin-mobile-drawer-view-site"
                                                           onClick={() => { setMobileDrawerOpen(false); onClose(); }}
                                                         >
@@ -1885,7 +2053,7 @@ export default function AdminPage({ onClose }) {
                                                             <span className="admin-mobile-drawer-status-dot" aria-hidden="true"></span>
                                                             <span>Modo Local Ativo</span>
                                                           </div>
-                                                          <button 
+                                                          <button
                                                             className="admin-mobile-drawer-logout"
                                                             onClick={handleLogout}
                                                           >

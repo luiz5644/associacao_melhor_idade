@@ -1,7 +1,8 @@
 import React from 'react';
-import { siteData } from '../data/mockData';
+import { useData } from '../context/DataContext';
 
 export default function Footer({ onNavigatePage, onSelectActivity }) {
+  const { brandInfo } = useData();
   const currentYear = 2026;
 
   return (
@@ -12,10 +13,10 @@ export default function Footer({ onNavigatePage, onSelectActivity }) {
           <div className="footer-brand">
             <div className="footer-brand-header">
               <div className="brand-badge" style={{ width: '38px', height: '38px', fontSize: '1.3rem' }}>M</div>
-              <span className="footer-brand-title">{siteData.brand.name}</span>
+              <span className="footer-brand-title">{brandInfo.name}</span>
             </div>
             <p className="footer-desc">
-              {siteData.brand.mission}
+              {brandInfo.mission}
             </p>
           </div>
 
@@ -69,15 +70,12 @@ export default function Footer({ onNavigatePage, onSelectActivity }) {
           {/* Col 3: Onde Estamos */}
           <div className="footer-col">
             <h4 className="footer-col-title">Onde Estamos</h4>
-            <p className="footer-address">
-              {siteData.brand.address}
-            </p>
-            <a 
-              href={`mailto:${siteData.brand.email}`} 
-              className="footer-email-link"
-            >
-              {siteData.brand.email}
-            </a>
+            {brandInfo.address || brandInfo.email ? (
+              <>
+                {brandInfo.address && <p className="footer-address">{brandInfo.address}</p>}
+                {brandInfo.email && <a href={`mailto:${brandInfo.email}`} className="footer-email-link">{brandInfo.email}</a>}
+              </>
+            ) : <p className="footer-address">Informações de contato em breve.</p>}
           </div>
         </div>
 

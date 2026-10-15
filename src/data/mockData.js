@@ -5,10 +5,10 @@ export const siteData = {
     name: "Melhor Idade",
     subtitle: "ASSOCIAÇÃO COMUNITÁRIA",
     since: 2005,
-    email: "contato@associacaomelhoridade.org",
-    address: "Rua das Oliveiras, 450 – Bairro das Flores, São Paulo – SP",
-    phone: "(11) 98765-4321",
-    pixKey: "contato@associacaomelhoridade.org",
+    email: "",
+    address: "",
+    phone: "",
+    pixKey: "",
     mission: "Oferecendo dignidade, alegria, integração e bem-estar para a melhor idade da nossa comunidade desde 2005. Venha nos fazer uma visita!"
   },
 

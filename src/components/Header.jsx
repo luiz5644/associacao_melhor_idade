@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Menu, X, Shield } from 'lucide-react';
-import { siteData } from '../data/mockData';
+import { useData } from '../context/DataContext';
 
 export default function Header({ activePage, setActivePage, onOpenAdmin }) {
+  const { brandInfo } = useData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -32,8 +33,8 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
         >
           <div className="brand-badge">M</div>
           <div className="brand-text-wrap">
-            <span className="brand-title">{siteData.brand.name}</span>
-            <span className="brand-subtitle">{siteData.brand.subtitle}</span>
+            <span className="brand-title">{brandInfo.name}</span>
+            <span className="brand-subtitle">{brandInfo.subtitle}</span>
           </div>
         </a>
 
@@ -82,7 +83,7 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <div className="brand-link">
               <div className="brand-badge" style={{ width: '36px', height: '36px', fontSize: '1.2rem' }}>M</div>
-              <span className="brand-title" style={{ fontSize: '1.1rem' }}>{siteData.brand.name}</span>
+              <span className="brand-title" style={{ fontSize: '1.1rem' }}>{brandInfo.name}</span>
             </div>
             <button 
               onClick={() => setMobileMenuOpen(false)}

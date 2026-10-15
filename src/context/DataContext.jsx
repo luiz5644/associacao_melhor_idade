@@ -13,10 +13,12 @@ import {
   adaptSponsorToFrontend,
   adaptSponsorToBackend,
   toStoredUrl,
+  informacoesApi,
 } from '../services/api';
 
 const STORAGE_KEY_BRAND = 'ami_brand_info_v1';
 const STORAGE_KEY_TESTIMONIALS = 'ami_testimonials_v1';
+const EMPTY_BRAND_INFO = { ...siteData.brand, email: '', address: '', phone: '', pixKey: '' };
 
 const DataContext = createContext(null);
 
@@ -32,13 +34,15 @@ export function DataProvider({ children }) {
 
   const [calendarEvents, setCalendarEvents] = useState([]);
 
-  const [brandInfo, setBrandInfo] = useState(() => {
+  const [brandInfo, setBrandInfo] = useState(EMPTY_BRAND_INFO);
+  const [legacyBrandInfo, setLegacyBrandInfo] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_BRAND);
       if (saved) return JSON.parse(saved);
     } catch (_) {}
-    return siteData.brand;
+    return null;
   });
+  const [brandInfoHasRecord, setBrandInfoHasRecord] = useState(false);
 
   const [sponsors, setSponsors] = useState([]);
 
@@ -116,10 +120,6 @@ export function DataProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_BRAND, JSON.stringify(brandInfo)); } catch (_) {}
-  }, [brandInfo]);
-
-  useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY_TESTIMONIALS, JSON.stringify(testimonials)); } catch (_) {}
   }, [testimonials]);
 
@@ -131,6 +131,29 @@ export function DataProvider({ children }) {
       setBackendConnected(isOnline);
 
       if (isOnline) {
+        try {
+          const info = await informacoesApi.get();
+          const hasRecord = Boolean(info && Object.keys(info).length);
+          setBrandInfoHasRecord(hasRecord);
+          if (hasRecord) {
+            setBrandInfo(current => ({
+              ...current, ...info,
+              name: info.name || current.name, subtitle: info.subtitle || current.subtitle,
+              mission: info.mission || current.mission, since: info.since || current.since,
+              email: info.email || '', address: info.address || '', phone: info.phone || '', pixKey: info.pixKey || '',
+            }));
+            setLegacyBrandInfo(null);
+          } else {
+            setBrandInfo(EMPTY_BRAND_INFO);
+            try {
+              const old = localStorage.getItem(STORAGE_KEY_BRAND);
+              setLegacyBrandInfo(old ? JSON.parse(old) : null);
+            } catch (_) { setLegacyBrandInfo(null); }
+          }
+        } catch (err) {
+          console.warn('[Backend] Erro ao carregar informações:', err);
+          setBrandInfo(EMPTY_BRAND_INFO);
+        }
         try {
           setGalleryItems(await loadGalleryFromBackend());
         } catch (err) {
@@ -161,6 +184,7 @@ export function DataProvider({ children }) {
         setGalleryItems([]);
         setCalendarEvents([]);
         setSponsors([]);
+        setBrandInfo(EMPTY_BRAND_INFO);
         if (!silent) {
           showToast('Backend offline. Operando em modo de dados locais.', 'info');
         }
@@ -479,7 +503,7 @@ export function DataProvider({ children }) {
       createdAt: new Date().toISOString(),
       name: testimonialData.name.trim(),
       role: testimonialData.role || '',
-      avatar: testimonialData.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop',
+      avatar: toStoredUrl(testimonialData.avatar || ''),
       text: testimonialData.text.trim()
     };
     setTestimonials(prev => [newTestimonial, ...prev]);
@@ -495,7 +519,7 @@ export function DataProvider({ children }) {
         ...updatedData,
         name: updatedData.name ? updatedData.name.trim() : t.name,
         role: updatedData.role !== undefined ? updatedData.role : t.role,
-        avatar: updatedData.avatar || t.avatar,
+        avatar: updatedData.avatar !== undefined ? toStoredUrl(updatedData.avatar) : t.avatar,
         text: updatedData.text ? updatedData.text.trim() : t.text,
         updatedAt: new Date().toISOString()
       };
@@ -508,16 +532,40 @@ export function DataProvider({ children }) {
     showToast('Depoimento removido.', 'warning');
   };
 
-  const updateBrandInfo = (newInfo) => {
-    setBrandInfo(prev => ({ ...prev, ...newInfo }));
-    showToast('Informações da Associação salvas com sucesso!', 'success');
+  const updateBrandInfo = async (newInfo) => {
+    if (!backendConnected) {
+      showToast('Backend offline. As informações não foram alteradas.', 'warning');
+      throw new Error('Backend offline');
+    }
+    try {
+      await informacoesApi.update({
+        email: newInfo.email,
+        phone: newInfo.phone,
+        address: newInfo.address,
+        pixKey: newInfo.pixKey,
+      });
+      const refreshed = await informacoesApi.get();
+      setBrandInfo(current => ({
+        ...current, ...refreshed,
+        name: refreshed.name || current.name, subtitle: refreshed.subtitle || current.subtitle,
+        mission: refreshed.mission || current.mission, since: refreshed.since || current.since,
+        email: refreshed.email || '', address: refreshed.address || '', phone: refreshed.phone || '', pixKey: refreshed.pixKey || '',
+      }));
+      setBrandInfoHasRecord(Boolean(Object.keys(refreshed || {}).length));
+      setLegacyBrandInfo(null);
+      localStorage.removeItem(STORAGE_KEY_BRAND);
+      showToast('Informações da Associação salvas com sucesso!', 'success');
+    } catch (error) {
+      showToast(error.message || 'Erro ao salvar informações da Associação.', 'warning');
+      throw error;
+    }
   };
 
   const resetToDefaultData = () => {
     [STORAGE_KEY_BRAND, STORAGE_KEY_TESTIMONIALS]
       .forEach(k => localStorage.removeItem(k));
     setCalendarEvents([]);
-    setBrandInfo(siteData.brand);
+    setBrandInfo(EMPTY_BRAND_INFO);
     setTestimonials(siteData.testimonials.items);
     showToast('Dados restaurados para o padrão original!', 'info');
   };
@@ -537,7 +585,7 @@ export function DataProvider({ children }) {
       deleteAdmin,
 
       // Entidades
-      galleryItems, calendarEvents, brandInfo, sponsors, testimonials, toast,
+      galleryItems, calendarEvents, brandInfo, legacyBrandInfo, brandInfoHasRecord, sponsors, testimonials, toast,
       reloadGallery,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
       addCalendarEvent, updateCalendarEvent, deleteCalendarEvent,

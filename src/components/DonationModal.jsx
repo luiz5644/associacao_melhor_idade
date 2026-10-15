@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Heart, Copy, Check, QrCode, Building2, MessageCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { siteData } from '../data/mockData';
+import { useData } from '../context/DataContext';
 
 const DONATION_TIERS = [
   { value: 25, label: 'R$ 25', impact: 'Café comunitário com bolo e frutas para 2 idosos' },
@@ -10,6 +10,7 @@ const DONATION_TIERS = [
 ];
 
 export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
+  const { brandInfo } = useData();
   const [copied, setCopied] = useState(false);
   const [selectedTier, setSelectedTier] = useState(50);
 
@@ -23,7 +24,8 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
   if (!isOpen) return null;
 
   const handleCopyPix = () => {
-    navigator.clipboard.writeText(siteData.brand.pixKey);
+    if (!brandInfo.pixKey) return;
+    navigator.clipboard.writeText(brandInfo.pixKey);
     setCopied(true);
     confetti({
       particleCount: 50,
@@ -44,8 +46,9 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
     });
   };
 
-  const cleanPhone = (siteData.brand.phone || '').replace(/\D/g, '');
-  const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(
+  const cleanPhone = (brandInfo.phone || '').replace(/\D/g, '');
+  const whatsappPhone = cleanPhone.startsWith('55') && cleanPhone.length >= 12 ? cleanPhone : `55${cleanPhone}`;
+  const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(
     mode === 'sponsor'
       ? `Olá! Tenho interesse em patrocinar a Associação Melhor Idade com a empresa ${companyName || ''}.`
       : `Olá! Acabei de fazer uma doação via PIX para a Associação Melhor Idade e gostaria de enviar o comprovante.`
@@ -128,11 +131,14 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
               <p style={{ fontSize: '0.83rem', color: '#5C534E', marginBottom: 12 }}>
                 Abra o aplicativo do seu banco, escolha PIX e transfira qualquer valor com amor:
               </p>
-              
+
               <div className="pix-key-display">
-                <span>{siteData.brand.pixKey}</span>
-                <button 
+                <span>{brandInfo.pixKey || 'Chave PIX ainda não cadastrada.'}</span>
+                <button
                   onClick={handleCopyPix}
+                  disabled={!brandInfo.pixKey}
+                  aria-disabled={!brandInfo.pixKey}
+                  title={!brandInfo.pixKey ? 'Chave PIX ainda não cadastrada.' : undefined}
                   style={{
                     background: copied ? '#3D6058' : '#2A5C66',
                     color: '#FFF',
@@ -160,9 +166,9 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
                 CNPJ: 12.345.678/0001-90<br />
                 Banco Comunitário (001) | Agência: 1234 | C/C: 56789-0
               </div>
-              <a 
-                href={whatsappUrl} 
-                target="_blank" 
+              {cleanPhone && <a
+                href={whatsappUrl}
+                target="_blank"
                 rel="noopener noreferrer"
                 style={{
                   display: 'flex',
@@ -181,7 +187,7 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
               >
                 <MessageCircle size={16} />
                 <span>Enviar Comprovante</span>
-              </a>
+              </a>}
             </div>
           </div>
         )}
@@ -200,9 +206,9 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
                 </p>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
                   <button className="btn btn-pill" onClick={onClose}>Fechar</button>
-                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  {cleanPhone && <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ display:'flex', alignItems:'center', gap:6 }}>
                     <MessageCircle size={15} /> Conversar pelo WhatsApp
-                  </a>
+                  </a>}
                 </div>
               </div>
             ) : (
@@ -213,9 +219,9 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
 
                 <div className="form-group">
                   <label className="form-label">Nome da Empresa / Comércio *</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
+                  <input
+                    type="text"
+                    className="form-input"
                     placeholder="Ex: Farmácia Popular, Padaria Central..."
                     required
                     value={companyName}
@@ -226,9 +232,9 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div className="form-group">
                     <label className="form-label">Nome do Responsável</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
+                    <input
+                      type="text"
+                      className="form-input"
                       placeholder="Ex: Roberto Mendes"
                       value={companyContact}
                       onChange={(e) => setCompanyContact(e.target.value)}
@@ -236,9 +242,9 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
                   </div>
                   <div className="form-group">
                     <label className="form-label">Telefone / WhatsApp Comercial *</label>
-                    <input 
-                      type="tel" 
-                      className="form-input" 
+                    <input
+                      type="tel"
+                      className="form-input"
                       placeholder="(11) 98765-4321"
                       required
                       value={companyPhone}
@@ -249,7 +255,7 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
 
                 <div className="form-group">
                   <label className="form-label">Categoria de Apoio Desejada</label>
-                  <select 
+                  <select
                     className="form-select"
                     value={companyTier}
                     onChange={(e) => setCompanyTier(e.target.value)}

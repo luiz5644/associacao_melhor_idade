@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext';
+import { resolveImageUrl } from '../services/api';
 import { ChevronDown } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 6;
@@ -35,7 +36,7 @@ export default function TestimonialsPage() {
             <article key={testimonial.id} className="testimonial-card">
               <div className="testimonial-avatar-wrap">
                 <img
-                  src={testimonial.avatar}
+                  src={resolveImageUrl(testimonial.avatar)}
                   alt={`Foto de ${testimonial.name}`}
                   className="testimonial-avatar"
                   loading="lazy"

@@ -137,6 +137,14 @@ export const adminApi = {
   },
 };
 
+export const informacoesApi = {
+  get: async () => unpackProps<any>(await fetchApi<any>('/informacoes')),
+  update: async (data: any) => fetchApi<any>('/informacoes', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+};
+
 // ============================================
 // AÇÕES (CALENDÁRIO)
 // ============================================
