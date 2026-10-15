@@ -93,6 +93,7 @@ body {
   background-color: var(--bg-page);
   color: var(--text-body);
   line-height: 1.6;
+  overflow-wrap: anywhere;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   display: flex;
@@ -1367,6 +1368,20 @@ h1, h2, h3, h4, .font-serif {
   .footer-grid {
     grid-template-columns: 1fr 1fr;
     gap: 36px;
+  }
+
+  .calendar-layout {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .calendar-layout > * {
+    min-width: 0;
+  }
+
+  .calendar-main-box {
+    width: 100%;
+    min-width: 0;
   }
 
   /* No mobile: esconde menu desktop e botão admin, mostra hambúrguer */
@@ -3134,8 +3149,8 @@ h1, h2, h3, h4, .font-serif {
   }
 
   .cal-nav-btn {
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
   }
 
   .cal-grid {
@@ -3143,12 +3158,24 @@ h1, h2, h3, h4, .font-serif {
   }
 
   .cal-day-cell {
-    min-height: 38px;
+    min-height: 44px;
     font-size: 0.8rem;
   }
 
   .cal-weekdays {
     font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .cal-nav-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .cal-day-cell {
+    aspect-ratio: auto;
+    min-height: 44px;
   }
 }
 
