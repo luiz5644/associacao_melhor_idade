@@ -4,7 +4,7 @@ import { useData } from '../context/DataContext';
 import { adminApi } from '../services/api';
 
 export default function AdminModal({ isOpen, onClose, onAddEvent }) {
-  const { backendConnected } = useData();
+  const { backendConnected, backendLoading } = useData();
   const [isLoggedIn, setIsLoggedIn] = useState(() => adminApi.isAuthenticated());
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
@@ -26,12 +26,11 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
     setLoading(true);
 
     try {
-      if (backendConnected) {
-        await adminApi.login(username, password);
-        setIsLoggedIn(true);
-      } else {
-        setIsLoggedIn(true);
+      if (!backendConnected || backendLoading) {
+        throw new Error('O backend precisa estar conectado para autenticar e salvar dados.');
       }
+      await adminApi.login(username, password);
+      setIsLoggedIn(true);
     } catch (err) {
       setLoginError(err.message || 'Erro ao autenticar');
     } finally {
@@ -108,12 +107,12 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
             )}
 
             <p style={{ fontSize: '0.82rem', color: '#6E6E6E', marginBottom: '16px' }}>
-              {backendConnected 
+              {backendConnected && !backendLoading
                 ? '🔐 Login conectado à base de dados de administradores.'
-                : '💡 Dica: Backend offline. Você pode clicar diretamente em Entrar no Painel para modo local.'}
+                : '💡 O backend precisa estar conectado para autenticar e salvar dados.'}
             </p>
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading || backendLoading || !backendConnected}>
               {loading ? 'Entrando...' : 'Entrar no Painel'}
             </button>
           </form>

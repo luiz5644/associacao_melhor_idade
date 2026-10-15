@@ -2801,6 +2801,35 @@ h1, h2, h3, h4, .font-serif {
   padding: 32px 0 48px;
 }
 
+.history-page,
+.activities-page,
+.calendar-page,
+.gallery-page {
+  padding-top: 48px;
+}
+
+.history-page .timeline-wrap,
+.activities-page .activities-grid,
+.calendar-page .calendar-layout,
+.gallery-page .gallery-grid {
+  margin-top: 32px;
+}
+
+.history-page .timeline-wrap,
+.activities-page .activities-grid,
+.calendar-page .calendar-layout {
+  padding-top: 0;
+}
+
+@media (max-width: 768px) {
+  .history-page,
+  .activities-page,
+  .calendar-page,
+  .gallery-page {
+    padding-top: 32px;
+  }
+}
+
 .testimonials-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

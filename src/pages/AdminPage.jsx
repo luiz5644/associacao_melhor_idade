@@ -1645,14 +1645,12 @@ export default function AdminPage({ onClose }) {
     setSubmittingLogin(true);
 
     try {
-      if (backendConnected) {
-        await adminApi.login(username, password);
-        await fetchAdmins();
-        setIsLoggedIn(true);
-      } else {
-        // Modo demonstração quando offline
-        setIsLoggedIn(true);
+      if (!backendConnected || backendLoading) {
+        throw new Error('O backend precisa estar conectado para autenticar e cadastrar dados.');
       }
+      await adminApi.login(username, password);
+      await fetchAdmins();
+      setIsLoggedIn(true);
     } catch (err) {
       setLoginError(err.message || 'Usuário ou senha inválidos no backend.');
     } finally {
@@ -1692,7 +1690,7 @@ export default function AdminPage({ onClose }) {
           }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <span style={{ width:8, height:8, borderRadius:'50%', background: backendConnected ? '#10B981' : '#F59E0B' }} />
-              <span>{backendConnected ? 'Backend Conectado (Porta 3000)' : 'Backend Offline (Modo Local)'}</span>
+              <span>{backendConnected ? 'Backend Conectado (Porta 3000)' : 'Backend Offline'}</span>
             </div>
             <button 
               onClick={() => checkBackendConnection(false)}
@@ -1721,13 +1719,13 @@ export default function AdminPage({ onClose }) {
               </div>
             )}
 
-            {!backendConnected && (
+            {(!backendConnected || backendLoading) && (
               <p style={{ fontSize:'0.82rem', color:'var(--text-subtle)', marginBottom:16, background:'#F5F9F8', padding:'10px 14px', borderRadius:8 }}>
-                💡 <strong>Demonstração Local:</strong> Como o backend não foi detectado na porta 3000, você pode clicar em <em>Entrar no Painel</em> para acessar o modo local.
+                💡 O painel precisa do backend conectado na porta 3000 para autenticar e salvar os dados.
               </p>
             )}
 
-            <button type="submit" className="btn btn-primary" disabled={submittingLogin} style={{ width:'100%', padding:'13px 20px', fontSize:'1rem' }}>
+            <button type="submit" className="btn btn-primary" disabled={submittingLogin || backendLoading || !backendConnected} style={{ width:'100%', padding:'13px 20px', fontSize:'1rem' }}>
               {submittingLogin ? 'Autenticando...' : 'Entrar no Painel'}
             </button>
           </form>
