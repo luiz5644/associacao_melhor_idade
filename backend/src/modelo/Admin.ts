@@ -3,6 +3,7 @@ export type propsAdmin = {
     username: string,
     cpf: string,
     senha?: string
+    email: string
 }
 export class Admin{
        private constructor(
@@ -13,9 +14,10 @@ export class Admin{
         id: number | undefined,
         username:string,
         cpf:string,
-        senha: string
+        senha: string,
+        email: string
     ){
-        if(!username||!cpf){
+        if(!username||!cpf!||!email){
             throw new Error("Os campos são Obrigatórios")
         }
         const props: propsAdmin ={
@@ -23,6 +25,7 @@ export class Admin{
             username,
             cpf,
             senha,
+            email
         
         }
         return new Admin(props)
@@ -47,6 +50,9 @@ export class Admin{
     }
     public get id(){
         return this.props.id
+    }
+    public get email(){
+        return this.props.email
     }
     
 

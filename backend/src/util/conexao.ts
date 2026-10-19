@@ -11,6 +11,10 @@ export const conexao = createPool({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
+
+    // Padroniza o tratamento das datas para UTC
+    timezone: "Z",
+
     ssl: {
         rejectUnauthorized: false
     }

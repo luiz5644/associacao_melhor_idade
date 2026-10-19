@@ -5,7 +5,8 @@ import {
     IsOptional,
     IsString,
     MinLength,
-    ValidateIf
+    ValidateIf,
+    IsEmail
 } from "class-validator";
 import { Type } from "class-transformer";
 
@@ -35,6 +36,11 @@ export class adminCreateDto {
     @IsString()
     @MinLength(6, { message: "A senha deve ter pelo menos 6 caracteres" })
     senha?: string;
+
+    @IsNotEmpty()
+    @IsEmail()
+    email: string
+    
 }
 
 export class adminUpdateDto {
@@ -47,4 +53,8 @@ export class adminUpdateDto {
     @IsString()
     @MinLength(6)
     senha?: string;
+
+    @IsNotEmpty()
+    @IsEmail()
+    email: string
 }

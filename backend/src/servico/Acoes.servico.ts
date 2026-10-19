@@ -1,15 +1,17 @@
-import { AcoesDao } from "../dao/Acoes.dao";
 import { Acoes } from "../modelo/Acoes";
-export class AcoesServicos{
+import { AcoesDao } from "../dao/Acoes.dao";
+
+export class AcoesServico{
     constructor(
-        readonly acoesDao: AcoesDao
-    )
-    {}
+        private readonly acoesDao: AcoesDao
+    ){}
+
     public async salvar(acoes:Acoes){
-       return await this.acoesDao.salvar(acoes)
+        return await this.acoesDao.salvar(acoes)
     }
+
     public async buscarPorId(id:number){
-        return await this.acoesDao.buscarporId(id)
+        return await this.acoesDao.buscarPorId(id)
     }
     public async listar(){
         return await this.acoesDao.listar()
@@ -20,6 +22,4 @@ export class AcoesServicos{
     public async deletar(id:number){
         return await this.acoesDao.deletar(id)
     }
-
-
 }

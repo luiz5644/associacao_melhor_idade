@@ -57,7 +57,9 @@ export class AdminControle{
             adminDto.id ?? undefined,
             adminDto.username,
             adminDto.cpf,
-            senhaHash
+            senhaHash,
+            adminDto.email,
+            
         );
 
         console.log("ADMIN CONSTRUÍDO:", admin);
@@ -120,7 +122,8 @@ export class AdminControle{
             id:idNumber,
             username: adminDto.username,
             cpf: "",
-            senha: adminDto.senha
+            senha: adminDto.senha,
+            email: adminDto.email
         }
         
         
@@ -186,6 +189,68 @@ export class AdminControle{
         }
         
       }
+    public async solicitarRecuperacaoSenha(req:Request, res:Response){
+        try{
+            const {email} = req.body
+            if(!email|| typeof email !== "string"){
+                return res.status(400).json({
+                    message:"E-mail invalido"
+                })
+            }
+            const resposta = await this.adminServico.solicitarRecuperacaoSenha(email)
+            return res.status(200).json(resposta)
+        }
+        catch(error){
+            console.log("Erro: ", error)
+             return res.status(500).json({
+            message: "Erro ao solicitar recuperação de senha"
+        });
+        }
+    }
+
+    public async redefinirSenha(req:Request, res:Response){
+        try{
+            const {token,novaSenha} = req.body
+             if (
+            typeof token !== "string" ||
+            typeof novaSenha !== "string"
+        ) {
+            return res.status(400).json({
+                message: "Informe o token e a nova senha"
+            });
+        }
+        const mensagem = await this.adminServico.redefinirSenha(token,novaSenha)
+        return res.status(200).json(mensagem)
+
+        }
+        catch(error){
+            console.log("Erro: ", error)
+             return res.status(500).json({
+            message: "Erro ao solicitar redefinir senha"
+        });
+        }
+
+        
+
+
+
+        
+    }
+    public async testarEmail(req: Request, res: Response) {
+    try {
+        const resultado = await this.adminServico.testarEmail();
+
+        return res.status(200).json({
+            message: resultado
+        });
+    } catch (error) {
+        console.error("Erro ao testar SMTP:", error);
+
+        return res.status(500).json({
+            message: "Falha na conexão SMTP"
+        });
+    }
+}
     
 
     

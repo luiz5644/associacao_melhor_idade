@@ -1,7 +1,7 @@
 import { IsNotEmpty, IsString, IsNumber, IsOptional, IsBoolean } from "class-validator";
 import { Type } from "class-transformer";
 
-export class AcoesDto {
+export class EventosDto {
     constructor(
         public id: number,
         public nome: string,
@@ -9,7 +9,7 @@ export class AcoesDto {
     ) {}
 }
 
-export class AcoesCreateDto {
+export class EventosCreateDto {
     @IsOptional()
     @IsNumber()
     @Type(() => Number)
@@ -44,8 +44,8 @@ export class AcoesCreateDto {
     status!: string;
 }
 
-export class AcoesUpdateDto {
-    @IsNotEmpty()
+export class EventosUpdateDto {
+    @IsOptional()
     @IsNumber()
     @Type(() => Number)
     id!: number;
