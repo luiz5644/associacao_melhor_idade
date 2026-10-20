@@ -12,6 +12,7 @@ import { adminApi, uploadApi, resolveImageUrl } from '../services/api';
 import CadastroAdminPage from './CadastroAdminPage';
 import { validateCPF, validateAdminPassword } from '../utils/adminValidation';
 import { toStoredUrl } from '../services/api';
+import DateField, { validateDateValue, MONTHS } from '../components/DateField';
 
 const FieldError = ({ children }) => children ? <p style={{ color:'#DC2626', fontSize:'0.78rem', marginTop:5 }}>{children}</p> : null;
 const focusFirstError = (errors) => {
@@ -19,8 +20,6 @@ const focusFirstError = (errors) => {
   if (field) Array.from(document.querySelectorAll(`[data-field="${field}"]`))
     .find(element => element.getClientRects().length)?.focus();
 };
-
-const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
 // ── Modal de Confirmação de Exclusão ─────────────────────────────────────────
 function ConfirmDeleteModal({ isOpen, onConfirm, onCancel, title, subtitle }) {
@@ -43,7 +42,7 @@ function ConfirmDeleteModal({ isOpen, onConfirm, onCancel, title, subtitle }) {
   );
 }
 
-// ── Formulário de Lembrança (Álbum) — suporte a múltiplas fotos ──────────────
+// ── Formulário de Lembrança (Álbum) — upload direto e data padronizada ───────
 function GalleryFormModal({ isOpen, item, onSave, onClose }) {
   const fileRef = useRef(null);
   const { backendConnected, showToast } = useData();
@@ -53,35 +52,24 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
     date: item?.date || '',
     photos: item?.photos?.length > 0 ? [...item.photos] : (item?.image ? [item.image] : []),
   });
-  const [urlInput, setUrlInput] = useState('');
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [uploadMode, setUploadMode] = useState('url'); // 'url' | 'file'
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (!isOpen) return;
     setForm({
-      title: item?.title || '', description: item?.description || '', date: item?.date || '',
+      title: item?.title || '',
+      description: item?.description || '',
+      date: item?.date || '',
       photos: item?.photos?.length ? [...item.photos] : (item?.image ? [item.image] : []),
     });
-    setUrlInput('');
     setUploading(false);
     setSaving(false);
-    setUploadMode('url');
     setErrors({});
   }, [item, isOpen]);
 
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
-
-  // Adiciona foto por URL
-  const handleAddUrl = () => {
-    const url = urlInput.trim();
-    if (!url) return;
-    setField('photos', [...form.photos, url]);
-    setErrors(p => ({...p, photos:''}));
-    setUrlInput('');
-  };
 
   // Adiciona uma ou várias fotos por upload de arquivo(s)
   const handleFilesChange = async (e) => {
@@ -132,6 +120,8 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
     e.preventDefault();
     const nextErrors = {};
     if (!form.title.trim()) nextErrors.title = 'Título é obrigatório.';
+    const dateErr = validateDateValue(form.date, false);
+    if (dateErr) nextErrors.date = dateErr;
     if (!form.photos.length) nextErrors.photos = 'Adicione pelo menos uma foto.';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) { focusFirstError(nextErrors); return; }
@@ -161,31 +151,39 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
             <Images size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Álbum de Lembranças</span>
           </div>
           <h3 className="modal-title">{item ? 'Editar Lembrança' : 'Nova Lembrança'}</h3>
-          <p className="modal-subtitle">Adicione quantas fotos quiser — a primeira é a capa da lembrança.</p>
+          <p className="modal-subtitle">Adicione fotos do seu computador — a primeira é a capa da lembrança.</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
           {/* Dados da Lembrança */}
           <div className="form-group">
-                      <label className="form-label">Título <span style={{ color:'#DC2626' }}>*</span></label>
-                      <input data-field="title" className="form-input" type="text" placeholder="Ex: Festa de São João 2026"
-                        value={form.title} onChange={e => { setField('title', e.target.value); setErrors(p => ({...p, title:''})); }} />
-                      <FieldError>{errors.title}</FieldError>
-                    </div>
+            <label className="form-label">Título <span style={{ color:'#DC2626' }}>*</span></label>
+            <input data-field="title" className="form-input" type="text" placeholder="Ex: Festa de São João 2026"
+              value={form.title} onChange={e => { setField('title', e.target.value); setErrors(p => ({...p, title:''})); }} />
+            <FieldError>{errors.title}</FieldError>
+          </div>
 
-                    <div className="form-group">
-                      <label className="form-label">Data do Evento</label>
-                      <input className="form-input" type="date" value={form.date} onChange={e => setField('date', e.target.value)} />
-                    </div>
+          {/* Campo de Data Padronizado */}
+          <DateField
+            label="Data do Evento"
+            value={form.date}
+            onChange={({ isoString }) => {
+              setField('date', isoString);
+              setErrors(p => ({ ...p, date: '' }));
+            }}
+            error={errors.date}
+            dataField="date"
+            idPrefix="gallery-date"
+          />
 
-                    <div className="form-group">
-                      <label className="form-label">Sobre / Descrição</label>
-                      <textarea className="form-input" rows={3} placeholder="Conte sobre o momento especial capturado nesta lembrança..."
-                        value={form.description} onChange={e => setField('description', e.target.value)}
-                        style={{ resize:'vertical', lineHeight:1.6 }} />
-                    </div>
+          <div className="form-group">
+            <label className="form-label">Sobre / Descrição</label>
+            <textarea className="form-input" rows={3} placeholder="Conte sobre o momento especial capturado nesta lembrança..."
+              value={form.description} onChange={e => setField('description', e.target.value)}
+              style={{ resize:'vertical', lineHeight:1.6 }} />
+          </div>
 
-          {/* ─── Seção de Fotos ──────────────────────────────── */}
+          {/* ─── Seção de Fotos (Apenas Upload de Arquivos) ──────────────── */}
           <div style={{ background:'#F5F9F8', borderRadius:14, padding:'20px', border:'1px solid #DCE7E5', marginBottom:18 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <label className="form-label" style={{ margin:0 }}>
@@ -195,54 +193,37 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
                   ({form.photos.length} {form.photos.length === 1 ? 'foto' : 'fotos'} • primeira = capa)
                 </span>
               </label>
-              <div style={{ display:'flex', gap:6 }}>
-                <button type="button"
-                  className={`btn ${uploadMode === 'url' ? 'btn-primary' : 'btn-pill'}`}
-                  style={{ padding:'5px 12px', fontSize:'0.78rem' }}
-                  data-field="photos" onClick={() => setUploadMode('url')}>
-                  <Link size={12} /> URL
-                </button>
-                <button type="button"
-                  className={`btn ${uploadMode === 'file' ? 'btn-primary' : 'btn-pill'}`}
-                  style={{ padding:'5px 12px', fontSize:'0.78rem' }}
-                  onClick={() => setUploadMode('file')}>
-                  <Upload size={12} /> Arquivo
-                </button>
-              </div>
-              <FieldError>{errors.photos}</FieldError>
+              <button
+                type="button"
+                className="btn btn-pill"
+                style={{ padding:'6px 14px', fontSize:'0.78rem' }}
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+              >
+                <Upload size={13} /> Adicionar fotos
+              </button>
             </div>
 
-            {/* Input de URL */}
-            {uploadMode === 'url' && (
-              <div style={{ display:'flex', gap:8, marginBottom:14 }}>
-                <input className="form-input" type="url" placeholder="https://exemplo.com/foto.jpg"
-                  value={urlInput} onChange={e => setUrlInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddUrl(); } }}
-                  style={{ flex:1 }} />
-                <button type="button" className="btn btn-primary" style={{ padding:'10px 16px', whiteSpace:'nowrap' }}
-                  onClick={handleAddUrl} disabled={!urlInput.trim()}>
-                  <Plus size={14} /> Adicionar
-                </button>
-              </div>
-            )}
-
-            {/* Área de Upload de Arquivos (múltiplos) */}
-            {uploadMode === 'file' && (
-              <div onClick={() => fileRef.current?.click()} style={{
-                border:'2px dashed #B0CDD6', borderRadius:10, padding:'20px', textAlign:'center',
-                cursor:'pointer', background:'#EAF4F6', transition:'border-color 0.2s', marginBottom:14 }}
-                onMouseEnter={e => e.currentTarget.style.borderColor='#2A5C66'}
-                onMouseLeave={e => e.currentTarget.style.borderColor='#B0CDD6'}>
-                <input ref={fileRef} type="file" accept="image/*" multiple style={{ display:'none' }} onChange={handleFilesChange} />
-                <Upload size={24} color="#2A5C66" style={{ marginBottom:6 }} />
-                <p style={{ fontSize:'0.88rem', color:'#2A5C66', fontWeight:700 }}>
-                  {uploading ? 'Carregando fotos...' : 'Clique para selecionar fotos'}
-                </p>
-                <p style={{ fontSize:'0.76rem', color:'#6E6E6E', marginTop:3 }}>
-                  PNG, JPG, WEBP até 5MB cada • Você pode selecionar várias de uma vez
-                </p>
-              </div>
-            )}
+            {/* Área de Upload Direto de Arquivos (múltiplos) */}
+            <div
+              onClick={() => fileRef.current?.click()}
+              data-field="photos"
+              style={{
+                border:'2px dashed #B0CDD6', borderRadius:10, padding:'22px 20px', textAlign:'center',
+                cursor:'pointer', background:'#EAF4F6', transition:'all 0.2s', marginBottom:14 }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor='#2A5C66'; e.currentTarget.style.background='#E2EFF2'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor='#B0CDD6'; e.currentTarget.style.background='#EAF4F6'; }}
+            >
+              <input ref={fileRef} type="file" accept="image/*" multiple style={{ display:'none' }} onChange={handleFilesChange} />
+              <Upload size={26} color="#2A5C66" style={{ marginBottom:6 }} />
+              <p style={{ fontSize:'0.9rem', color:'#2A5C66', fontWeight:700 }}>
+                {uploading ? 'Carregando fotos...' : 'Clique ou arraste para selecionar fotos'}
+              </p>
+              <p style={{ fontSize:'0.76rem', color:'#6E6E6E', marginTop:4 }}>
+                PNG, JPG, WEBP até 5MB cada • Selecione várias fotos de uma vez
+              </p>
+            </div>
+            <FieldError>{errors.photos}</FieldError>
 
             {/* Grade de Miniaturas das Fotos Adicionadas */}
             {form.photos.length > 0 ? (
@@ -295,7 +276,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
             ) : (
               <div style={{ textAlign:'center', padding:'18px', color:'var(--text-subtle)', fontSize:'0.85rem' }}>
                 <Camera size={28} style={{ opacity:0.3, display:'block', margin:'0 auto 8px' }} />
-                Nenhuma foto adicionada ainda. Use os botões acima para inserir fotos.
+                Nenhuma foto adicionada ainda. Clique na área acima para enviar fotos do seu computador.
               </div>
             )}
           </div>
@@ -332,16 +313,12 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
 
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
-  const daysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
-  const numDays = daysInMonth(parseInt(form.month), parseInt(form.year));
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const day = Number(form.day), month = Number(form.month), year = Number(form.year);
-    const date = new Date(year, month, day);
     const nextErrors = {};
     if (!form.title.trim()) nextErrors.title = 'Título é obrigatório.';
-    if (!form.day || !form.month || !form.year || date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) nextErrors.date = 'Informe uma data válida.';
+    const dateErr = validateDateValue({ day: form.day, month: form.month, year: form.year }, true);
+    if (dateErr) nextErrors.date = dateErr;
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.time)) nextErrors.time = 'Informe um horário válido.';
     if (!form.location.trim()) nextErrors.location = 'Local é obrigatório.';
     if (!form.desc.trim()) nextErrors.desc = 'Descrição é obrigatória.';
@@ -356,8 +333,8 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
       year: parseInt(form.year, 10),
       time: form.time,
       location: form.location,
-      isHighlight: form.isHighlight
-      ,status: item?.status || 'ativo'
+      isHighlight: form.isHighlight,
+      status: item?.status || 'ativo'
     }); onClose(); } finally { setSaving(false); }
   };
 
@@ -385,33 +362,19 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
             <FieldError>{errors.title}</FieldError>
           </div>
 
-          {/* Data e Horário */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12 }}>
-            <div className="form-group">
-              <label className="form-label">Mês</label>
-              <select data-field="date" className="form-select" value={form.month} onChange={e => { setField('month', e.target.value); setField('day', ''); setErrors(p => ({...p,date:''})); }}>
-                <option value="">Selecione</option>
-                {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Dia</label>
-              <select className="form-select" value={form.day} onChange={e => {setField('day', e.target.value); setErrors(p => ({...p,date:''}));}}>
-                <option value="">Selecione</option>
-                {Array.from({ length: numDays }, (_, i) => i + 1).map(d => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Ano</label>
-              <select className="form-select" value={form.year} onChange={e => {setField('year', e.target.value); setErrors(p => ({...p,date:''}));}}>
-                <option value="">Selecione</option>
-                {[2026, 2027, 2028].map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
-          </div>
-          <FieldError>{errors.date}</FieldError>
+          {/* Campo de Data Padronizado */}
+          <DateField
+            label="Data da Ação / Evento"
+            required
+            value={{ day: form.day, month: form.month, year: form.year }}
+            onChange={({ day, month, year }) => {
+              setForm(p => ({ ...p, day, month, year }));
+              setErrors(p => ({ ...p, date: '' }));
+            }}
+            error={errors.date}
+            dataField="date"
+            idPrefix="calendar-event-date"
+          />
 
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
             <div className="form-group">
@@ -460,6 +423,7 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
   );
 }
 
+
 // ── Formulário de Patrocinador (Modal) ──────────────────────────────────────
 function SponsorFormModal({ isOpen, item, onSave, onClose }) {
   const { backendConnected, showToast } = useData();
@@ -471,8 +435,6 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
     description: '',
     active: true
   });
-  const [uploadMode, setUploadMode] = useState('file');
-  const [urlInput, setUrlInput] = useState('');
   const [errors, setErrors] = useState({});
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -487,7 +449,6 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
         description: item.description || '',
         active: item.active !== undefined ? item.active : true
       });
-      setUrlInput(item.logo || '');
     } else {
       setForm({
         name: '',
@@ -496,12 +457,10 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
         description: '',
         active: true
       });
-      setUrlInput('');
     }
     setErrors({});
     setUploading(false);
     setSaving(false);
-    setUploadMode('file');
   }, [item, isOpen]);
 
   if (!isOpen) return null;
@@ -537,12 +496,6 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
     e.target.value = '';
   };
 
-  const handleApplyUrl = () => {
-    if (urlInput.trim()) {
-      setField('logo', urlInput.trim());
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     const websiteUrl = form.websiteUrl.trim() && !/^https?:\/\//i.test(form.websiteUrl.trim()) ? `https://${form.websiteUrl.trim()}` : form.websiteUrl.trim();
@@ -560,127 +513,88 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
   };
 
   return (
-      <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-        <div className="modal-card" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:38, height:38, background:'#FDF6F0', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <Building2 size={20} color="#B8621A" />
-              </div>
-              <div>
-                <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.25rem' }}>
-                  {item ? 'Editar Patrocinador' : 'Novo Patrocinador'}
-                </h3>
-                <p style={{ fontSize:'0.82rem', color:'var(--text-subtle)' }}>
-                  Empresa parceira com logo no carrossel da página inicial
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="modal-card" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
+        <button className="modal-close-btn" onClick={onClose} aria-label="Fechar">
+          <X size={20} />
+        </button>
+        <div className="modal-header">
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
+            <Building2 size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Patrocinadores & Parceiros</span>
+          </div>
+          <h3 className="modal-title">{item ? 'Editar Patrocinador' : 'Novo Patrocinador'}</h3>
+          <p className="modal-subtitle">Empresa parceira com logo no carrossel da página inicial.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="form-group">
+            <label className="form-label">Nome da Empresa ou Comércio <span style={{ color:'#DC2626' }}>*</span></label>
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Ex: Farmácia São Lucas, Padaria Central..."
+              data-field="name"
+              value={form.name}
+              onChange={e => {setField('name', e.target.value); setErrors(p => ({...p,name:''}));}}
+            />
+            <FieldError>{errors.name}</FieldError>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              <Globe size={13} style={{ verticalAlign:'middle', marginRight:4 }} />
+              Website ou Rede Social
+            </label>
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Ex: https://instagram.com/empresa"
+              data-field="websiteUrl" value={form.websiteUrl}
+              onChange={e => {setField('websiteUrl', e.target.value); setErrors(p => ({...p,websiteUrl:''}));}}
+            />
+            <FieldError>{errors.websiteUrl}</FieldError>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              <Camera size={14} style={{ verticalAlign:'middle', marginRight:5 }} />
+              Logo da Empresa / Patrocinador
+            </label>
+
+            {/* Upload Direto de Imagem */}
+            <div>
+              <input
+                type="file"
+                ref={fileRef}
+                accept="image/*"
+                style={{ display:'none' }}
+                onChange={handleFileUpload}
+              />
+              <div
+                onClick={() => fileRef.current?.click()}
+                data-field="logo"
+                style={{
+                  border:'2px dashed #BED8D3', borderRadius:10, padding:'20px', textAlign:'center',
+                  cursor:'pointer', background:'#F5F9F8', transition:'all 0.2s', marginBottom:10 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor='#2A5C66'; e.currentTarget.style.background='#EAF4F6'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor='#BED8D3'; e.currentTarget.style.background='#F5F9F8'; }}
+              >
+                <Upload size={22} color="#2A5C66" style={{ marginBottom:6 }} />
+                <p style={{ fontSize:'0.88rem', color:'#2A5C66', fontWeight:700 }}>
+                  {uploading ? 'Enviando logo...' : 'Escolher arquivo de imagem do computador'}
+                </p>
+                <p style={{ fontSize:'0.76rem', color:'#6E6E6E', marginTop:3 }}>
+                  PNG, JPG, WEBP até 5MB
                 </p>
               </div>
             </div>
-            <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-subtle)' }}>
-              <X size={20} />
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="form-group">
-              <label className="form-label">Nome da Empresa ou Comércio *</label>
-              <input
-                className="form-input"
-                type="text"
-                placeholder="Ex: Farmácia São Lucas, Padaria Central..."
-                data-field="name"
-                value={form.name}
-                onChange={e => {setField('name', e.target.value); setErrors(p => ({...p,name:''}));}}
-              />
-              <FieldError>{errors.name}</FieldError>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">
-                <Globe size={13} style={{ verticalAlign:'middle', marginRight:4 }} />
-                Website ou Rede Social
-              </label>
-              <input
-                className="form-input"
-                type="text"
-                placeholder="Ex: https://instagram.com/empresa"
-                data-field="websiteUrl" value={form.websiteUrl}
-                onChange={e => {setField('websiteUrl', e.target.value); setErrors(p => ({...p,websiteUrl:''}));}}
-              />
-              <FieldError>{errors.websiteUrl}</FieldError>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">
-                <Camera size={14} style={{ verticalAlign:'middle', marginRight:5 }} />
-                Logo da Empresa / Patrocinador
-              </label>
-
-              {/* Alternar modo Arquivo / URL */}
-                            <div style={{ display:'flex', gap:8, marginBottom:10 }}>
-                              <button
-                                type="button"
-                                className={`btn btn-pill ${uploadMode === 'file' ? 'active' : ''}`}
-                                style={{ fontSize:'0.8rem', padding:'5px 12px' }}
-                                onClick={() => setUploadMode('file')}
-                              >
-                                <Upload size={13} /> Enviar do Computador
-                              </button>
-                              <button
-                type="button"
-                className={`btn btn-pill ${uploadMode === 'url' ? 'active' : ''}`}
-                style={{ fontSize:'0.8rem', padding:'5px 12px' }}
-                onClick={() => setUploadMode('url')}
-              >
-                <Link size={13} /> Inserir Link (URL)
-              </button>
-            </div>
-
-            {uploadMode === 'file' ? (
-              <div>
-                <input
-                  type="file"
-                  ref={fileRef}
-                  accept="image/*"
-                  style={{ display:'none' }}
-                  onChange={handleFileUpload}
-                />
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ width:'100%', background:'#F5F9F8', border:'2px dashed #BED8D3', color:'#2A5C66', padding:'14px', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', gap:8, cursor:'pointer' }}
-                  onClick={() => fileRef.current?.click()}
-                >
-                  <Upload size={18} />
-                  <span>Escolher arquivo de imagem do computador</span>
-                </button>
-              </div>
-            ) : (
-              <div style={{ display:'flex', gap:8 }}>
-                <input
-                  className="form-input"
-                  type="url"
-                  placeholder="https://exemplo.com/logo.png"
-                  value={urlInput}
-                  onChange={e => setUrlInput(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="btn btn-pill"
-                  style={{ whiteSpace:'nowrap' }}
-                  onClick={handleApplyUrl}
-                >
-                  Aplicar
-                </button>
-              </div>
-            )}
 
             {/* Preview do Logo */}
             {form.logo && (
               <div style={{ marginTop:12, padding:14, background:'#FAF7F5', border:'1px solid #DCE7E5', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
                 <div style={{ width:70, height:70, background:'#fff', borderRadius:8, border:'1px solid #E5E7EB', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', padding:6 }}>
                   <img
-                    src={form.logo}
+                    src={resolveImageUrl(form.logo)}
                     alt="Pré-visualização do logo"
                     style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain' }}
                     onError={(e) => {
@@ -732,7 +646,7 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
           <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
             <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
             <button type="submit" className="btn btn-primary" disabled={uploading || saving}>
-              <CheckCircle size={15} /> {item ? 'Salvar Alterações' : 'Cadastrar Patrocinador'}
+              <CheckCircle size={15} /> {saving ? 'Salvando...' : (item ? 'Salvar Alterações' : 'Cadastrar Patrocinador')}
             </button>
           </div>
         </form>
@@ -740,6 +654,7 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
     </div>
   );
 }
+
 
 // ── PAINEL: VISÃO GERAL ──────────────────────────────────────────────────────
 function TabOverview({ setActiveTab }) {
@@ -1522,9 +1437,8 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
   const { backendConnected, showToast } = useData();
   const fileRef = useRef(null);
   const [form, setForm] = useState({ name: '', role: '', avatar: '', text: '' });
-  const [uploadMode, setUploadMode] = useState('file');
-  const [urlInput, setUrlInput] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
@@ -1533,60 +1447,78 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
     setForm({
       name: item?.name || '',
       role: item?.role || '',
-      avatar: resolveImageUrl(item?.avatar || ''),
+      avatar: item?.avatar ? resolveImageUrl(item.avatar) : '',
       text: item?.text || ''
     });
     setErrors({});
-    setUrlInput(item?.avatar || '');
-    setUploadMode('file');
     setUploading(false);
+    setSaving(false);
   }, [item, isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setErrors(p => ({ ...p, avatar: 'Selecione um arquivo de imagem válido.' }));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors(p => ({ ...p, avatar: 'A imagem deve ter no máximo 5 MB.' }));
+      return;
+    }
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível enviar a foto.', 'warning');
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadApi.upload(file);
+      setField('avatar', resolveImageUrl(url));
+      setErrors(p => ({ ...p, avatar: '' }));
+    } catch (error) {
+      setErrors(p => ({ ...p, avatar: error.message || 'Não foi possível enviar a foto.' }));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const nextErrors = {};
     if (!form.name.trim()) nextErrors.name = 'Nome é obrigatório.';
     if (!form.avatar.trim()) nextErrors.avatar = 'Adicione uma foto para o depoimento.';
-    else if (form.avatar.startsWith('data:')) nextErrors.avatar = 'Envie a foto por URL ou arquivo, sem dados incorporados.';
-    else if (!form.avatar.startsWith('/uploads/')) {
-      try {
-        const photoUrl = new URL(form.avatar);
-        if (!['http:', 'https:'].includes(photoUrl.protocol)) nextErrors.avatar = 'Informe um endereço de foto válido.';
-      } catch (_) { nextErrors.avatar = 'Informe um endereço de foto válido.'; }
-    }
     if (!form.text.trim()) nextErrors.text = 'Depoimento é obrigatório.';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) { focusFirstError(nextErrors); return; }
-    onSave({
-      name: form.name.trim(),
-      role: form.role.trim(),
-      avatar: toStoredUrl(form.avatar.trim()),
-      text: form.text.trim()
-    });
+    setSaving(true);
+    try {
+      await onSave({
+        name: form.name.trim(),
+        role: form.role.trim(),
+        avatar: toStoredUrl(form.avatar.trim()),
+        text: form.text.trim()
+      });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="modal-card" style={{ maxWidth: 520 }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 38, height: 38, background: '#FDF6F0', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <HeartHandshake size={20} color="#2A5C66" />
-            </div>
-            <div>
-              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem' }}>
-                {item ? 'Editar Depoimento' : 'Novo Depoimento'}
-              </h3>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-subtle)' }}>
-                Depoimento exibido na página pública de Depoimentos
-              </p>
-            </div>
+      <div className="modal-card" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
+        <button className="modal-close-btn" onClick={onClose} aria-label="Fechar">
+          <X size={20} />
+        </button>
+        <div className="modal-header">
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
+            <HeartHandshake size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Depoimentos</span>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)' }}>
-            <X size={20} />
-          </button>
+          <h3 className="modal-title">{item ? 'Editar Depoimento' : 'Novo Depoimento'}</h3>
+          <p className="modal-subtitle">Depoimento exibido na página pública de Depoimentos.</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
@@ -1615,35 +1547,56 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Foto <span style={{ color:'#DC2626' }}>*</span></label>
-            <div style={{ display:'flex', gap:8, marginBottom:10 }}>
-              <button data-field="avatar" type="button" className="btn btn-pill" onClick={() => setUploadMode('file')}><Upload size={13} /> Enviar do Computador</button>
-              <button type="button" className="btn btn-pill" onClick={() => setUploadMode('url')}><Link size={13} /> Inserir Link (URL)</button>
-            </div>
-            {uploadMode === 'file' ? (
-              <div>
-                <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }} onChange={async e => {
-                  const file = e.target.files?.[0]; e.target.value = ''; if (!file) return;
-                  if (!file.type.startsWith('image/')) { setErrors(p => ({...p,avatar:'Selecione um arquivo de imagem válido.'})); return; }
-                  if (file.size > 5 * 1024 * 1024) { setErrors(p => ({...p,avatar:'A imagem deve ter no máximo 5 MB.'})); return; }
-                  if (!backendConnected) { showToast('Backend offline. Envie a foto por URL.', 'warning'); return; }
-                  setUploading(true);
-                  try { setField('avatar', resolveImageUrl(await uploadApi.upload(file))); setErrors(p => ({...p,avatar:''})); }
-                  catch (error) { setErrors(p => ({...p,avatar:error.message || 'Não foi possível enviar a foto.'})); }
-                  finally { setUploading(false); }
-                }} />
-                <button type="button" className="btn" onClick={() => backendConnected ? fileRef.current?.click() : showToast('Backend offline. Envie a foto por URL.', 'warning')} disabled={uploading} style={{ width:'100%', background:'#F5F9F8', border:'2px dashed #BED8D3', color:'#2A5C66', padding:14, borderRadius:10 }}>
-                  <Upload size={18} /> {uploading ? 'Enviando foto...' : 'Escolher arquivo de imagem do computador'}
-                </button>
+            <label className="form-label">Foto do Depoente <span style={{ color:'#DC2626' }}>*</span></label>
+            {/* Upload Direto de Imagem */}
+            <div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                style={{ display:'none' }}
+                onChange={handleFileUpload}
+              />
+              <div
+                onClick={() => fileRef.current?.click()}
+                data-field="avatar"
+                style={{
+                  border:'2px dashed #BED8D3', borderRadius:10, padding:'20px', textAlign:'center',
+                  cursor:'pointer', background:'#F5F9F8', transition:'all 0.2s', marginBottom:8 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor='#2A5C66'; e.currentTarget.style.background='#EAF4F6'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor='#BED8D3'; e.currentTarget.style.background='#F5F9F8'; }}
+              >
+                <Upload size={22} color="#2A5C66" style={{ marginBottom:6 }} />
+                <p style={{ fontSize:'0.88rem', color:'#2A5C66', fontWeight:700 }}>
+                  {uploading ? 'Enviando foto...' : 'Escolher arquivo de imagem do computador'}
+                </p>
+                <p style={{ fontSize:'0.76rem', color:'#6E6E6E', marginTop:3 }}>
+                  PNG, JPG, WEBP até 5MB
+                </p>
               </div>
-            ) : (
-              <div style={{ display:'flex', gap:8 }}>
-                <input data-field="avatar" className="form-input" type="url" placeholder="https://exemplo.com/foto.jpg" value={urlInput} onChange={e => {setUrlInput(e.target.value); setErrors(p => ({...p,avatar:''}));}} />
-                <button type="button" className="btn btn-pill" onClick={() => {setField('avatar',urlInput.trim()); setErrors(p => ({...p,avatar:''}));}}>Aplicar</button>
+            </div>
+
+            {form.avatar && (
+              <div style={{ marginTop:12, padding:14, background:'#FAF7F5', border:'1px solid #DCE7E5', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
+                <img
+                  src={resolveImageUrl(form.avatar)}
+                  alt="Pré-visualização da foto"
+                  style={{ width:60, height:60, objectFit:'cover', borderRadius:'50%', border:'2px solid #2A5C66' }}
+                  onError={e => { e.currentTarget.style.display = 'none'; }}
+                />
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-main)' }}>Prévia da Foto</div>
+                  <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)' }}>Foto cadastrada para o depoimento.</div>
+                  <button
+                    type="button"
+                    onClick={() => setField('avatar', '')}
+                    style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.75rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}
+                  >
+                    Remover foto
+                  </button>
+                </div>
               </div>
             )}
-            {form.avatar && <div style={{ marginTop:12 }}><img src={resolveImageUrl(form.avatar)} alt="Pré-visualização da foto" style={{ width:70, height:70, objectFit:'cover', borderRadius:8 }} /></div>}
-            {!form.avatar && <p style={{ fontSize:'0.78rem', color:'var(--text-subtle)', marginTop:6 }}>Adicione uma foto para o depoimento.</p>}
             <FieldError>{errors.avatar}</FieldError>
           </div>
 
@@ -1651,7 +1604,7 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
             <label className="form-label">Depoimento <span style={{ color: '#DC2626' }}>*</span></label>
             <textarea
               className="form-input"
-              rows={5}
+              rows={4}
               placeholder="Conte como a associação impactou a vida desta pessoa..."
               data-field="text"
               value={form.text}
@@ -1663,8 +1616,8 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary" disabled={uploading}>
-              <CheckCircle size={15} /> {item ? 'Salvar Alterações' : 'Adicionar Depoimento'}
+            <button type="submit" className="btn btn-primary" disabled={uploading || saving}>
+              <CheckCircle size={15} /> {saving ? 'Salvando...' : (item ? 'Salvar Alterações' : 'Adicionar Depoimento')}
             </button>
           </div>
         </form>
@@ -1672,6 +1625,7 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
     </div>
   );
 }
+
 
 // ── PAINEL: CONFIGURAÇÕES ─────────────────────────────────────────────────────
 function TabSettings() {

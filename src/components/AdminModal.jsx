@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Shield, Lock, User, PlusCircle, Users, CalendarCheck, HeartHandshake, CheckCircle } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { adminApi } from '../services/api';
+import DateField, { validateDateValue } from './DateField';
 
 export default function AdminModal({ isOpen, onClose, onAddEvent }) {
   const { backendConnected, backendLoading } = useData();
@@ -13,7 +14,8 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
   
   // Novo evento
   const [newTitle, setNewTitle] = useState('');
-  const [newDay, setNewDay] = useState('15');
+  const [dateValue, setDateValue] = useState({ day: 15, month: 9, year: 2026 });
+  const [dateError, setDateError] = useState('');
   const [newTime, setNewTime] = useState('14:00');
   const [newDesc, setNewDesc] = useState('');
   const [eventAddedSuccess, setEventAddedSuccess] = useState(false);
@@ -39,21 +41,30 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
   };
 
   const handleCreateEvent = (e) => {
-      e.preventDefault();
-      if (!newTitle) return;
+    e.preventDefault();
+    if (!newTitle.trim()) return;
 
-      onAddEvent({
-        day: parseInt(newDay, 10),
-        title: newTitle,
-        time: newTime,
-        desc: newDesc || "Atividade especial da comunidade."
-      });
+    const err = validateDateValue(dateValue, true);
+    if (err) {
+      setDateError(err);
+      return;
+    }
+    setDateError('');
 
-      setEventAddedSuccess(true);
-      setNewTitle('');
-      setNewDesc('');
-      setTimeout(() => setEventAddedSuccess(false), 3000);
-    };
+    onAddEvent({
+      day: parseInt(dateValue.day, 10),
+      month: parseInt(dateValue.month, 10),
+      year: parseInt(dateValue.year, 10),
+      title: newTitle.trim(),
+      time: newTime,
+      desc: newDesc || "Atividade especial da comunidade."
+    });
+
+    setEventAddedSuccess(true);
+    setNewTitle('');
+    setNewDesc('');
+    setTimeout(() => setEventAddedSuccess(false), 3000);
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
@@ -149,13 +160,13 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
               {eventAddedSuccess && (
                 <div style={{ background: '#EAF5F2', color: '#2A5C66', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <CheckCircle size={16} />
-                  <span>Evento agendado com sucesso no calendário de Outubro 2026!</span>
+                  <span>Evento agendado com sucesso no calendário!</span>
                 </div>
               )}
 
               <form onSubmit={handleCreateEvent}>
                 <div className="form-group">
-                  <label className="form-label">Nome da Ação / Encontro</label>
+                  <label className="form-label">Nome da Ação / Encontro <span style={{ color: '#DC2626' }}>*</span></label>
                   <input 
                     type="text" 
                     className="form-input" 
@@ -166,30 +177,27 @@ export default function AdminModal({ isOpen, onClose, onAddEvent }) {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
-                                  <div className="form-group">
-                                    <label className="form-label">Dia (Outubro)</label>
-                                    <select 
-                                      className="form-select" 
-                                      value={newDay} 
-                                      onChange={(e) => setNewDay(e.target.value)}
-                                    >
-                                      {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                                        <option key={d} value={d}>Dia {d}</option>
-                                      ))}
-                                    </select>
-                                  </div>
+                <DateField
+                  label="Data do Encontro"
+                  required
+                  value={dateValue}
+                  onChange={(val) => {
+                    setDateValue(val);
+                    setDateError('');
+                  }}
+                  error={dateError}
+                  idPrefix="admin-modal-event-date"
+                />
 
-                                  <div className="form-group">
-                                    <label className="form-label">Horário</label>
-                                    <input 
-                                      type="time" 
-                                      className="form-input" 
-                                      value={newTime}
-                                      onChange={(e) => setNewTime(e.target.value)}
-                                    />
-                                  </div>
-                                </div>
+                <div className="form-group">
+                  <label className="form-label">Horário</label>
+                  <input 
+                    type="time" 
+                    className="form-input" 
+                    value={newTime}
+                    onChange={(e) => setNewTime(e.target.value)}
+                  />
+                </div>
 
                 <div className="form-group">
                   <label className="form-label">Descrição Breve</label>
