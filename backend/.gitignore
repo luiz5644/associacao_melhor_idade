@@ -1,2 +1,4 @@
 src/config/.env
+.env
+.env.*
 uploads/

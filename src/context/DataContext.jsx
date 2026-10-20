@@ -3,11 +3,13 @@ import { siteData } from '../data/mockData';
 import {
   adminApi,
   acoesApi,
+  eventosApi,
   albumApi,
   fotosApi,
   checkBackendHealth,
-  adaptAcaoToFrontend,
-  adaptAcaoToBackend,
+  adaptEventoToFrontend,
+  adaptEventoToBackend,
+  adaptAcaoRecorrenteToFrontend,
   adaptAlbumToFrontend,
   patrocinadoresApi,
   adaptSponsorToFrontend,
@@ -33,6 +35,9 @@ export function DataProvider({ children }) {
   const [galleryItems, setGalleryItems] = useState([]);
 
   const [calendarEvents, setCalendarEvents] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [activitiesError, setActivitiesError] = useState('');
 
   const [brandInfo, setBrandInfo] = useState(EMPTY_BRAND_INFO);
   const [legacyBrandInfo, setLegacyBrandInfo] = useState(() => {
@@ -126,6 +131,8 @@ export function DataProvider({ children }) {
   // ── Sincronização inicial com o Backend (se ativo na porta 3000) ────
   const checkAndSyncBackend = useCallback(async (silent = false) => {
     setBackendLoading(true);
+    setActivitiesLoading(true);
+    setActivitiesError('');
     try {
       const isOnline = await checkBackendHealth();
       setBackendConnected(isOnline);
@@ -168,13 +175,24 @@ export function DataProvider({ children }) {
           console.warn('[Backend] Erro ao carregar patrocinadores:', err);
         }
 
-        // Carrega ações do calendário do backend
+        // Carrega eventos do calendário e ações recorrentes separadamente.
         try {
-          const acoesData = await acoesApi.list();
-          setCalendarEvents(Array.isArray(acoesData) ? acoesData.map(a => adaptAcaoToFrontend(a)) : []);
+          const events = await eventosApi.list();
+          setCalendarEvents(Array.isArray(events) ? events.map(adaptEventoToFrontend) : []);
         } catch (err) {
           setCalendarEvents([]);
+          console.warn('[Backend] Erro ao carregar eventos:', err);
+        }
+        try {
+          const actions = await acoesApi.list();
+          setActivities(Array.isArray(actions) ? actions.map(adaptAcaoRecorrenteToFrontend) : []);
+          setActivitiesError('');
+        } catch (err) {
+          setActivities([]);
+          setActivitiesError(err.message || 'Não foi possível carregar as ações.');
           console.warn('[Backend] Erro ao carregar ações:', err);
+        } finally {
+          setActivitiesLoading(false);
         }
 
         if (!silent) {
@@ -183,6 +201,8 @@ export function DataProvider({ children }) {
       } else {
         setGalleryItems([]);
         setCalendarEvents([]);
+        setActivities([]);
+        setActivitiesError('Backend desconectado. Não foi possível carregar as ações.');
         setSponsors([]);
         setBrandInfo(EMPTY_BRAND_INFO);
         if (!silent) {
@@ -193,11 +213,14 @@ export function DataProvider({ children }) {
       setBackendConnected(false);
       setGalleryItems([]);
       setCalendarEvents([]);
+      setActivities([]);
+      setActivitiesError('Não foi possível conectar ao backend para carregar as ações.');
       setSponsors([]);
       if (!silent) {
         showToast('Backend inacessível. Usando armazenamento local.', 'info');
       }
     } finally {
+      setActivitiesLoading(false);
       setBackendLoading(false);
     }
   }, [loadGalleryFromBackend, loadSponsorsFromBackend, showToast]);
@@ -387,9 +410,9 @@ export function DataProvider({ children }) {
     };
 
     try {
-      await acoesApi.create(adaptAcaoToBackend(newEvent));
-      const acoes = await acoesApi.list();
-      setCalendarEvents(Array.isArray(acoes) ? acoes.map(a => adaptAcaoToFrontend(a)) : []);
+      await eventosApi.create(adaptEventoToBackend(newEvent));
+      const events = await eventosApi.list();
+      setCalendarEvents(Array.isArray(events) ? events.map(adaptEventoToFrontend) : []);
       showToast('Ação salva com sucesso no banco de dados!', 'success');
     } catch (err) {
       showToast(err.message || 'Erro ao cadastrar ação no backend.', 'warning');
@@ -405,9 +428,9 @@ export function DataProvider({ children }) {
     const numericId = Number(event?.apiId ?? id);
     if (!Number.isInteger(numericId) || numericId <= 0) return;
     try {
-      await acoesApi.update(numericId, adaptAcaoToBackend({ ...event, ...updatedData, id: numericId }));
-      const acoes = await acoesApi.list();
-      setCalendarEvents(Array.isArray(acoes) ? acoes.map(a => adaptAcaoToFrontend(a)) : []);
+      await eventosApi.update(numericId, adaptEventoToBackend({ ...event, ...updatedData, id: numericId }));
+      const events = await eventosApi.list();
+      setCalendarEvents(Array.isArray(events) ? events.map(adaptEventoToFrontend) : []);
       showToast('Ação atualizada com sucesso no backend!', 'info');
     } catch (err) {
       showToast(err.message || 'Erro ao atualizar ação no backend.', 'warning');
@@ -423,12 +446,93 @@ export function DataProvider({ children }) {
     const numericId = Number(event?.apiId ?? id);
     if (!Number.isInteger(numericId) || numericId <= 0) return;
     try {
-      await acoesApi.delete(numericId);
-      const acoes = await acoesApi.list();
-      setCalendarEvents(Array.isArray(acoes) ? acoes.map(a => adaptAcaoToFrontend(a)) : []);
+      await eventosApi.delete(numericId);
+      const events = await eventosApi.list();
+      setCalendarEvents(Array.isArray(events) ? events.map(adaptEventoToFrontend) : []);
       showToast('Ação excluída com sucesso do backend!', 'warning');
     } catch (err) {
       showToast(err.message || 'Erro ao remover ação do backend.', 'warning');
+    }
+  };
+
+  const reloadActivities = useCallback(async () => {
+    if (!backendConnected) {
+      setActivities([]);
+      setActivitiesError('Backend desconectado. Não foi possível carregar as ações.');
+      return [];
+    }
+    setActivitiesLoading(true);
+    setActivitiesError('');
+    try {
+      const records = await acoesApi.list();
+      const items = Array.isArray(records) ? records.map(adaptAcaoRecorrenteToFrontend) : [];
+      setActivities(items);
+      return items;
+    } catch (error) {
+      setActivities([]);
+      setActivitiesError(error.message || 'Não foi possível carregar as ações.');
+      throw error;
+    } finally {
+      setActivitiesLoading(false);
+    }
+  }, [backendConnected]);
+
+  const addActivity = async (data) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível cadastrar ação no banco.', 'warning');
+      throw new Error('Backend offline');
+    }
+    try {
+      await acoesApi.create({
+        titulo: data.title.trim(), dia_semana: data.days.trim(),
+        horario_inicio: data.startTime, horario_fim: data.endTime,
+        local: data.location.trim(), responsavel: data.responsible.trim(),
+      });
+      await reloadActivities();
+      showToast('Ação cadastrada com sucesso!', 'success');
+    } catch (error) {
+      showToast(error.message || 'Erro ao cadastrar ação.', 'warning');
+      throw error;
+    }
+  };
+
+  const updateActivity = async (id, data) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível atualizar ação no banco.', 'warning');
+      throw new Error('Backend offline');
+    }
+    const current = activities.find(item => item.id === id || item.apiId === id);
+    const apiId = Number(current?.apiId ?? id);
+    if (!Number.isInteger(apiId) || apiId <= 0) throw new Error('Ação inválida.');
+    try {
+      await acoesApi.update(apiId, {
+        titulo: data.title.trim(), dia_semana: data.days.trim(),
+        horario_inicio: data.startTime, horario_fim: data.endTime,
+        local: data.location.trim(), responsavel: data.responsible.trim(),
+      });
+      await reloadActivities();
+      showToast('Ação atualizada com sucesso!', 'info');
+    } catch (error) {
+      showToast(error.message || 'Erro ao atualizar ação.', 'warning');
+      throw error;
+    }
+  };
+
+  const deleteActivity = async (id) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível excluir ação do banco.', 'warning');
+      return;
+    }
+    const current = activities.find(item => item.id === id || item.apiId === id);
+    const apiId = Number(current?.apiId ?? id);
+    if (!Number.isInteger(apiId) || apiId <= 0) return;
+    try {
+      await acoesApi.delete(apiId);
+      await reloadActivities();
+      showToast('Ação excluída com sucesso.', 'warning');
+    } catch (error) {
+      showToast(error.message || 'Erro ao excluir ação.', 'warning');
+      throw error;
     }
   };
 
@@ -585,10 +689,11 @@ export function DataProvider({ children }) {
       deleteAdmin,
 
       // Entidades
-      galleryItems, calendarEvents, brandInfo, legacyBrandInfo, brandInfoHasRecord, sponsors, testimonials, toast,
+      galleryItems, calendarEvents, activities, activitiesLoading, activitiesError, brandInfo, legacyBrandInfo, brandInfoHasRecord, sponsors, testimonials, toast,
       reloadGallery,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
       addCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
+      reloadActivities, addActivity, updateActivity, deleteActivity,
       addSponsor, updateSponsor, deleteSponsor,
       addTestimonial, updateTestimonial, deleteTestimonial,
       updateBrandInfo, resetToDefaultData, showToast

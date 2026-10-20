@@ -12,12 +12,11 @@ import AdminPage from './pages/AdminPage';
 import DonationModal from './components/DonationModal';
 import ScheduleModal from './components/ScheduleModal';
 import ImageLightbox from './components/ImageLightbox';
-import { siteData } from './data/mockData';
 import { useData } from './context/DataContext';
 
 function AppContent() {
   const [activePage, setActivePage] = useState('home');
-  const { galleryItems } = useData();
+  const { galleryItems, activities } = useData();
 
   // Modals state
   const [donationModal, setDonationModal] = useState({ isOpen: false, mode: 'pix' });
@@ -43,7 +42,7 @@ function AppContent() {
   };
 
   const handleSelectActivityFromFooter = (actId) => {
-    const act = siteData.activities.items.find(item => item.id === actId);
+    const act = activities.find(item => item.id === actId);
     if (act) {
       setSelectedActivity(act);
     }

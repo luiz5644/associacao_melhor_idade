@@ -38,26 +38,25 @@ CREATE TABLE voluntarios (
     telefone VARCHAR(30)
 ) ENGINE=InnoDB;
 
-CREATE TABLE categorias_calendario (
+CREATE TABLE eventos (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL UNIQUE
-) ENGINE=InnoDB;
-
-CREATE TABLE atividades (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    categoria_id INT NOT NULL,
     titulo VARCHAR(200) NOT NULL,
     `desc` TEXT,
     data_completa DATE NOT NULL,
     horario TIME,
     local VARCHAR(200),
     is_highlight BOOLEAN NOT NULL DEFAULT FALSE,
-    status ENUM('ativo', 'cancelado') NOT NULL DEFAULT 'ativo',
-    CONSTRAINT fk_atividades_categoria
-        FOREIGN KEY (categoria_id)
-        REFERENCES categorias_calendario(id)
-        ON UPDATE CASCADE
-        ON DELETE RESTRICT
+    status ENUM('ativo', 'cancelado') NOT NULL DEFAULT 'ativo'
+) ENGINE=InnoDB;
+
+CREATE TABLE acoes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    dia_semana VARCHAR(150) NOT NULL,
+    horario_inicio TIME NOT NULL,
+    horario_fim TIME NOT NULL,
+    local VARCHAR(200) NOT NULL,
+    responsavel VARCHAR(200) NOT NULL,
+    titulo VARCHAR(200) NOT NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE categorias_galeria (
@@ -102,20 +101,14 @@ CREATE TABLE patrocinadores (
 ) ENGINE=InnoDB;
 
 select * from administradores
-select * from categorias_calendario 
-delete from categorias_calendario where id = 2
 select * from categorias_galeria 
 delete from categorias_galeria where id = 1
 
 drop table categorias_galeria
 
 ALTER TABLE albuns_lembrancas DROP FOREIGN KEY fk_albuns_categoria;
-alter table atividades drop foreign key fk_atividades_categoria
-drop table categorias_calendario
-alter table atividades drop column categoria_id
 alter table albuns_lembrancas drop column categoria_id
 
-rename table atividades to acoes
-
 select * from acoes
+select * from eventos
 select * from albuns_lembrancas

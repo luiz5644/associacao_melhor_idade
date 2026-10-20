@@ -2,72 +2,42 @@ import React from 'react';
 import { useData } from '../context/DataContext';
 
 export default function Footer({ onNavigatePage, onSelectActivity }) {
-  const { brandInfo } = useData();
+  const { brandInfo, activities } = useData();
   const currentYear = 2026;
 
   return (
     <footer className="site-footer">
       <div className="container">
         <div className="footer-grid">
-          {/* Col 1: Brand & Mission */}
           <div className="footer-brand">
             <div className="footer-brand-header">
               <div className="brand-badge" style={{ width: '38px', height: '38px', fontSize: '1.3rem' }}>M</div>
               <span className="footer-brand-title">{brandInfo.name}</span>
             </div>
-            <p className="footer-desc">
-              {brandInfo.mission}
-            </p>
+            <p className="footer-desc">{brandInfo.mission}</p>
           </div>
 
-          {/* Col 2: Ações Links */}
           <div className="footer-col">
             <h4 className="footer-col-title">Ações</h4>
             <ul className="footer-links">
+              {activities.map(activity => (
+                <li key={activity.id}>
+                  <button className="footer-link-btn" onClick={() => {
+                    onNavigatePage('activities');
+                    onSelectActivity(activity.id);
+                  }}>
+                    {activity.title}
+                  </button>
+                </li>
+              ))}
               <li>
-                <button 
-                  className="footer-link-btn"
-                  onClick={() => { onNavigatePage('activities'); onSelectActivity('act-forro'); }}
-                >
-                  Forró da Melhor Idade
-                </button>
-              </li>
-              <li>
-                <button 
-                  className="footer-link-btn"
-                  onClick={() => { onNavigatePage('activities'); onSelectActivity('act-coral'); }}
-                >
-                  Coral Comunitário
-                </button>
-              </li>
-              <li>
-                <button 
-                  className="footer-link-btn"
-                  onClick={() => { onNavigatePage('activities'); onSelectActivity('act-viagens'); }}
-                >
-                  Viagens e Turismo
-                </button>
-              </li>
-              <li>
-                <button 
-                  className="footer-link-btn"
-                  onClick={() => { onNavigatePage('activities'); onSelectActivity('act-artesanato'); }}
-                >
-                  Oficinas e Artesanato
-                </button>
-              </li>
-              <li>
-                <button 
-                  className="footer-link-btn"
-                  onClick={() => onNavigatePage('testimonials')}
-                >
+                <button className="footer-link-btn" onClick={() => onNavigatePage('testimonials')}>
                   Depoimentos
                 </button>
               </li>
             </ul>
           </div>
 
-          {/* Col 3: Onde Estamos */}
           <div className="footer-col">
             <h4 className="footer-col-title">Onde Estamos</h4>
             {brandInfo.address || brandInfo.email ? (
@@ -79,7 +49,6 @@ export default function Footer({ onNavigatePage, onSelectActivity }) {
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="footer-bottom">
           <span>© {currentYear} Associação Melhor Idade. Todos os direitos reservados.</span>
           <div className="footer-badge-flag">

@@ -43,8 +43,8 @@ export class EventosControle{
 
     public async buscarporId(req: Request, res: Response){
         try{
-            const id = req.params.id
-            const idNumber = Number(id)
+            const idNumber = Number(req.params.id)
+            if (!Number.isInteger(idNumber) || idNumber <= 0) return res.status(400).json({ message: "ID inválido" })
             const evento = await this.eventosServico.buscarPorId(idNumber)
             if (!evento) {
                 return res.status(404).json({ message: "Evento não encontrado" })
@@ -70,8 +70,9 @@ export class EventosControle{
 
     public async atualizar(req:Request, res:Response){
         try{
-            const id = req.params.id
-            const idNumber = Number(id)
+            const idNumber = Number(req.params.id)
+            if (!Number.isInteger(idNumber) || idNumber <= 0) return res.status(400).json({ message: "ID inválido" })
+            if (!await this.eventosServico.buscarPorId(idNumber)) return res.status(404).json({ message: "Evento não encontrado" })
             const eventosDto= plainToInstance(EventosUpdateDto,req.body)
             const erros = await validate(eventosDto)
             if(erros.length > 0){
@@ -99,8 +100,9 @@ export class EventosControle{
     
     public async deletar(req:Request, res: Response){
         try{
-            const id = req.params.id
-            const idNumber = Number(id)
+            const idNumber = Number(req.params.id)
+            if (!Number.isInteger(idNumber) || idNumber <= 0) return res.status(400).json({ message: "ID inválido" })
+            if (!await this.eventosServico.buscarPorId(idNumber)) return res.status(404).json({ message: "Evento não encontrado" })
             await this.eventosServico.deletar(idNumber)
             return res.status(200).json({ message: "Evento excluído com sucesso" })
         }

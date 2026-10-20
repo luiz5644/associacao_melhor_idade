@@ -1,5 +1,10 @@
 // API Service Layer - Frontend Integration with Backend
-const API_BASE = 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, '') || '';
+
+function apiUrl(endpoint: string): string {
+  if (!API_BASE) throw new ApiError(0, 'Configure VITE_API_URL para conectar ao backend.');
+  return `${API_BASE}${endpoint}`;
+}
 
 export class ApiError extends Error {
   constructor(public status: number, message: string, public data?: any) {
@@ -34,7 +39,7 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const response = await fetch(apiUrl(endpoint), {
     ...options,
     headers,
   });
@@ -59,10 +64,11 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
 // VERIFICAÇÃO DE SAÚDE DA API (ONLINE / OFFLINE)
 // ============================================
 export async function checkBackendHealth(): Promise<boolean> {
+  if (!API_BASE) return false;
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2500);
-    const res = await fetch(`${API_BASE}/health`, {
+    const res = await fetch(apiUrl('/health'), {
       method: 'GET',
       signal: controller.signal,
     });
@@ -146,9 +152,9 @@ export const informacoesApi = {
 };
 
 // ============================================
-// AÇÕES (CALENDÁRIO)
+// EVENTOS DO CALENDÁRIO
 // ============================================
-export interface Acao {
+export interface Evento {
   id: number;
   titulo: string;
   desc: string;
@@ -159,7 +165,7 @@ export interface Acao {
   status: 'ativo' | 'cancelado' | string;
 }
 
-export interface AcaoCreate {
+export interface EventoCreate {
   titulo: string;
   desc: string;
   data_completa: string;
@@ -169,7 +175,7 @@ export interface AcaoCreate {
   status: string;
 }
 
-export interface AcaoUpdate {
+export interface EventoUpdate {
   id: number;
   titulo?: string;
   desc?: string;
@@ -180,36 +186,60 @@ export interface AcaoUpdate {
   status?: string;
 }
 
-export const acoesApi = {
-  list: async (): Promise<Acao[]> => {
-    const data = await fetchApi<any[]>('/acoes');
-    return unpackList<Acao>(data);
+export const eventosApi = {
+  list: async (): Promise<Evento[]> => {
+    const data = await fetchApi<any[]>('/eventos');
+    return unpackList<Evento>(data);
   },
 
-  create: async (data: AcaoCreate): Promise<{ message: string }> => {
-    return fetchApi('/acoes', {
+  create: async (data: EventoCreate): Promise<{ message: string }> => {
+    return fetchApi('/eventos', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  getById: async (id: number): Promise<Acao> => {
-    const data = await fetchApi<any>(`/acoes/${id}`);
-    return unpackProps<Acao>(data);
+  getById: async (id: number): Promise<Evento> => {
+    const data = await fetchApi<any>(`/eventos/${id}`);
+    return unpackProps<Evento>(data);
   },
 
-  update: async (id: number, data: Partial<AcaoUpdate>): Promise<{ message: string }> => {
-    return fetchApi(`/acoes/${id}`, {
+  update: async (id: number, data: Partial<EventoUpdate>): Promise<{ message: string }> => {
+    return fetchApi(`/eventos/${id}`, {
       method: 'PUT',
       body: JSON.stringify({ ...data, id }),
     });
   },
 
   delete: async (id: number): Promise<{ message: string }> => {
-    return fetchApi(`/acoes/${id}`, {
+    return fetchApi(`/eventos/${id}`, {
       method: 'DELETE',
     });
   },
+};
+
+export interface AcaoRecorrente {
+  id: number;
+  titulo: string;
+  dia_semana: string;
+  horario_inicio: string;
+  horario_fim: string;
+  local: string;
+  responsavel: string;
+}
+
+export type AcaoRecorrenteInput = Omit<AcaoRecorrente, 'id'>;
+
+export const acoesApi = {
+  list: async (): Promise<AcaoRecorrente[]> => unpackList<AcaoRecorrente>(await fetchApi<any[]>('/acoes')),
+  getById: async (id: number): Promise<AcaoRecorrente> => unpackProps<AcaoRecorrente>(await fetchApi<any>(`/acoes/${id}`)),
+  create: async (data: AcaoRecorrenteInput) => fetchApi<{ message: string }>('/acoes', {
+    method: 'POST', body: JSON.stringify(data),
+  }),
+  update: async (id: number, data: AcaoRecorrenteInput) => fetchApi<{ message: string }>(`/acoes/${id}`, {
+    method: 'PUT', body: JSON.stringify(data),
+  }),
+  delete: async (id: number) => fetchApi<{ message: string }>(`/acoes/${id}`, { method: 'DELETE' }),
 };
 
 export const albumApi = {
@@ -235,7 +265,7 @@ export const uploadApi = {
     const formData = new FormData();
     formData.append('imagem', file);
     const token = localStorage.getItem('admin_token');
-    const response = await fetch(`${API_BASE}/upload`, {
+    const response = await fetch(apiUrl('/upload'), {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
@@ -327,8 +357,8 @@ export function adaptAlbumToFrontend(albumInput: any, fotosInput: any[] = []) {
 // ADAPTADORES FRONTEND <-> BACKEND
 // ============================================
 
-export function adaptAcaoToFrontend(raw: any): any {
-  const api = unpackProps<Acao>(raw);
+export function adaptEventoToFrontend(raw: any): any {
+  const api = unpackProps<Evento>(raw);
   let year = 2026;
   let month = 9;
   let day = 1;
@@ -357,7 +387,26 @@ export function adaptAcaoToFrontend(raw: any): any {
   };
 }
 
-export function adaptAcaoToBackend(front: any): AcaoCreate {
+export function adaptAcaoRecorrenteToFrontend(input: any) {
+  const action = unpackProps<AcaoRecorrente>(input);
+  const start = String(action.horario_inicio || '').slice(0, 5);
+  const end = String(action.horario_fim || '').slice(0, 5);
+  return {
+    id: `act-${action.id}`,
+    apiId: Number(action.id),
+    title: action.titulo || '',
+    description: '',
+    schedule: {
+      days: action.dia_semana || '',
+      time: [start, end].filter(Boolean).join(' às '),
+      location: action.local || '',
+      instructor: action.responsavel || '',
+      details: '',
+    },
+  };
+}
+
+export function adaptEventoToBackend(front: any): EventoCreate {
   const month = (front.month !== undefined ? parseInt(front.month, 10) : 9) + 1; // 0-11 -> 1-12
   const day = parseInt(front.day, 10) || 1;
   const year = parseInt(front.year, 10) || 2026;

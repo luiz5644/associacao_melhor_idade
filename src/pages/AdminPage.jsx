@@ -5,7 +5,7 @@ import {
   HeartHandshake, Camera, Upload, Link, Clock, MapPin, Star,
   ChevronRight, Search, AlertTriangle,
   Building2, ExternalLink, Globe, UserCheck, RefreshCw,
-  Menu, LayoutGrid, Image, Calendar, Heart
+  Menu, LayoutGrid, Image, Calendar, Heart, Activity
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { adminApi, uploadApi, resolveImageUrl } from '../services/api';
@@ -371,9 +371,9 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
         </button>
         <div className="modal-header">
           <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
-            <CalendarDays size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Calendário de Ações</span>
+            <CalendarDays size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Calendário / Eventos</span>
           </div>
-          <h3 className="modal-title">{item ? 'Editar Ação' : 'Nova Ação'}</h3>
+          <h3 className="modal-title">{item ? 'Editar Evento' : 'Novo Evento'}</h3>
           <p className="modal-subtitle">Cadastre um encontro ou evento para o calendário público.</p>
         </div>
 
@@ -746,7 +746,7 @@ function TabOverview({ setActiveTab }) {
   const { galleryItems, calendarEvents, sponsors } = useData();
   const stats = [
     { icon: <Users size={22} color="#2A5C66" />, value: 248, label: 'Associados Ativos', bg: '#EAF4F6', border: '#D2ECF0' },
-    { icon: <CalendarCheck size={22} color="#3D6058" />, value: calendarEvents.length, label: 'Ações Agendadas', bg: '#F0F9F5', border: '#CBE8DF' },
+    { icon: <CalendarCheck size={22} color="#3D6058" />, value: calendarEvents.length, label: 'Eventos Agendados', bg: '#F0F9F5', border: '#CBE8DF' },
     { icon: <Images size={22} color="#7B5EA7" />, value: galleryItems.length, label: 'Lembranças no Álbum', bg: '#F5F0FB', border: '#E2D4F5' },
     { icon: <Building2 size={22} color="#B8621A" />, value: (sponsors || []).length, label: 'Patrocinadores & Parceiros', bg: '#FDF6F0', border: '#F8DFC2' }
   ];
@@ -793,13 +793,13 @@ function TabOverview({ setActiveTab }) {
             <div style={{ width:38, height:38, background:'#EAF4F6', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               <CalendarDays size={20} color="#2A5C66" />
             </div>
-            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Calendário de Ações</h3>
+            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Calendário / Eventos</h3>
           </div>
           <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
-            {calendarEvents.length} ações agendadas no calendário.
+            {calendarEvents.length} eventos cadastrados no calendário.
           </p>
           <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px', width:'100%' }} onClick={() => setActiveTab('calendar')}>
-            <Plus size={14} /> Agendar Ação
+            <Plus size={14} /> Agendar Evento
           </button>
         </div>
 
@@ -943,7 +943,7 @@ function TabGallery() {
   );
 }
 
-// ── PAINEL: CALENDÁRIO DE AÇÕES ─────────────────────────────────────────
+// ── PAINEL: EVENTOS DO CALENDÁRIO ───────────────────────────────────────
 function TabCalendar() {
   const { calendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent } = useData();
   const [search, setSearch] = useState('');
@@ -976,11 +976,11 @@ function TabCalendar() {
       <div>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
           <div>
-            <h2 className="admin-section-title">Calendário de Ações</h2>
-                      <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{calendarEvents.length} ações cadastradas</p>
+            <h2 className="admin-section-title">Calendário / Eventos</h2>
+                      <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{calendarEvents.length} eventos cadastrados</p>
                     </div>
                     <button className="btn btn-primary" onClick={() => { setEditingEvent(null); setShowForm(true); }}>
-                      <Plus size={16} /> Nova Ação
+                      <Plus size={16} /> Novo Evento
           </button>
         </div>
 
@@ -1001,7 +1001,7 @@ function TabCalendar() {
         <div style={{ textAlign:'center', padding:'48px 20px', color:'var(--text-subtle)' }}>
           <CalendarDays size={40} style={{ opacity:0.3, marginBottom:12, display:'block', margin:'0 auto 12px' }} />
           <p style={{ fontWeight:600 }}>Nenhuma ação encontrada.</p>
-          <p style={{ fontSize:'0.85rem', marginTop:4 }}>Clique em "Nova Ação" para agendar.</p>
+          <p style={{ fontSize:'0.85rem', marginTop:4 }}>Clique em "Novo Evento" para agendar.</p>
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
@@ -1056,9 +1056,163 @@ function TabCalendar() {
 
       <ConfirmDeleteModal isOpen={!!deleteTarget}
         title={deleteTarget?.title}
-        subtitle="Esta ação será removida do calendário público."
+        subtitle="Este evento será removido do calendário público."
         onConfirm={() => { deleteCalendarEvent(deleteTarget.id); setDeleteTarget(null); }}
         onCancel={() => setDeleteTarget(null)} />
+    </div>
+  );
+}
+
+function ActivityFormModal({ isOpen, item, onSave, onClose }) {
+  const [form, setForm] = useState(() => ({
+    title: item?.title || '',
+    days: item?.schedule?.days || '',
+    startTime: item?.schedule?.time?.split(' às ')[0] || '',
+    endTime: item?.schedule?.time?.split(' às ')[1] || '',
+    location: item?.schedule?.location || '',
+    responsible: item?.schedule?.instructor || '',
+  }));
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  if (!isOpen) return null;
+  const update = (field, value) => {
+    setForm(current => ({ ...current, [field]: value }));
+    setErrors(current => ({ ...current, [field]: '' }));
+  };
+  const submit = async event => {
+    event.preventDefault();
+    const next = {};
+    if (!form.title.trim()) next.title = 'Informe o título.';
+    else if (form.title.trim().length > 200) next.title = 'Use até 200 caracteres.';
+    if (!form.days.trim()) next.days = 'Informe os dias de encontro.';
+    else if (form.days.trim().length > 150) next.days = 'Use até 150 caracteres.';
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.startTime)) next.startTime = 'Informe um horário válido.';
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.endTime)) next.endTime = 'Informe um horário válido.';
+    else if (form.startTime && form.endTime <= form.startTime) next.endTime = 'O término deve ser posterior ao início.';
+    if (!form.location.trim()) next.location = 'Informe o local.';
+    else if (form.location.trim().length > 200) next.location = 'Use até 200 caracteres.';
+    if (!form.responsible.trim()) next.responsible = 'Informe o responsável.';
+    else if (form.responsible.trim().length > 200) next.responsible = 'Use até 200 caracteres.';
+    setErrors(next);
+    if (Object.keys(next).length) { focusFirstError(next); return; }
+    setSaving(true);
+    try {
+      await onSave(form);
+      onClose();
+    } catch {
+      // O contexto apresenta o erro em uma notificação.
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const fields = [
+    ['title', 'Título', 'Ex.: Oficina de artesanato', 'text'],
+    ['days', 'Dias de encontro', 'Ex.: Segundas e quartas', 'text'],
+    ['startTime', 'Horário de início', '', 'time'],
+    ['endTime', 'Horário de término', '', 'time'],
+    ['location', 'Local', 'Local dos encontros', 'text'],
+    ['responsible', 'Instrutor / Responsável', 'Nome do responsável', 'text'],
+  ];
+
+  return (
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="modal-card" style={{ maxWidth:620, maxHeight:'90vh', overflowY:'auto' }} onClick={event => event.stopPropagation()}>
+        <button className="modal-close-btn" onClick={onClose} aria-label="Fechar"><X size={20} /></button>
+        <div className="modal-header">
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
+            <Activity size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Ações da Associação</span>
+          </div>
+          <h3 className="modal-title">{item ? 'Editar Ação' : 'Nova Ação'}</h3>
+          <p className="modal-subtitle">Preencha os dados disponíveis para esta ação.</p>
+        </div>
+        <form onSubmit={submit} noValidate>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:'0 16px' }}>
+            {fields.map(([field, label, placeholder, type]) => (
+              <div className="form-group" key={field}>
+                <label className="form-label" htmlFor={`activity-${field}`}>{label} <span style={{ color:'#DC2626' }}>*</span></label>
+                <input id={`activity-${field}`} data-field={field} className="form-input" type={type} placeholder={placeholder}
+                  value={form[field]} onChange={event => update(field, event.target.value)} maxLength={field === 'title' ? 200 : (field === 'days' ? 150 : 200)} />
+                <FieldError>{errors[field]}</FieldError>
+              </div>
+            ))}
+          </div>
+          <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:12 }}>
+            <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Salvando...' : 'Salvar Ação'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function TabActions() {
+  const { activities, activitiesLoading, activitiesError, reloadActivities, addActivity, updateActivity, deleteActivity } = useData();
+  const [search, setSearch] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const filtered = activities.filter(item => item.title.toLowerCase().includes(search.toLowerCase()));
+
+  const save = async data => {
+    if (editing) await updateActivity(editing.id, data);
+    else await addActivity(data);
+    setShowForm(false);
+    setEditing(null);
+  };
+
+  return (
+    <div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:14 }}>
+        <div>
+          <h2 className="admin-section-title">Ações</h2>
+          <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{activities.length} ações cadastradas</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => { setEditing(null); setShowForm(true); }}><Plus size={16} /> Adicionar ação</button>
+      </div>
+      <div style={{ display:'flex', gap:12, marginBottom:22 }}>
+        <div style={{ position:'relative', flex:1 }}>
+          <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
+          <input className="form-input" style={{ paddingLeft:36 }} placeholder="Buscar ação..." value={search} onChange={event => setSearch(event.target.value)} />
+        </div>
+      </div>
+      {activitiesLoading ? (
+        <p role="status" style={{ textAlign:'center', padding:40, color:'var(--text-subtle)' }}>Carregando ações...</p>
+      ) : activitiesError ? (
+        <div role="alert" style={{ textAlign:'center', padding:40, color:'var(--text-subtle)' }}>
+          <p>Não foi possível carregar as ações.</p>
+          <button className="btn btn-primary" onClick={async () => { try { await reloadActivities(); } catch {} }} style={{ marginTop:14 }}>Tentar novamente</button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign:'center', padding:48, color:'var(--text-subtle)' }}>
+          <Activity size={40} style={{ opacity:0.25, display:'block', margin:'0 auto 12px' }} />
+          <p style={{ fontWeight:600 }}>Nenhuma ação cadastrada.</p>
+          <p style={{ fontSize:'0.85rem', marginTop:4 }}>Adicione a primeira ação da Associação.</p>
+        </div>
+      ) : (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(270px, 1fr))', gap:18 }}>
+          {filtered.map(item => (
+            <article key={item.id} style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:14, padding:20, boxShadow:'0 2px 8px rgba(27,37,39,0.04)' }}>
+              <h3 style={{ fontSize:'1.05rem', marginBottom:10 }}>{item.title}</h3>
+              <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:6 }}>{item.schedule.days}</p>
+              <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:6 }}>{item.schedule.time}</p>
+              <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem' }}>{item.schedule.location}</p>
+              <div style={{ display:'flex', gap:8, justifyContent:'flex-end', marginTop:18 }}>
+                <button className="btn btn-pill" style={{ padding:'6px 13px', fontSize:'0.8rem' }} onClick={() => { setEditing(item); setShowForm(true); }}><Pencil size={12} /> Editar</button>
+                <button className="btn" style={{ padding:'6px 13px', fontSize:'0.8rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }} onClick={() => setDeleteTarget(item)}><Trash2 size={12} /> Excluir</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+      <ActivityFormModal key={showForm ? (editing?.id ?? 'new') : 'closed'} isOpen={showForm} item={editing}
+        onSave={save} onClose={() => { setShowForm(false); setEditing(null); }} />
+      <ConfirmDeleteModal isOpen={!!deleteTarget} title={deleteTarget?.title} subtitle="Esta ação será removida da página pública."
+        onConfirm={async () => {
+          try { await deleteActivity(deleteTarget.id); setDeleteTarget(null); } catch {}
+        }} onCancel={() => setDeleteTarget(null)} />
     </div>
   );
 }
@@ -1790,7 +1944,8 @@ export default function AdminPage({ onClose }) {
     const navItems = [
           { id: 'overview',        label: 'Visão Geral',         icon: LayoutGrid,    badge: null },
           { id: 'gallery',         label: 'Álbum de Lembranças', icon: Image,         badge: { text: '5 fotos', type: 'purple' } },
-          { id: 'calendar',        label: 'Calendário & Ações',  icon: Calendar,      badge: { text: '10', type: 'gray' } },
+          { id: 'calendar',        label: 'Calendário / Eventos', icon: Calendar,      badge: null },
+          { id: 'actions',         label: 'Ações',                icon: Activity,      badge: null },
           { id: 'admins',          label: 'Administradores',     icon: Users,         badge: null },
           { id: 'sponsors',        label: 'Patrocinadores & Apoio', icon: Building2,   badge: { text: '6', type: 'gray' } },
           { id: 'testimonials',    label: 'Depoimentos',         icon: Heart,         badge: null },
@@ -1800,7 +1955,8 @@ export default function AdminPage({ onClose }) {
     const tabs = [
         { id: 'overview',        label: 'Visão Geral',              icon: <LayoutDashboard size={17} /> },
         { id: 'gallery',         label: 'Álbum de Lembranças',      icon: <Images size={17} /> },
-        { id: 'calendar',        label: 'Calendário & Ações',       icon: <CalendarDays size={17} /> },
+        { id: 'calendar',        label: 'Calendário / Eventos',     icon: <CalendarDays size={17} /> },
+        { id: 'actions',         label: 'Ações',                    icon: <Activity size={17} /> },
         { id: 'admins',          label: 'Administradores',          icon: <UserCheck size={17} /> },
         { id: 'sponsors',        label: 'Patrocinadores & Apoio',   icon: <Building2 size={17} /> },
         { id: 'testimonials',    label: 'Depoimentos',              icon: <HeartHandshake size={17} /> },
@@ -1990,6 +2146,7 @@ export default function AdminPage({ onClose }) {
                   {activeTab === 'overview' && <TabOverview setActiveTab={setActiveTab} />}
                   {activeTab === 'gallery' && <TabGallery />}
                   {activeTab === 'calendar' && <TabCalendar />}
+                  {activeTab === 'actions' && <TabActions />}
                   {activeTab === 'admins' && <TabAdmins onNavigateToCreate={() => setActiveTab('cadastrar-admin')} />}
                   {activeTab === 'cadastrar-admin' && (
                     <CadastroAdminPage onVoltar={() => setActiveTab('admins')} />

@@ -5,8 +5,8 @@ export class AcoesDao{
     public async salvar(acoes:Acoes):Promise<void>{
         try{
             const [rows]:any = await conexao.query(
-                'insert into acoes (id,dia_semana,horario_inicio,horario_fim,local,responsavel,titulo) values (?,?,?,?,?,?,?)',
-                [acoes.id,acoes.dia_semana,acoes.horario_inicio,acoes.horario_fim,acoes.local,acoes.responsavel,acoes.titulo]
+                'insert into acoes (dia_semana,horario_inicio,horario_fim,local,responsavel,titulo) values (?,?,?,?,?,?)',
+                [acoes.dia_semana,acoes.horario_inicio,acoes.horario_fim,acoes.local,acoes.responsavel,acoes.titulo]
             )
         }
         catch(error){

@@ -21,5 +21,12 @@ dist-ssr
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Relatórios
+auditoria-mobile/
+auditoria-seguranca/
