@@ -1,10 +1,9 @@
 import React, { useMemo } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { siteData } from '../data/mockData';
-import SponsorsCarousel from '../components/SponsorsCarousel';
 import { useData } from '../context/DataContext';
 
-export default function HomePage({ onNavigate, onOpenDonation, onOpenSponsorModal, onSelectPhoto }) {
+export default function HomePage({ onNavigate, onSelectPhoto }) {
   const { home } = siteData;
   const { calendarEvents, galleryItems, backendConnected, backendLoading } = useData();
   const upcomingEvents = useMemo(() => {
@@ -159,9 +158,6 @@ export default function HomePage({ onNavigate, onOpenDonation, onOpenSponsorModa
           </div>
         </div>
       </section>
-
-      {/* 5. CARROSSEL DE PATROCINADORES & PARCEIROS (Antes do rodapé) */}
-      <SponsorsCarousel onOpenSponsorModal={onOpenSponsorModal} onOpenDonation={onOpenDonation} />
     </div>
   );
 }

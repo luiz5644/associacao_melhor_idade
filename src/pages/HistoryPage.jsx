@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import { siteData } from '../data/mockData';
+import SponsorsCarousel from '../components/SponsorsCarousel';
 
-export default function HistoryPage({ onSelectPhoto, onOpenDonation }) {
-  const { history, home } = siteData;
+export default function HistoryPage({ onSelectPhoto, onOpenSponsorModal }) {
+  const { history } = siteData;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -53,20 +54,7 @@ export default function HistoryPage({ onSelectPhoto, onOpenDonation }) {
         </div>
       </div>
 
-      {/* CTA BANNER / DOAÇÃO VIA PIX (Faixa de largura total antes do rodapé) */}
-      <section className="cta-banner">
-        <div className="container">
-          <div className="cta-grid">
-            <div className="cta-content">
-              <h2 className="cta-title">{home.cta.title}</h2>
-              <p className="cta-desc">{home.cta.description}</p>
-            </div>
-            <button className="cta-btn" onClick={onOpenDonation}>
-              {home.cta.buttonText}
-            </button>
-          </div>
-        </div>
-      </section>
+      <SponsorsCarousel onOpenSponsorModal={onOpenSponsorModal} />
     </div>
   );
 }

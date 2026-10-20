@@ -13,6 +13,31 @@ import DonationModal from './components/DonationModal';
 import ScheduleModal from './components/ScheduleModal';
 import ImageLightbox from './components/ImageLightbox';
 import { useData } from './context/DataContext';
+import DonationBanner from './components/DonationBanner';
+import { siteData } from './data/mockData';
+
+const donationBanners = {
+  home: {
+    title: siteData.home.cta.title,
+    description: siteData.home.cta.description
+  },
+  activities: {
+    title: 'Ajude a manter as oficinas funcionando',
+    description: 'Sua doação ou seu trabalho voluntário ajudam a manter e ampliar nossas oficinas e atividades.'
+  },
+  gallery: {
+    title: 'Esses sorrisos dependem de você',
+    description: 'Cada momento feliz acontece com o apoio de quem doa ou oferece seu tempo como voluntário.'
+  },
+  calendar: {
+    title: 'Ajude a organizar o próximo passeio',
+    description: 'Sua contribuição ajuda a realizar passeios, encontros e eventos da nossa programação.'
+  },
+  testimonials: {
+    title: 'Faça parte dessa história',
+    description: 'Contribua para que mais idosos vivam experiências especiais como as que você conheceu aqui.'
+  }
+};
 
 function AppContent() {
   const [activePage, setActivePage] = useState('home');
@@ -69,8 +94,6 @@ function AppContent() {
         {activePage === 'home' && (
           <HomePage 
             onNavigate={handleNavigate}
-            onOpenDonation={handleOpenPixDonation}
-            onOpenSponsorModal={handleOpenSponsorModal}
             onSelectPhoto={setSelectedPhoto}
           />
         )}
@@ -78,7 +101,7 @@ function AppContent() {
         {activePage === 'history' && (
           <HistoryPage 
             onSelectPhoto={setSelectedPhoto}
-            onOpenDonation={handleOpenPixDonation}
+            onOpenSponsorModal={handleOpenSponsorModal}
           />
         )}
 
@@ -102,6 +125,13 @@ function AppContent() {
                   <TestimonialsPage />
                 )}
               </main>
+
+      {donationBanners[activePage] && (
+        <DonationBanner
+          {...donationBanners[activePage]}
+          onOpenDonation={handleOpenPixDonation}
+        />
+      )}
 
       {/* 4. Rodapé Global */}
       <Footer 
