@@ -4,6 +4,7 @@ import {
     IsNumber,
     IsOptional,
     IsString,
+    IsIn,
     MaxLength,
     Matches,
 
@@ -25,7 +26,7 @@ export class AcoesCreateDto{
 
     @IsNotEmpty()
     @IsString()
-    @MaxLength(150)
+    @IsIn(['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'])
     dia_semana:string
 
     
@@ -41,24 +42,39 @@ export class AcoesCreateDto{
 
     @IsNotEmpty()
     @IsString()
-    @MaxLength(200)
+    @MaxLength(255)
     local: string
 
     @IsNotEmpty()
     @IsString()
-    @MaxLength(200)
+    @MaxLength(255)
     responsavel:string
 
     @IsNotEmpty()
     @IsString()
-    @MaxLength(200)
+    @MaxLength(250)
     titulo:string
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    url_imagem?: string
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    descricao_curta?: string
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    orientacoes?: string
 }
 
 export class AcoesUpdateDto{
-     @IsNotEmpty()
+    @IsNotEmpty()
     @IsString()
-    @MaxLength(150)
+    @IsIn(['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'])
     dia_semana:string
 
     
@@ -74,16 +90,31 @@ export class AcoesUpdateDto{
 
     @IsNotEmpty()
     @IsString()
-    @MaxLength(200)
+    @MaxLength(255)
     local: string
 
     @IsNotEmpty()
     @IsString()
-    @MaxLength(200)
+    @MaxLength(255)
     responsavel:string
 
     @IsNotEmpty()
     @IsString()
-    @MaxLength(200)
+    @MaxLength(250)
     titulo:string
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    url_imagem?: string
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(100)
+    descricao_curta?: string
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(255)
+    orientacoes?: string
 }

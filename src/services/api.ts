@@ -226,6 +226,9 @@ export interface AcaoRecorrente {
   horario_fim: string;
   local: string;
   responsavel: string;
+  url_imagem?: string | null;
+  descricao_curta?: string | null;
+  orientacoes?: string | null;
 }
 
 export type AcaoRecorrenteInput = Omit<AcaoRecorrente, 'id'>;
@@ -389,19 +392,25 @@ export function adaptEventoToFrontend(raw: any): any {
 
 export function adaptAcaoRecorrenteToFrontend(input: any) {
   const action = unpackProps<AcaoRecorrente>(input);
+  const weekdayLabels: Record<string, string> = {
+    domingo: 'Domingo', segunda: 'Segunda-feira', terca: 'Terça-feira', quarta: 'Quarta-feira',
+    quinta: 'Quinta-feira', sexta: 'Sexta-feira', sabado: 'Sábado',
+  };
   const start = String(action.horario_inicio || '').slice(0, 5);
   const end = String(action.horario_fim || '').slice(0, 5);
   return {
     id: `act-${action.id}`,
     apiId: Number(action.id),
     title: action.titulo || '',
-    description: '',
+    image: resolveImageUrl(action.url_imagem || ''),
+    description: action.descricao_curta || '',
     schedule: {
       days: action.dia_semana || '',
+      daysLabel: weekdayLabels[action.dia_semana] || action.dia_semana || '',
       time: [start, end].filter(Boolean).join(' às '),
       location: action.local || '',
       instructor: action.responsavel || '',
-      details: '',
+      details: action.orientacoes || '',
     },
   };
 }

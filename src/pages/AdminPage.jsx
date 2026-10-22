@@ -158,7 +158,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
           {/* Dados da Lembrança */}
           <div className="form-group">
             <label className="form-label">Título <span style={{ color:'#DC2626' }}>*</span></label>
-            <input data-field="title" className="form-input" type="text" placeholder="Ex: Festa de São João 2026"
+            <input data-field="title" className="form-input" type="text" placeholder="Ex.: Quadrilha da Melhor Idade no Limoeiro Junino"
               value={form.title} onChange={e => { setField('title', e.target.value); setErrors(p => ({...p, title:''})); }} />
             <FieldError>{errors.title}</FieldError>
           </div>
@@ -178,7 +178,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
 
           <div className="form-group">
             <label className="form-label">Sobre / Descrição</label>
-            <textarea className="form-input" rows={3} placeholder="Conte sobre o momento especial capturado nesta lembrança..."
+            <textarea className="form-input" rows={3} placeholder="Identifique a atividade e a ocasião. Ex.: Apresentação da Quadrilha da Melhor Idade na abertura do Limoeiro Junino, 2026."
               value={form.description} onChange={e => setField('description', e.target.value)}
               style={{ resize:'vertical', lineHeight:1.6 }} />
           </div>
@@ -979,8 +979,13 @@ function TabCalendar() {
 }
 
 function ActivityFormModal({ isOpen, item, onSave, onClose }) {
+  const { backendConnected } = useData();
+  const imageInputRef = useRef(null);
   const [form, setForm] = useState(() => ({
     title: item?.title || '',
+    image: item?.image || '',
+    description: item?.description || '',
+    details: item?.schedule?.details || '',
     days: item?.schedule?.days || '',
     startTime: item?.schedule?.time?.split(' às ')[0] || '',
     endTime: item?.schedule?.time?.split(' às ')[1] || '',
@@ -989,6 +994,7 @@ function ActivityFormModal({ isOpen, item, onSave, onClose }) {
   }));
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   if (!isOpen) return null;
   const update = (field, value) => {
@@ -1000,8 +1006,7 @@ function ActivityFormModal({ isOpen, item, onSave, onClose }) {
     const next = {};
     if (!form.title.trim()) next.title = 'Informe o título.';
     else if (form.title.trim().length > 200) next.title = 'Use até 200 caracteres.';
-    if (!form.days.trim()) next.days = 'Informe os dias de encontro.';
-    else if (form.days.trim().length > 150) next.days = 'Use até 150 caracteres.';
+    if (!['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'].includes(form.days)) next.days = 'Selecione um dia da semana.';
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.startTime)) next.startTime = 'Informe um horário válido.';
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.endTime)) next.endTime = 'Informe um horário válido.';
     else if (form.startTime && form.endTime <= form.startTime) next.endTime = 'O término deve ser posterior ao início.';
@@ -1009,6 +1014,8 @@ function ActivityFormModal({ isOpen, item, onSave, onClose }) {
     else if (form.location.trim().length > 200) next.location = 'Use até 200 caracteres.';
     if (!form.responsible.trim()) next.responsible = 'Informe o responsável.';
     else if (form.responsible.trim().length > 200) next.responsible = 'Use até 200 caracteres.';
+    if (form.description.trim().length > 100) next.description = 'Use até 100 caracteres.';
+    if (form.details.trim().length > 255) next.details = 'Use até 255 caracteres.';
     setErrors(next);
     if (Object.keys(next).length) { focusFirstError(next); return; }
     setSaving(true);
@@ -1022,9 +1029,36 @@ function ActivityFormModal({ isOpen, item, onSave, onClose }) {
     }
   };
 
+  const uploadActionImage = async event => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setErrors(current => ({ ...current, image: 'Selecione um arquivo de imagem válido.' }));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors(current => ({ ...current, image: 'A imagem deve ter no máximo 5 MB.' }));
+      return;
+    }
+    if (!backendConnected) {
+      setErrors(current => ({ ...current, image: 'Conecte o backend para enviar a imagem.' }));
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadApi.upload(file);
+      setForm(current => ({ ...current, image: resolveImageUrl(url) }));
+      setErrors(current => ({ ...current, image: '' }));
+    } catch (error) {
+      setErrors(current => ({ ...current, image: error.message || 'Não foi possível enviar a imagem.' }));
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const fields = [
     ['title', 'Título', 'Ex.: Oficina de artesanato', 'text'],
-    ['days', 'Dias de encontro', 'Ex.: Segundas e quartas', 'text'],
     ['startTime', 'Horário de início', '', 'time'],
     ['endTime', 'Horário de término', '', 'time'],
     ['location', 'Local', 'Local dos encontros', 'text'],
@@ -1044,18 +1078,72 @@ function ActivityFormModal({ isOpen, item, onSave, onClose }) {
         </div>
         <form onSubmit={submit} noValidate>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:'0 16px' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="activity-days">Dia da semana <span style={{ color:'#DC2626' }}>*</span></label>
+              <select id="activity-days" data-field="days" className="form-input" value={form.days} onChange={event => update('days', event.target.value)}>
+                <option value="">Selecione um dia</option>
+                <option value="domingo">Domingo</option>
+                <option value="segunda">Segunda-feira</option>
+                <option value="terca">Terça-feira</option>
+                <option value="quarta">Quarta-feira</option>
+                <option value="quinta">Quinta-feira</option>
+                <option value="sexta">Sexta-feira</option>
+                <option value="sabado">Sábado</option>
+              </select>
+              <FieldError>{errors.days}</FieldError>
+            </div>
             {fields.map(([field, label, placeholder, type]) => (
               <div className="form-group" key={field}>
-                <label className="form-label" htmlFor={`activity-${field}`}>{label} <span style={{ color:'#DC2626' }}>*</span></label>
+                <label className="form-label" htmlFor={`activity-${field}`}>{label}{['title', 'startTime', 'endTime', 'location', 'responsible'].includes(field) && <span style={{ color:'#DC2626' }}> *</span>}</label>
                 <input id={`activity-${field}`} data-field={field} className="form-input" type={type} placeholder={placeholder}
-                  value={form[field]} onChange={event => update(field, event.target.value)} maxLength={field === 'title' ? 200 : (field === 'days' ? 150 : 200)} />
+                  value={form[field]} onChange={event => update(field, event.target.value)} maxLength={field === 'title' ? 250 : (['location', 'responsible'].includes(field) ? 255 : undefined)} />
                 <FieldError>{errors[field]}</FieldError>
               </div>
             ))}
           </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="activity-image">Imagem da ação</label>
+            <input ref={imageInputRef} id="activity-image" type="file" accept="image/*" style={{ display:'none' }} onChange={uploadActionImage} disabled={uploading} />
+            <div
+              onClick={() => imageInputRef.current?.click()}
+              data-field="image"
+              style={{ border:'2px dashed #BED8D3', borderRadius:10, padding:'20px', textAlign:'center', cursor:'pointer', background:'#F5F9F8', transition:'all 0.2s' }}
+              onMouseEnter={event => { event.currentTarget.style.borderColor='#2A5C66'; event.currentTarget.style.background='#EAF4F6'; }}
+              onMouseLeave={event => { event.currentTarget.style.borderColor='#BED8D3'; event.currentTarget.style.background='#F5F9F8'; }}
+            >
+              <Upload size={22} color="#2A5C66" style={{ marginBottom:6 }} />
+              <p style={{ fontSize:'0.88rem', color:'#2A5C66', fontWeight:700 }}>{uploading ? 'Enviando imagem...' : 'Escolher imagem do computador'}</p>
+              <p style={{ fontSize:'0.76rem', color:'#6E6E6E', marginTop:3 }}>PNG, JPG ou WEBP até 5 MB</p>
+            </div>
+            {form.image && (
+              <div style={{ marginTop:12, padding:14, background:'#FAF7F5', border:'1px solid #DCE7E5', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
+                <div style={{ width:110, height:76, background:'#fff', borderRadius:8, border:'1px solid #E5E7EB', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', padding:4 }}>
+                  <img src={form.image} alt="Prévia da imagem da ação" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                </div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-main)' }}>Prévia da imagem</div>
+                  <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)' }}>Será exibida no card da ação.</div>
+                  <button type="button" onClick={() => update('image', '')} style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.75rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}>Remover imagem</button>
+                </div>
+              </div>
+            )}
+            <FieldError>{errors.image}</FieldError>
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="activity-description">Descrição curta</label>
+            <textarea id="activity-description" className="form-input" rows={3} maxLength={100} value={form.description} onChange={event => update('description', event.target.value)} />
+            <FieldError>{errors.description}</FieldError>
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="activity-details">Orientações e participação</label>
+            <textarea id="activity-details" className="form-input" rows={4} maxLength={255} value={form.details} onChange={event => update('details', event.target.value)} />
+            <FieldError>{errors.details}</FieldError>
+          </div>
           <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:12 }}>
             <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Salvando...' : 'Salvar Ação'}</button>
+            <button type="submit" className="btn btn-primary" disabled={saving || uploading}>
+              <CheckCircle size={15} /> {uploading ? 'Enviando imagem...' : saving ? 'Salvando...' : (item ? 'Salvar Alterações' : 'Cadastrar Ação')}
+            </button>
           </div>
         </form>
       </div>
@@ -1111,7 +1199,7 @@ function TabActions() {
           {filtered.map(item => (
             <article key={item.id} style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:14, padding:20, boxShadow:'0 2px 8px rgba(27,37,39,0.04)' }}>
               <h3 style={{ fontSize:'1.05rem', marginBottom:10 }}>{item.title}</h3>
-              <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:6 }}>{item.schedule.days}</p>
+              <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:6 }}>{item.schedule.daysLabel || item.schedule.days}</p>
               <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:6 }}>{item.schedule.time}</p>
               <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem' }}>{item.schedule.location}</p>
               <div style={{ display:'flex', gap:8, justifyContent:'flex-end', marginTop:18 }}>
@@ -1668,6 +1756,14 @@ function TabSettings() {
           <Settings size={18} color="#2A5C66" /> Informações da Associação
         </h3>
         <form onSubmit={handleSave} noValidate>
+        <div className="form-group">
+          <label className="form-label">Ano de fundação</label>
+          <input data-field="since" className="form-input" type="number" min="1900" max="2100" value={form.since || ''} onChange={e => setField('since', e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Apresentação da Associação</label>
+          <textarea data-field="mission" className="form-textarea" rows={4} value={form.mission || ''} onChange={e => setField('mission', e.target.value)} />
+        </div>
         <div className="form-group">
           <label className="form-label">E-mail de Contato</label>
           <input data-field="email" className="form-input" type="email" value={form.email || ''} onChange={e => {setField('email', e.target.value); setErrors(p => ({...p,email:''}));}} />

@@ -6,6 +6,9 @@ export type propsAcoes = {
     local: string,
     responsavel: string
     titulo: string
+    url_imagem?: string | null
+    descricao_curta?: string | null
+    orientacoes?: string | null
 }
 
 export class Acoes{
@@ -19,12 +22,19 @@ export class Acoes{
         horario_fim: string,
         local:string,
         responsavel:string,
-        titulo:string
+        titulo:string,
+        url_imagem?: string | null,
+        descricao_curta?: string | null,
+        orientacoes?: string | null
     )
     {
 
          if (horario_fim <= horario_inicio) {
             throw new Error("O horário final deve ser posterior ao inicial");
+        }
+        const validDays = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+        if (!validDays.includes(dia_semana)) {
+            throw new Error("Dia da semana inválido");
         }
         if(!dia_semana||!horario_inicio||!horario_fim||!local||!responsavel||!titulo){
             throw new Error("Campos Obrigatórios")
@@ -37,7 +47,10 @@ export class Acoes{
             horario_fim,
             local,
             responsavel,
-            titulo
+            titulo,
+            url_imagem: url_imagem || null,
+            descricao_curta: descricao_curta || null,
+            orientacoes: orientacoes || null,
         }
 
         return new Acoes(props)
@@ -67,5 +80,8 @@ export class Acoes{
     public get titulo(){
         return this.props.titulo
     }
+    public get url_imagem(){ return this.props.url_imagem }
+    public get descricao_curta(){ return this.props.descricao_curta }
+    public get orientacoes(){ return this.props.orientacoes }
     
 }

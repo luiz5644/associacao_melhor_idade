@@ -27,7 +27,10 @@ export class AcoesControle{
                 acoesDto.horario_fim,
                 acoesDto.local,
                 acoesDto.responsavel,
-                acoesDto.titulo
+                acoesDto.titulo,
+                acoesDto.url_imagem,
+                acoesDto.descricao_curta,
+                acoesDto.orientacoes
             )
         }
         catch(error){
@@ -84,7 +87,10 @@ export class AcoesControle{
                 acaoDto.horario_fim,
                 acaoDto.local,
                 acaoDto.responsavel,
-                acaoDto.titulo
+                acaoDto.titulo,
+                acaoDto.url_imagem,
+                acaoDto.descricao_curta,
+                acaoDto.orientacoes
             )
 
             await this.acoesServico.atualizar(acao)

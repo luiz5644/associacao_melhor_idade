@@ -108,7 +108,7 @@ export default function HomePage({ onNavigate, onSelectPhoto }) {
             <div className="history-teaser-img-wrap">
               <img 
                 src={home.historyTeaser.image} 
-                alt="Fotografia histórica da fundação da Associação Melhor Idade em 2005" 
+                alt="Pessoas idosas reunidas em um momento de convivência" 
                 className="history-teaser-img" 
               />
             </div>

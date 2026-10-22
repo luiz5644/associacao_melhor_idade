@@ -51,12 +51,15 @@ CREATE TABLE eventos (
 
 CREATE TABLE acoes (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    dia_semana VARCHAR(150) NOT NULL,
+    dia_semana ENUM('domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado') NOT NULL,
     horario_inicio TIME NOT NULL,
     horario_fim TIME NOT NULL,
-    local VARCHAR(200) NOT NULL,
-    responsavel VARCHAR(200) NOT NULL,
-    titulo VARCHAR(200) NOT NULL
+    local VARCHAR(255) NULL,
+    responsavel VARCHAR(255) NULL,
+    titulo VARCHAR(250) NOT NULL,
+    url_imagem VARCHAR(255) NULL,
+    descricao_curta VARCHAR(100) NULL,
+    orientacoes VARCHAR(255) NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE categorias_galeria (

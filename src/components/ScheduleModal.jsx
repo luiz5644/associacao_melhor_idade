@@ -3,6 +3,10 @@ import { X, Clock, Calendar, MapPin, User, Info } from 'lucide-react';
 
 export default function ScheduleModal({ activity, onClose }) {
   if (!activity) return null;
+  const weekdayLabels = {
+    domingo: 'Domingo', segunda: 'Segunda-feira', terca: 'Terça-feira', quarta: 'Quarta-feira',
+    quinta: 'Quinta-feira', sexta: 'Sexta-feira', sabado: 'Sábado',
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
@@ -20,8 +24,8 @@ export default function ScheduleModal({ activity, onClose }) {
           {activity.schedule.days && <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#F5F9F8', padding: '12px 16px', borderRadius: '10px' }}>
             <Calendar size={20} color="#2A5C66" />
             <div>
-              <strong style={{ display: 'block', fontSize: '0.85rem', color: '#6E6E6E' }}>Dias de Encontro</strong>
-              <span style={{ fontWeight: 600, color: '#1B2527' }}>{activity.schedule.days}</span>
+              <strong style={{ display: 'block', fontSize: '0.85rem', color: '#6E6E6E' }}>Dia da semana</strong>
+              <span style={{ fontWeight: 600, color: '#1B2527' }}>{weekdayLabels[activity.schedule.days] || activity.schedule.days}</span>
             </div>
           </div>}
 

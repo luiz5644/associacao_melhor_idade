@@ -22,6 +22,22 @@ const STORAGE_KEY_BRAND = 'ami_brand_info_v1';
 const STORAGE_KEY_TESTIMONIALS = 'ami_testimonials_v1';
 const EMPTY_BRAND_INFO = { ...siteData.brand, email: '', address: '', phone: '', pixKey: '' };
 
+function normalizeBrandInfo(info, current) {
+  const hasOutdatedHistory = Number(info?.since) === 2005 || /desde 2005|garagem da dona alzira/i.test(info?.mission || '');
+  return {
+    ...current,
+    ...info,
+    name: info.name || current.name,
+    subtitle: info.subtitle || current.subtitle,
+    mission: hasOutdatedHistory ? siteData.brand.mission : (info.mission || current.mission),
+    since: hasOutdatedHistory ? siteData.brand.since : (info.since || current.since),
+    email: info.email || '',
+    address: info.address || '',
+    phone: info.phone || '',
+    pixKey: info.pixKey || '',
+  };
+}
+
 const DataContext = createContext(null);
 
 export function DataProvider({ children }) {
@@ -143,12 +159,7 @@ export function DataProvider({ children }) {
           const hasRecord = Boolean(info && Object.keys(info).length);
           setBrandInfoHasRecord(hasRecord);
           if (hasRecord) {
-            setBrandInfo(current => ({
-              ...current, ...info,
-              name: info.name || current.name, subtitle: info.subtitle || current.subtitle,
-              mission: info.mission || current.mission, since: info.since || current.since,
-              email: info.email || '', address: info.address || '', phone: info.phone || '', pixKey: info.pixKey || '',
-            }));
+            setBrandInfo(current => normalizeBrandInfo(info, current));
             setLegacyBrandInfo(null);
           } else {
             setBrandInfo(EMPTY_BRAND_INFO);
@@ -487,6 +498,8 @@ export function DataProvider({ children }) {
         titulo: data.title.trim(), dia_semana: data.days.trim(),
         horario_inicio: data.startTime, horario_fim: data.endTime,
         local: data.location.trim(), responsavel: data.responsible.trim(),
+        url_imagem: toStoredUrl(data.image || ''),
+        descricao_curta: data.description.trim(), orientacoes: data.details.trim(),
       });
       await reloadActivities();
       showToast('Ação cadastrada com sucesso!', 'success');
@@ -509,6 +522,8 @@ export function DataProvider({ children }) {
         titulo: data.title.trim(), dia_semana: data.days.trim(),
         horario_inicio: data.startTime, horario_fim: data.endTime,
         local: data.location.trim(), responsavel: data.responsible.trim(),
+        url_imagem: toStoredUrl(data.image || ''),
+        descricao_curta: data.description.trim(), orientacoes: data.details.trim(),
       });
       await reloadActivities();
       showToast('Ação atualizada com sucesso!', 'info');
@@ -643,18 +658,17 @@ export function DataProvider({ children }) {
     }
     try {
       await informacoesApi.update({
+        name: newInfo.name,
+        subtitle: newInfo.subtitle,
         email: newInfo.email,
         phone: newInfo.phone,
         address: newInfo.address,
         pixKey: newInfo.pixKey,
+        mission: newInfo.mission,
+        since: Number(newInfo.since) || undefined,
       });
       const refreshed = await informacoesApi.get();
-      setBrandInfo(current => ({
-        ...current, ...refreshed,
-        name: refreshed.name || current.name, subtitle: refreshed.subtitle || current.subtitle,
-        mission: refreshed.mission || current.mission, since: refreshed.since || current.since,
-        email: refreshed.email || '', address: refreshed.address || '', phone: refreshed.phone || '', pixKey: refreshed.pixKey || '',
-      }));
+      setBrandInfo(current => normalizeBrandInfo(refreshed || {}, current));
       setBrandInfoHasRecord(Boolean(Object.keys(refreshed || {}).length));
       setLegacyBrandInfo(null);
       localStorage.removeItem(STORAGE_KEY_BRAND);

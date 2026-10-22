@@ -4,12 +4,12 @@ export const siteData = {
   brand: {
     name: "Melhor Idade",
     subtitle: "ASSOCIAÇÃO COMUNITÁRIA",
-    since: 2005,
+    since: 2011,
     email: "",
     address: "",
     phone: "",
     pixKey: "",
-    mission: "Oferecendo dignidade, alegria, integração e bem-estar para a melhor idade da nossa comunidade desde 2005. Venha nos fazer uma visita!"
+    mission: "Desde 2011, promovemos bem-estar, convivência e valorização da pessoa idosa por meio de atividades culturais e de lazer. Venha nos fazer uma visita!"
   },
 
   // 1. TELA INÍCIO
@@ -30,8 +30,8 @@ export const siteData = {
       title: "Nossa Caminhada",
       image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1000&auto=format&fit=crop", // Foto comunitária nostálgica / vintage
       paragraphs: [
-        "Nascemos do sonho de integrar as pessoas idosas de nossa comunidade, trazendo companhia, risadas e resgate cultural para o bairro.",
-        "Em 2005, um pequeno grupo de vizinhos se juntou na garagem da Dona Alzira para conversar e costurar. Hoje, somos centenas de associados que encontram um lar acolhedor todos os dias."
+        "Idealizado por Maria Saraiva de Santiago, com o apoio de Arnóbio Santiago de Freitas e de um grupo de idosas, o projeto nasceu para ampliar o bem-estar, a convivência e a valorização da pessoa idosa.",
+        "Desde 2011, a Associação promove atividades culturais e de lazer, como Forró, Quadrilha, Reisado, Coral, eventos comemorativos e viagens."
       ],
       ctaText: "Ler nossa história completa"
     },
@@ -47,58 +47,25 @@ export const siteData = {
     }
   },
 
-  // 2. TELA NOSSA HISTÓRIA
-  history: {
-    tag: "NOSSA TRAJETÓRIA",
-    title: "Nossa Linda História",
-    subtitle: "Como o carinho transformou uma garagem humilde em um refúgio de amizade para centenas de idosos.",
-    timeline: [
-      {
-        year: "2005",
-        yearColor: "#2A5C66",
-        title: "O Início na Garagem",
-        text: "Tudo começou quando a Dona Alzira e mais três amigas decidiram se reunir para tomar chá, fazer tricô e compartilhar lembranças. Elas perceberam que muitos idosos do bairro passavam as tardes sozinhos. Nascia a semente da nossa associação.",
-        image: "https://images.unsplash.com/photo-1581579438747-1dc8d17bbce4?q=80&w=900&auto=format&fit=crop", // Senhoras tricotando e conversando na sala/garagem
-        imagePosition: "right"
-      },
-      {
-        year: "2012",
-        yearColor: "#E8A87C",
-        title: "O Primeiro Coral",
-        text: "O grupo cresceu tanto que o salão da paróquia local foi pequeno. Nesse ano, fundamos o Coral da Melhor Idade sob a regência voluntária do maestro Roberto, trazendo melodia e união às nossas terças-feiras.",
-        image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=900&auto=format&fit=crop", // Grupo de coral com partituras
-        imagePosition: "left"
-      },
-      {
-        year: "2018",
-        yearColor: "#3D6058",
-        title: "A Conquista da Sede Própria",
-        text: "Graças às generosas contribuições e parcerias com o comércio do bairro, conseguimos restaurar uma antiga chácara abandonada e transformá-la em nossa maravilhosa sede atual, com horta, cozinha e amplo salão para bailes.",
-        image: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?q=80&w=900&auto=format&fit=crop", // Bela casa histórica com jardim e flores
-        imagePosition: "right"
-      }
-    ]
-  },
-
-  // 3. TELA ATIVIDADES
+  // 2. TELA ATIVIDADES
     activities: {
       tag: "AÇÕES COM AMOR",
       title: "Nossas Ações diárias",
-      subtitle: "Oferecemos uma variedade de oficinas, encontros e dinâmicas criadas especialmente para o seu bem-estar mental e físico.",
+      subtitle: "Nossas atividades artísticas, culturais e de lazer promovem convivência, valorizam tradições e incentivam a participação ativa. Entre elas estão o Forró, as danças culturais e os eventos comemorativos.",
   },
 
   // 4. TELA CALENDÁRIO
   calendar: {
       tag: "CALENDÁRIO DO IDOSO",
       title: "Nossa Programação",
-      subtitle: "Datas claras e de fácil leitura para você programar seus dias de diversão e aprendizado.",
+      subtitle: "Acompanhe os encontros e eventos da Associação. O Forró da Melhor Idade acontece às quartas-feiras, na quadra da Escola São Vicente de Paula – Patronato.",
   },
 
   // 5. TELA GALERIA DE FOTOS
   gallery: {
       tag: "GALERIA DE FOTOS",
       title: "Álbum de Lembranças",
-      subtitle: "Cada fotografia guarda um sorriso, uma história e o orgulho de pertencer à nossa grande família.",
+      subtitle: "Registros do Forró, da Quadrilha, do Reisado, do Coral e de outras atividades culturais e de lazer que celebram nossos encontros e tradições.",
   },
 
   // 6. DEPOIMENTOS
