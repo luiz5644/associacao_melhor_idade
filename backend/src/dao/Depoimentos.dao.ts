@@ -35,7 +35,7 @@ export class DepoimentoDao{
     public async listar():Promise<Depoimento[]>{
         try{
             const [rows]: any = await conexao.query(
-                'select * from depoimentos'
+                'select * from depoimentos order by id desc'
             )
             return rows.map((r:any) => Depoimento.reconstruir(r))
         }

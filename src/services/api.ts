@@ -295,6 +295,48 @@ export const patrocinadoresApi = {
   delete: async (id: number) => fetchApi<{ message: string }>(`/patrocinadores/${id}`, { method: 'DELETE' }),
 };
 
+export interface Depoimento {
+  id: number;
+  nome: string;
+  papel: string;
+  url_imagem: string;
+  depoimento: string;
+}
+
+export type DepoimentoInput = Omit<Depoimento, 'id'>;
+
+export const depoimentosApi = {
+  list: async (): Promise<Depoimento[]> => unpackList<Depoimento>(await fetchApi<any[]>('/depoimentos')),
+  create: async (data: DepoimentoInput) => fetchApi<{ message: string }>('/depoimentos', {
+    method: 'POST', body: JSON.stringify(data),
+  }),
+  update: async (id: number, data: DepoimentoInput) => fetchApi<{ message: string }>(`/depoimentos/${id}`, {
+    method: 'PUT', body: JSON.stringify(data),
+  }),
+  delete: async (id: number) => fetchApi<{ message: string }>(`/depoimentos/${id}`, { method: 'DELETE' }),
+};
+
+export function adaptDepoimentoToFrontend(input: any) {
+  const item = unpackProps<Depoimento>(input);
+  return {
+    id: `test-${item.id}`,
+    apiId: Number(item.id),
+    name: item.nome || '',
+    role: item.papel || '',
+    avatar: resolveImageUrl(item.url_imagem || ''),
+    text: item.depoimento || '',
+  };
+}
+
+export function adaptDepoimentoToBackend(input: any): DepoimentoInput {
+  return {
+    nome: String(input.name || '').trim(),
+    papel: String(input.role || '').trim(),
+    url_imagem: toStoredUrl(input.avatar || ''),
+    depoimento: String(input.text || '').trim(),
+  };
+}
+
 export function adaptSponsorToFrontend(input: any) {
   const row = unpackProps<any>(input);
   return {

@@ -16,10 +16,12 @@ import {
   adaptSponsorToBackend,
   toStoredUrl,
   informacoesApi,
+  depoimentosApi,
+  adaptDepoimentoToFrontend,
+  adaptDepoimentoToBackend,
 } from '../services/api';
 
 const STORAGE_KEY_BRAND = 'ami_brand_info_v1';
-const STORAGE_KEY_TESTIMONIALS = 'ami_testimonials_v1';
 const EMPTY_BRAND_INFO = { ...siteData.brand, email: '', address: '', phone: '', pixKey: '' };
 
 function normalizeBrandInfo(info, current) {
@@ -67,13 +69,7 @@ export function DataProvider({ children }) {
 
   const [sponsors, setSponsors] = useState([]);
 
-  const [testimonials, setTestimonials] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_TESTIMONIALS);
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
-    return siteData.testimonials.items;
-  });
+  const [testimonials, setTestimonials] = useState([]);
 
   const [toast, setToast] = useState(null);
 
@@ -141,8 +137,24 @@ export function DataProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_TESTIMONIALS, JSON.stringify(testimonials)); } catch (_) {}
-  }, [testimonials]);
+    localStorage.removeItem('ami_testimonials_v1');
+  }, []);
+
+  const reloadTestimonials = useCallback(async () => {
+    if (!backendConnected) {
+      setTestimonials([]);
+      return [];
+    }
+    try {
+      const records = await depoimentosApi.list();
+      const items = records.map(adaptDepoimentoToFrontend);
+      setTestimonials(items);
+      return items;
+    } catch (error) {
+      setTestimonials([]);
+      throw error;
+    }
+  }, [backendConnected]);
 
   // ── Sincronização inicial com o Backend (se ativo na porta 3000) ────
   const checkAndSyncBackend = useCallback(async (silent = false) => {
@@ -186,6 +198,14 @@ export function DataProvider({ children }) {
           console.warn('[Backend] Erro ao carregar patrocinadores:', err);
         }
 
+        try {
+          const records = await depoimentosApi.list();
+          setTestimonials(records.map(adaptDepoimentoToFrontend));
+        } catch (err) {
+          setTestimonials([]);
+          console.warn('[Backend] Erro ao carregar depoimentos:', err);
+        }
+
         // Carrega eventos do calendário e ações recorrentes separadamente.
         try {
           const events = await eventosApi.list();
@@ -215,6 +235,7 @@ export function DataProvider({ children }) {
         setActivities([]);
         setActivitiesError('Backend desconectado. Não foi possível carregar as ações.');
         setSponsors([]);
+        setTestimonials([]);
         setBrandInfo(EMPTY_BRAND_INFO);
         if (!silent) {
           showToast('Backend offline. Operando em modo de dados locais.', 'info');
@@ -227,6 +248,7 @@ export function DataProvider({ children }) {
       setActivities([]);
       setActivitiesError('Não foi possível conectar ao backend para carregar as ações.');
       setSponsors([]);
+      setTestimonials([]);
       if (!silent) {
         showToast('Backend inacessível. Usando armazenamento local.', 'info');
       }
@@ -616,39 +638,55 @@ export function DataProvider({ children }) {
   };
 
   // ── CRUD: Depoimentos ─────────────────────────────────────────────
-  const addTestimonial = (testimonialData) => {
-    const newTestimonial = {
-      id: `test-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      name: testimonialData.name.trim(),
-      role: testimonialData.role || '',
-      avatar: toStoredUrl(testimonialData.avatar || ''),
-      text: testimonialData.text.trim()
-    };
-    setTestimonials(prev => [newTestimonial, ...prev]);
-    showToast('Depoimento adicionado com sucesso!', 'success');
-    return newTestimonial;
+  const addTestimonial = async (testimonialData) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível cadastrar depoimento no banco.', 'warning');
+      throw new Error('Backend offline');
+    }
+    try {
+      await depoimentosApi.create(adaptDepoimentoToBackend(testimonialData));
+      await reloadTestimonials();
+      showToast('Depoimento adicionado com sucesso!', 'success');
+    } catch (error) {
+      showToast(error.message || 'Erro ao cadastrar depoimento.', 'warning');
+      throw error;
+    }
   };
 
-  const updateTestimonial = (id, updatedData) => {
-    setTestimonials(prev => prev.map(t => {
-      if (t.id !== id) return t;
-      return {
-        ...t,
-        ...updatedData,
-        name: updatedData.name ? updatedData.name.trim() : t.name,
-        role: updatedData.role !== undefined ? updatedData.role : t.role,
-        avatar: updatedData.avatar !== undefined ? toStoredUrl(updatedData.avatar) : t.avatar,
-        text: updatedData.text ? updatedData.text.trim() : t.text,
-        updatedAt: new Date().toISOString()
-      };
-    }));
-    showToast('Depoimento atualizado com sucesso!', 'info');
+  const updateTestimonial = async (id, updatedData) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível atualizar depoimento no banco.', 'warning');
+      throw new Error('Backend offline');
+    }
+    const current = testimonials.find(item => item.id === id || item.apiId === id);
+    const apiId = Number(current?.apiId ?? String(id).replace(/^test-/, ''));
+    if (!current || !Number.isInteger(apiId) || apiId <= 0) throw new Error('Depoimento inválido.');
+    try {
+      await depoimentosApi.update(apiId, adaptDepoimentoToBackend({ ...current, ...updatedData }));
+      await reloadTestimonials();
+      showToast('Depoimento atualizado com sucesso!', 'info');
+    } catch (error) {
+      showToast(error.message || 'Erro ao atualizar depoimento.', 'warning');
+      throw error;
+    }
   };
 
-  const deleteTestimonial = (id) => {
-    setTestimonials(prev => prev.filter(t => t.id !== id));
-    showToast('Depoimento removido.', 'warning');
+  const deleteTestimonial = async (id) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível remover depoimento do banco.', 'warning');
+      throw new Error('Backend offline');
+    }
+    const current = testimonials.find(item => item.id === id || item.apiId === id);
+    const apiId = Number(current?.apiId ?? String(id).replace(/^test-/, ''));
+    if (!current || !Number.isInteger(apiId) || apiId <= 0) throw new Error('Depoimento inválido.');
+    try {
+      await depoimentosApi.delete(apiId);
+      await reloadTestimonials();
+      showToast('Depoimento removido.', 'warning');
+    } catch (error) {
+      showToast(error.message || 'Erro ao remover depoimento.', 'warning');
+      throw error;
+    }
   };
 
   const updateBrandInfo = async (newInfo) => {
@@ -680,11 +718,11 @@ export function DataProvider({ children }) {
   };
 
   const resetToDefaultData = () => {
-    [STORAGE_KEY_BRAND, STORAGE_KEY_TESTIMONIALS]
+    [STORAGE_KEY_BRAND, 'ami_testimonials_v1']
       .forEach(k => localStorage.removeItem(k));
     setCalendarEvents([]);
     setBrandInfo(EMPTY_BRAND_INFO);
-    setTestimonials(siteData.testimonials.items);
+    setTestimonials([]);
     showToast('Dados restaurados para o padrão original!', 'info');
   };
 

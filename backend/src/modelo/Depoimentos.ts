@@ -17,7 +17,7 @@ export class Depoimento{
         depoimento:string
     )
     {
-        if(!nome||!papel||!url_imagem||!depoimento){
+        if(!nome||!url_imagem||!depoimento){
             throw new Error("Campos Obrigatórios")
         }
 

@@ -348,7 +348,7 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
         </button>
         <div className="modal-header">
           <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
-            <CalendarDays size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Calendário / Eventos</span>
+            <CalendarDays size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Eventos</span>
           </div>
           <h3 className="modal-title">{item ? 'Editar Evento' : 'Novo Evento'}</h3>
           <p className="modal-subtitle">Cadastre um encontro ou evento para o calendário público.</p>
@@ -708,7 +708,7 @@ function TabOverview({ setActiveTab }) {
             <div style={{ width:38, height:38, background:'#EAF4F6', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               <CalendarDays size={20} color="#2A5C66" />
             </div>
-            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Calendário / Eventos</h3>
+            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Eventos</h3>
           </div>
           <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
             {calendarEvents.length} eventos cadastrados no calendário.
@@ -891,7 +891,7 @@ function TabCalendar() {
       <div>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
           <div>
-            <h2 className="admin-section-title">Calendário / Eventos</h2>
+            <h2 className="admin-section-title">Eventos</h2>
                       <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{calendarEvents.length} eventos cadastrados</p>
                     </div>
                     <button className="btn btn-primary" onClick={() => { setEditingEvent(null); setShowForm(true); }}>
@@ -1427,14 +1427,29 @@ function TabTestimonials() {
   const [editingItem, setEditingItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const handleSave = (data) => {
-    if (editingItem) {
-      updateTestimonial(editingItem.id, data);
-    } else {
-      addTestimonial(data);
+  const handleSave = async (data) => {
+    try {
+      if (editingItem) {
+        await updateTestimonial(editingItem.id, data);
+      } else {
+        await addTestimonial(data);
+      }
+      setEditingItem(null);
+      setShowForm(false);
+      return true;
+    } catch {
+      return false;
     }
-    setEditingItem(null);
-    setShowForm(false);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteTestimonial(deleteTarget.id);
+      setDeleteTarget(null);
+    } catch {
+      // O contexto já exibe o erro ao usuário.
+    }
   };
 
   return (
@@ -1513,7 +1528,7 @@ function TabTestimonials() {
         isOpen={!!deleteTarget}
         title={deleteTarget?.name}
         subtitle="Este depoimento será removido permanentemente da página de Depoimentos."
-        onConfirm={() => { deleteTestimonial(deleteTarget.id); setDeleteTarget(null); }}
+        onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
     </div>
@@ -1583,13 +1598,13 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
     if (Object.keys(nextErrors).length) { focusFirstError(nextErrors); return; }
     setSaving(true);
     try {
-      await onSave({
+      const saved = await onSave({
         name: form.name.trim(),
         role: form.role.trim(),
         avatar: toStoredUrl(form.avatar.trim()),
         text: form.text.trim()
       });
-      onClose();
+      if (saved !== false) onClose();
     } finally {
       setSaving(false);
     }
@@ -1994,7 +2009,7 @@ export default function AdminPage({ onClose }) {
     const navItems = [
           { id: 'overview',        label: 'Visão Geral',         icon: LayoutGrid,    badge: null },
           { id: 'gallery',         label: 'Álbum de Lembranças', icon: Image,         badge: { text: '5 fotos', type: 'purple' } },
-          { id: 'calendar',        label: 'Calendário / Eventos', icon: Calendar,      badge: null },
+          { id: 'calendar',        label: 'Eventos',             icon: Calendar,      badge: null },
           { id: 'actions',         label: 'Ações',                icon: Activity,      badge: null },
           { id: 'admins',          label: 'Administradores',     icon: Users,         badge: null },
           { id: 'sponsors',        label: 'Patrocinadores & Apoio', icon: Building2,   badge: { text: '6', type: 'gray' } },
@@ -2005,7 +2020,7 @@ export default function AdminPage({ onClose }) {
     const tabs = [
         { id: 'overview',        label: 'Visão Geral',              icon: <LayoutDashboard size={17} /> },
         { id: 'gallery',         label: 'Álbum de Lembranças',      icon: <Images size={17} /> },
-        { id: 'calendar',        label: 'Calendário / Eventos',     icon: <CalendarDays size={17} /> },
+        { id: 'calendar',        label: 'Eventos',                  icon: <CalendarDays size={17} /> },
         { id: 'actions',         label: 'Ações',                    icon: <Activity size={17} /> },
         { id: 'admins',          label: 'Administradores',          icon: <UserCheck size={17} /> },
         { id: 'sponsors',        label: 'Patrocinadores & Apoio',   icon: <Building2 size={17} /> },

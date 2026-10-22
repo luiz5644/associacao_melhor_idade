@@ -27,7 +27,7 @@ export class DepoimentoCreateDto{
 
     nome:string
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
 
     papel:string
@@ -49,7 +49,7 @@ export class DepoimentoUpdateDto{
 
     nome:string
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
 
     papel:string
