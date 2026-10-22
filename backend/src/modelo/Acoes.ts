@@ -6,8 +6,8 @@ export type propsAcoes = {
     local: string,
     responsavel: string
     titulo: string
-    url_imagem?: string | null
-    descricao_curta?: string | null
+    url_imagem?: string | null,
+    descricao_curta?: string | null,
     orientacoes?: string | null
 }
 

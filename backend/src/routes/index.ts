@@ -7,6 +7,7 @@ import uploadRoute from "./Upload.routes";
 import patrocinadorRoutes from "./Patrocinador.routes";
 import informacoesRoutes from "./Informacoes.routes";
 import AcaoRouter from "./Acao.routes";
+import depoimentoRouter from "./Depoimento.routes";
 
 
 
@@ -19,6 +20,7 @@ routes.use("/upload", uploadRoute)
 routes.use("/patrocinadores", patrocinadorRoutes)
 routes.use("/informacoes", informacoesRoutes)
 routes.use("/acoes",AcaoRouter )
+routes.use("/depoimentos",depoimentoRouter)
 
 
 

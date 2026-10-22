@@ -115,3 +115,18 @@ alter table albuns_lembrancas drop column categoria_id
 select * from acoes
 select * from eventos
 select * from albuns_lembrancas
+
+
+create table depoimentos(
+id int AUTO_INCREMENT PRIMARY KEY,
+nome varchar(255),
+papel varchar(255),
+url_imagem varchar(255),
+depoimento varchar(10000)
+)
+
+alter table acoes add column url_imagem varchar(255)
+alter table acoes add column descricao_curta varchar(100)
+alter table acoes add column orientacoes varchar(255)
+
+select * from acoes

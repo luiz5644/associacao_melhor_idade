@@ -47,7 +47,7 @@ export class AcoesDao{
         try{
             const [results]: any = await conexao.query(
                 'update acoes set dia_semana = ?, horario_inicio = ?, horario_fim = ?, local =?, responsavel = ?, titulo = ?, url_imagem = ?, descricao_curta = ?, orientacoes = ? where id =?',
-                [acoes.dia_semana,acoes.horario_inicio,acoes.horario_fim, acoes.local,acoes.responsavel,acoes.titulo,acoes.url_imagem,acoes.descricao_curta,acoes.orientacoes, acoes.id]
+                [acoes.dia_semana, acoes.horario_inicio, acoes.horario_fim, acoes.local, acoes.responsavel, acoes.titulo, acoes.url_imagem, acoes.descricao_curta, acoes.orientacoes, acoes.id]
 
             )
             if(results.affectedRows===0){
