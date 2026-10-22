@@ -27,7 +27,10 @@ export class AcoesControle{
                 acoesDto.horario_fim,
                 acoesDto.local,
                 acoesDto.responsavel,
-                acoesDto.titulo
+                acoesDto.titulo,
+                acoesDto.url_imagem,
+                acoesDto.descricao_curta,
+                acoesDto.orientacoes
             )
         }
         catch(error){
@@ -77,15 +80,18 @@ export class AcoesControle{
         if(erros.length > 0) return res.status(400).json({ message:"Dados da ação inválidos", errors: erros })
         try{
             if (!await this.acoesServico.buscarPorId(idNumber)) return res.status(404).json({ message:"Ação não encontrada" })
-            const acao = Acoes.construir(
-                idNumber,
-                acaoDto.dia_semana,
-                acaoDto.horario_inicio,
-                acaoDto.horario_fim,
-                acaoDto.local,
-                acaoDto.responsavel,
-                acaoDto.titulo
-            )
+            const acao = Acoes.reconstruir({
+                id:idNumber,
+                dia_semana:acaoDto.dia_semana,
+                horario_inicio:acaoDto.horario_inicio,
+                horario_fim: acaoDto.horario_fim,
+                local: acaoDto.local,
+                responsavel: acaoDto.responsavel,
+                titulo:acaoDto.titulo,
+                url_imagem:acaoDto.url_imagem,
+                descricao_curta:acaoDto.descricao_curta,
+                orientacoes:acaoDto.orientacoes
+        })
 
             await this.acoesServico.atualizar(acao)
 

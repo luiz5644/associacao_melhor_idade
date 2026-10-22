@@ -4,8 +4,6 @@ import {
     IsNumber,
     IsOptional,
     IsString,
-    MinLength,
-    ValidateIf
 } from "class-validator";
 import { Type } from "class-transformer";
 

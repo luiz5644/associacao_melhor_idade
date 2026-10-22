@@ -53,6 +53,25 @@ export class AcoesCreateDto{
     @IsString()
     @MaxLength(200)
     titulo:string
+
+    @IsNotEmpty()
+    @IsString()
+
+    url_imagem:string
+
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(50)
+
+    descricao_curta: string
+
+    @IsNotEmpty()
+    @IsString()
+    orientacoes: string
+
+
+
+
 }
 
 export class AcoesUpdateDto{
@@ -86,4 +105,20 @@ export class AcoesUpdateDto{
     @IsString()
     @MaxLength(200)
     titulo:string
+
+    
+    @IsNotEmpty()
+    @IsString()
+
+    url_imagem:string
+
+    @IsNotEmpty()
+    @IsString()
+    @MaxLength(50)
+
+    descricao_curta: string
+
+    @IsNotEmpty()
+    @IsString()
+    orientacoes: string
 }

@@ -5,8 +5,8 @@ export class AcoesDao{
     public async salvar(acoes:Acoes):Promise<void>{
         try{
             const [rows]:any = await conexao.query(
-                'insert into acoes (dia_semana,horario_inicio,horario_fim,local,responsavel,titulo) values (?,?,?,?,?,?)',
-                [acoes.dia_semana,acoes.horario_inicio,acoes.horario_fim,acoes.local,acoes.responsavel,acoes.titulo]
+                'insert into acoes (dia_semana,horario_inicio,horario_fim,local,responsavel,titulo,url_imagem,descricao_curta,orientacoes) values (?,?,?,?,?,?,?,?,?)',
+                [acoes.dia_semana,acoes.horario_inicio,acoes.horario_fim,acoes.local,acoes.responsavel,acoes.titulo,acoes.url_imagem,acoes.descricao_curta,acoes.orientacoes]
             )
         }
         catch(error){
@@ -46,8 +46,8 @@ export class AcoesDao{
     public async atualizar(acoes:Acoes):Promise<void>{
         try{
             const [results]: any = await conexao.query(
-                'update acoes set dia_semana = ?, horario_inicio = ?, horario_fim = ?, local =?, responsavel = ?, titulo = ? where id =?',
-                [acoes.dia_semana,acoes.horario_inicio,acoes.horario_fim, acoes.local,acoes.responsavel,acoes.titulo, acoes.id]
+                'update acoes set dia_semana = ?, horario_inicio = ?, horario_fim = ?, local =?, responsavel = ?, titulo = ?, url_imagem = ?, descricao_curta = ?, orientacoes = ? where id =?',
+                [acoes.dia_semana,acoes.horario_inicio,acoes.horario_fim, acoes.local,acoes.responsavel,acoes.titulo, acoes.url_imagem, acoes.descricao_curta,acoes.orientacoes, acoes.id]
 
             )
             if(results.affectedRows===0){

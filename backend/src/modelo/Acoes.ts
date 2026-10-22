@@ -6,6 +6,9 @@ export type propsAcoes = {
     local: string,
     responsavel: string
     titulo: string
+    url_imagem: string,
+    descricao_curta:string,
+    orientacoes:string
 }
 
 export class Acoes{
@@ -19,14 +22,17 @@ export class Acoes{
         horario_fim: string,
         local:string,
         responsavel:string,
-        titulo:string
+        titulo:string,
+        url_imagem:string,
+        descricao_curta:string,
+        orientacoes:string
     )
     {
 
          if (horario_fim <= horario_inicio) {
             throw new Error("O horário final deve ser posterior ao inicial");
         }
-        if(!dia_semana||!horario_inicio||!horario_fim||!local||!responsavel||!titulo){
+        if(!dia_semana||!horario_inicio||!horario_fim||!local||!responsavel||!titulo|| !url_imagem|| !descricao_curta|| !orientacoes){
             throw new Error("Campos Obrigatórios")
         }
              
@@ -37,7 +43,10 @@ export class Acoes{
             horario_fim,
             local,
             responsavel,
-            titulo
+            titulo,
+            url_imagem,
+            descricao_curta,
+            orientacoes
         }
 
         return new Acoes(props)
@@ -66,6 +75,15 @@ export class Acoes{
     }
     public get titulo(){
         return this.props.titulo
+    }
+    public get url_imagem(){
+        return this.props.titulo
+    }
+    public get descricao_curta(){
+        return this.props.descricao_curta
+    }
+    public get orientacoes(){
+        return this.props.orientacoes
     }
     
 }
