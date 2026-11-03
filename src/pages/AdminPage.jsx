@@ -5,7 +5,8 @@ import {
   HeartHandshake, Camera, Upload, Link, Clock, MapPin, Star,
   ChevronRight, Search, AlertTriangle,
   Building2, ExternalLink, Globe, UserCheck, RefreshCw,
-  Menu, LayoutGrid, Image, Calendar, Heart, Activity
+  Menu, LayoutGrid, Image, Calendar, Heart, Activity,
+  KeyRound, Mail, ArrowLeft
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { adminApi, uploadApi, resolveImageUrl } from '../services/api';
@@ -1984,6 +1985,38 @@ export default function AdminPage({ onClose }) {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [submittingLogin, setSubmittingLogin] = useState(false);
+  const [authView, setAuthView] = useState('login'); // 'login' | 'forgot_password'
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryError, setRecoveryError] = useState('');
+  const [recoverySuccess, setRecoverySuccess] = useState(false);
+  const [submittingRecovery, setSubmittingRecovery] = useState(false);
+
+  const handleRecoverySubmit = async (e) => {
+    e.preventDefault();
+    setRecoveryError('');
+
+    const trimmed = recoveryEmail.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmed) {
+      setRecoveryError('Por favor, informe seu e-mail cadastrado.');
+      return;
+    }
+    if (!emailRegex.test(trimmed)) {
+      setRecoveryError('Por favor, informe um endereço de e-mail válido.');
+      return;
+    }
+
+    setSubmittingRecovery(true);
+    try {
+      // Simulação da chamada de recuperação (o backend será conectado posteriormente)
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setRecoverySuccess(true);
+    } catch (_) {
+      setRecoveryError('Ocorreu um erro ao processar o pedido. Tente novamente mais tarde.');
+    } finally {
+      setSubmittingRecovery(false);
+    }
+  };
   const [activeTab, setActiveTab] = useState('overview');
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
@@ -2052,38 +2085,142 @@ export default function AdminPage({ onClose }) {
     setIsLoggedIn(false);
   };
 
-  // ── Tela de Login ──────────────────────────────────────────────────
+  // ── Tela de Login / Recuperação de Senha ──────────────────────────
   if (!isLoggedIn) {
+    if (authView === 'forgot_password') {
+      return (
+        <div className="admin-page auth-page">
+          <div className="auth-card">
+            {recoverySuccess ? (
+              <div>
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                  <div className="auth-success-icon">
+                    <CheckCircle size={36} color="#fff" />
+                  </div>
+                  <h1 className="auth-success-title">E-mail Enviado!</h1>
+                  <p className="auth-success-text">
+                    Se o e-mail <strong>{recoveryEmail}</strong> estiver cadastrado em nossa base, você receberá em instantes as instruções e o link seguro para redefinir sua senha.
+                  </p>
+                </div>
+
+                <div className="auth-tip-box">
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <Mail size={18} style={{ flexShrink: 0, marginTop: 2 }} />
+                    <div>
+                      <strong>Dica:</strong> Se não encontrar a mensagem na caixa de entrada em até 5 minutos, confira sua pasta de <em>Spam</em> ou <em>Lixo Eletrônico</em>.
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn btn-primary auth-button"
+                  onClick={() => {
+                    setAuthView('login');
+                    setRecoverySuccess(false);
+                    setRecoveryEmail('');
+                  }}
+                >
+                  <ArrowLeft size={18} />
+                  <span>Voltar para o Login</span>
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                  <div className="auth-icon">
+                    <KeyRound size={30} color="#fff" />
+                  </div>
+                  <h1 className="auth-title">Recuperar Senha</h1>
+                  <p className="auth-subtitle">
+                    Digite seu e-mail cadastrado. Enviaremos um link seguro para você redefinir sua senha de acesso.
+                  </p>
+                </div>
+
+                <form onSubmit={handleRecoverySubmit}>
+                  <div className="auth-form-group">
+                    <label className="form-label" htmlFor="admin-recovery-email">E-mail Cadastrado</label>
+                    <div className="auth-input-wrapper">
+                      <input
+                        id="admin-recovery-email"
+                        className="form-input"
+                        type="email"
+                        placeholder="admin@associacaomelhoridade.org"
+                        value={recoveryEmail}
+                        onChange={e => setRecoveryEmail(e.target.value)}
+                        autoComplete="email"
+                        required
+                        autoFocus
+                      />
+                      <Mail size={18} color="var(--text-subtle, #6E6E6E)" />
+                    </div>
+                  </div>
+
+                  {recoveryError && (
+                    <div className="auth-error">
+                      <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                      <span>{recoveryError}</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary auth-button"
+                    disabled={submittingRecovery}
+                  >
+                    {submittingRecovery ? 'Enviando link...' : 'Enviar Link de Recuperação'}
+                  </button>
+                </form>
+
+                <div className="auth-divider">
+                  <button
+                    type="button"
+                    className="auth-link"
+                    onClick={() => {
+                      setAuthView('login');
+                      setRecoveryError('');
+                    }}
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Lembrou a senha? Fazer login</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="admin-page admin-login-page">
-        <div className="admin-login-card">
-          <div style={{ textAlign:'center', marginBottom:28 }}>
-            <div style={{ width:64, height:64, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:18, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px', boxShadow:'0 8px 24px rgba(42,92,102,0.25)' }}>
+      <div className="admin-page auth-page">
+        <div className="auth-card">
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <div className="auth-icon">
               <Shield size={30} color="#fff" />
             </div>
-            <h1 style={{ fontFamily:'var(--font-serif)', fontSize:'1.8rem', color:'var(--text-main)', marginBottom:6 }}>
-              Área do Administrador
-            </h1>
-            <p style={{ color:'var(--text-subtle)', fontSize:'0.92rem' }}>
+            <h1 className="auth-title">Área do Administrador</h1>
+            <p className="auth-subtitle">
               Acesso restrito à diretoria e equipe de coordenação.
             </p>
           </div>
 
           <div style={{
-            display:'flex', alignItems:'center', justifyContent:'space-between',
-            padding:'8px 14px', borderRadius:10, marginBottom:20,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '8px 14px', borderRadius: 10, marginBottom: 20,
             background: backendConnected ? '#ECFDF5' : '#FFFBEB',
             border: `1px solid ${backendConnected ? '#A7F3D0' : '#FDE68A'}`,
-            fontSize:'0.82rem',
+            fontSize: '0.82rem',
             color: backendConnected ? '#065F46' : '#92400E'
           }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <span style={{ width:8, height:8, borderRadius:'50%', background: backendConnected ? '#10B981' : '#F59E0B' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: backendConnected ? '#10B981' : '#F59E0B' }} />
               <span>{backendConnected ? 'Backend Conectado (Porta 3000)' : 'Backend Offline'}</span>
             </div>
             <button
               onClick={() => checkBackendConnection(false)}
-              style={{ background:'none', border:'none', cursor:'pointer', padding:2, color:'inherit', display:'flex', alignItems:'center', gap:4, textDecoration:'underline' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'inherit', display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'underline' }}
               title="Testar conexão com backend"
             >
               <RefreshCw size={12} className={backendLoading ? 'spin' : ''} />
@@ -2092,34 +2229,46 @@ export default function AdminPage({ onClose }) {
           </div>
 
           <form onSubmit={handleLogin}>
-            <div className="form-group">
+            <div className="auth-form-group">
               <label className="form-label">Usuário / CPF</label>
               <input className="form-input" type="text" placeholder="Nome de usuário ou CPF"
                 value={username} onChange={e => setUsername(e.target.value)} autoComplete="username" required />
             </div>
-            <div className="form-group">
+            <div className="auth-form-group">
               <label className="form-label">Senha</label>
               <input className="form-input" type="password" placeholder="••••••••"
                 value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required />
+              <button
+                type="button"
+                className="auth-link"
+                style={{ marginTop: 8, display: 'block', textDecoration: 'underline' }}
+                onClick={() => {
+                  setAuthView('forgot_password');
+                  setRecoveryError('');
+                  setRecoverySuccess(false);
+                }}
+              >
+                Esqueceu a senha?
+              </button>
             </div>
             {loginError && (
-              <div style={{ background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#DC2626', borderRadius:8, padding:'10px 14px', fontSize:'0.85rem', marginBottom:14, display:'flex', alignItems:'center', gap:8 }}>
+              <div className="auth-error">
                 <AlertTriangle size={15} /> {loginError}
               </div>
             )}
 
             {(!backendConnected || backendLoading) && (
-              <p style={{ fontSize:'0.82rem', color:'var(--text-subtle)', marginBottom:16, background:'#F5F9F8', padding:'10px 14px', borderRadius:8 }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-subtle)', marginBottom: 16, background: '#F5F9F8', padding: '10px 14px', borderRadius: 8 }}>
                 💡 O painel precisa do backend conectado na porta 3000 para autenticar e salvar os dados.
               </p>
             )}
 
-            <button type="submit" className="btn btn-primary" disabled={submittingLogin || backendLoading || !backendConnected} style={{ width:'100%', padding:'13px 20px', fontSize:'1rem' }}>
+            <button type="submit" className="btn btn-primary auth-button" disabled={submittingLogin || backendLoading || !backendConnected}>
               {submittingLogin ? 'Autenticando...' : 'Entrar no Painel'}
             </button>
           </form>
 
-          <button onClick={onClose} style={{ display:'block', textAlign:'center', margin:'16px auto 0', background:'none', border:'none', cursor:'pointer', color:'var(--text-subtle)', fontSize:'0.88rem', textDecoration:'underline' }}>
+          <button onClick={onClose} className="auth-footer-link">
             ← Voltar ao site
           </button>
         </div>

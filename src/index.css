@@ -1461,6 +1461,209 @@ h1, h2, h3, h4, .font-serif {
 }
 
 /* =========================================================
+   AUTH SHARED STYLES (Login / Recuperar Senha)
+   ========================================================= */
+.auth-page {
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #EAF4F6 0%, #F5F9F8 50%, #FDF6F0 100%);
+  min-height: 100vh;
+}
+
+.auth-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 48px 44px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 60px rgba(27,37,39,0.12);
+  border: 1px solid var(--border-light);
+}
+
+.auth-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #2A5C66, #3D8A9A);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  box-shadow: 0 8px 24px rgba(42, 92, 102, 0.25);
+}
+
+.auth-icon svg {
+  color: #fff;
+  width: 30px;
+  height: 30px;
+}
+
+.auth-title {
+  font-family: var(--font-sans);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 6px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.auth-subtitle {
+  color: var(--text-subtle);
+  font-size: 0.92rem;
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 0;
+}
+
+.auth-form-group {
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.auth-input-wrapper {
+  position: relative;
+}
+
+.auth-input-wrapper .form-input {
+  padding-left: 44px;
+}
+
+.auth-input-wrapper svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--text-subtle);
+  width: 18px;
+  height: 18px;
+}
+
+.auth-button {
+  width: 100%;
+  padding: 13px 20px;
+  font-size: 1rem;
+}
+
+.auth-divider {
+  border-top: 1px solid var(--border-light);
+  padding-top: 16px;
+  margin-top: 8px;
+}
+
+.auth-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  text-decoration: underline;
+  font-family: var(--font-sans);
+}
+
+.auth-link:hover {
+  color: var(--primary-hover);
+}
+
+.auth-footer-link {
+  display: block;
+  text-align: center;
+  margin: 16px auto 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-subtle);
+  font-size: 0.88rem;
+  text-decoration: underline;
+  font-family: var(--font-sans);
+}
+
+.auth-footer-link:hover {
+  color: var(--text-main);
+}
+
+.auth-error {
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  color: #DC2626;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+}
+
+.auth-success-icon {
+  width: 68px;
+  height: 68px;
+  background: linear-gradient(135deg, #10B981, #059669);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);
+}
+
+.auth-success-icon svg {
+  color: #fff;
+  width: 36px;
+  height: 36px;
+}
+
+.auth-success-title {
+  font-family: var(--font-sans);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 8px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.auth-success-text {
+  color: var(--text-subtle);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.auth-tip-box {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 22px;
+  font-size: 0.85rem;
+  color: #166534;
+  line-height: 1.5;
+  font-family: var(--font-sans);
+}
+
+.auth-tip-box svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Garante que botões, inputs e links herdem a fonte Poppins */
+.auth-card button,
+.auth-card input,
+.auth-card a,
+.auth-card textarea,
+.auth-card select {
+  font-family: inherit;
+}
+
+/* =========================================================
    PAINEL ADMINISTRATIVO — ADMIN PAGE
    ========================================================= */
 
