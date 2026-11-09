@@ -1,7 +1,3 @@
-use defaultdb
-
-USE associacao_melhor_idade;
-
 CREATE TABLE administradores (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,
@@ -31,12 +27,14 @@ CREATE TABLE associados (
     status ENUM('ativo', 'inativo') NOT NULL DEFAULT 'ativo'
 ) ENGINE=InnoDB;
 
+
 CREATE TABLE voluntarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
     especialidade VARCHAR(150),
     telefone VARCHAR(30)
 ) ENGINE=InnoDB;
+
 
 CREATE TABLE eventos (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -48,6 +46,7 @@ CREATE TABLE eventos (
     is_highlight BOOLEAN NOT NULL DEFAULT FALSE,
     status ENUM('ativo', 'cancelado') NOT NULL DEFAULT 'ativo'
 ) ENGINE=InnoDB;
+
 
 CREATE TABLE acoes (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -62,23 +61,13 @@ CREATE TABLE acoes (
     orientacoes VARCHAR(255) NULL
 ) ENGINE=InnoDB;
 
-CREATE TABLE categorias_galeria (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL UNIQUE
-) ENGINE=InnoDB;
-
 CREATE TABLE albuns_lembrancas (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    categoria_id INT NOT NULL,
     titulo VARCHAR(200) NOT NULL,
     description TEXT,
-    `date` DATE,
-    CONSTRAINT fk_albuns_categoria
-        FOREIGN KEY (categoria_id)
-        REFERENCES categorias_galeria(id)
-        ON UPDATE CASCADE
-        ON DELETE RESTRICT
+    `date` DATE
 ) ENGINE=InnoDB;
+
 
 CREATE TABLE fotos_lembranca (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -102,31 +91,41 @@ CREATE TABLE patrocinadores (
     description TEXT,
     active BOOLEAN NOT NULL DEFAULT TRUE
 ) ENGINE=InnoDB;
+   
+CREATE TABLE depoimentos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(255) NOT NULL,
+    papel VARCHAR(255),
+    url_imagem VARCHAR(500),
+    depoimento TEXT NOT NULL
+) ENGINE=InnoDB;
 
-select * from administradores
-select * from categorias_galeria 
-delete from categorias_galeria where id = 1
+ALTER TABLE administradores ADD COLUMN email VARCHAR(150) NOT NULL;
 
-drop table categorias_galeria
+CREATE TABLE token_recuperacao (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    token_hash VARCHAR(64) NOT NULL,
+    data_expiracao DATETIME NOT NULL,
+    utilizado BOOLEAN NOT NULL DEFAULT FALSE,
+    criado_em TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_token_admin
+        FOREIGN KEY (usuario_id)
+        REFERENCES administradores(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
 
-ALTER TABLE albuns_lembrancas DROP FOREIGN KEY fk_albuns_categoria;
-alter table albuns_lembrancas drop column categoria_id
 
-select * from acoes
-select * from eventos
-select * from albuns_lembrancas
-
-
-create table depoimentos(
-id int AUTO_INCREMENT PRIMARY KEY,
-nome varchar(255),
-papel varchar(255),
-url_imagem varchar(255),
-depoimento varchar(10000)
-)
-
-alter table acoes add column url_imagem varchar(255)
-alter table acoes add column descricao_curta varchar(100)
-alter table acoes add column orientacoes varchar(255)
-
-select * from acoes
+CREATE TABLE patrocinadores_pj (
+    id               INT AUTO_INCREMENT PRIMARY KEY,
+    patrocinador_id  INT NOT NULL,                -- referencia a tabela `patrocinadores`
+    cnpj             VARCHAR(20)  NOT NULL UNIQUE,
+    razao_social     VARCHAR(200) NOT NULL,
+    endereco         VARCHAR(255),
+    telefone         VARCHAR(30),
+    CONSTRAINT fk_pj_pat
+        FOREIGN KEY (patrocinador_id)
+        REFERENCES patrocinadores(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+) ENGINE=InnoDB;

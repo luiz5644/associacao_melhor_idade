@@ -147,7 +147,7 @@ Este link expira em 15 minutos. Se você não solicitou a recuperação, ignore 
 
     public async redefinirSenha(token:string, novaSenha: string){
         if(!novaSenha || novaSenha.length<6){
-            throw new Error("A senha precisa ter no minimo 6 caracteteres")
+            throw new Error("A senha precisa ter no minimo 6 caracteres")
         }
         const tokenHash = createHash("sha256")
         .update(token)

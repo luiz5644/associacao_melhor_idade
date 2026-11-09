@@ -19,7 +19,7 @@ export class Album{
         date:string
     ){
         if(!titulo||!date){
-            throw new Error("Campus Obrigatórios")
+            throw new Error("Campos Obrigatórios")
         }
         const props:PropsAlbum = {
             id,

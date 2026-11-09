@@ -1,5 +1,5 @@
 // API Service Layer - Frontend Integration with Backend
-const API_BASE = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, '') || '';
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3000').trim().replace(/\/+$/, '');
 
 function apiUrl(endpoint: string): string {
   if (!API_BASE) throw new ApiError(0, 'Configure VITE_API_URL para conectar ao backend.');
@@ -67,7 +67,7 @@ export async function checkBackendHealth(): Promise<boolean> {
   if (!API_BASE) return false;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
     const res = await fetch(apiUrl('/health'), {
       method: 'GET',
       signal: controller.signal,

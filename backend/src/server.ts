@@ -44,7 +44,7 @@ app.use(cors({
 
     return callback(new Error(`Bloqueado pelo CORS: origem ${origin} não permitida.`));
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -66,6 +66,7 @@ app.get('/health', (_req, res) => {
 app.use(routes);
 
 const PORT = Number(process.env.PORT) || 3000;
+
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}!`);
 });

@@ -72,11 +72,11 @@ export class AlbumDao {
                 [id]
             )
             if(results.affectedRows===0){
-                throw new Error("Album não encotrado")
+                throw new Error("Album não encontrado")
             }
     }
     catch(error){
         console.log("Error", error)
-        throw new Error("Erro ao exclui album")
+        throw new Error("Erro ao excluir album")
     }
 }}

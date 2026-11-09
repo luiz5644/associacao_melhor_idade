@@ -17,7 +17,7 @@ export class Admin{
         senha: string,
         email: string
     ){
-        if(!username||!cpf!||!email){
+        if(!username || !cpf || !email){
             throw new Error("Os campos são Obrigatórios")
         }
         const props: propsAdmin ={
