@@ -3,11 +3,14 @@ import express from "express";
 import routes from "./routes";
 import cors from 'cors';
 import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: path.resolve(__dirname, 'config', '.env') });
 const app = express();
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -31,6 +34,8 @@ app.get('/health', (_req, res) => {
 
 app.use(routes);
 
-app.listen(3000, () => {
-    console.log("🚀 Servidor rodando na porta 3000!");
+const PORT = Number(process.env.PORT) || 3000;
+
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}!`);
 });

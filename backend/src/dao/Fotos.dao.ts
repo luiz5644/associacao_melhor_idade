@@ -29,7 +29,7 @@ export class FotosDao{
         }
         catch(error){
             console.log("Erro: ", error)
-            throw new Error("Erro ao listar Fotos")
+            throw new Error("Erro ao buscar Foto")
         }
     }
     public async listar():Promise<Fotos[]>{

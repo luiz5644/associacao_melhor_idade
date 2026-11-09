@@ -1,5 +1,5 @@
 import { AlbumDao } from "../dao/Album.dao";
-import { Album } from "../modelo/Album";7
+import { Album } from "../modelo/Album";
 
 export class AlbumServico{
     constructor(

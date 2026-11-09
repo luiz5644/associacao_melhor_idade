@@ -22,7 +22,7 @@ export function authMiddleware(
     try{
         const decoded = jwt.verify(
             token,
-            "SEGREDO_DO_TOKEN"
+            process.env.JWT_SECRET || "SEGREDO_DO_TOKEN"
         )
         next()
     }

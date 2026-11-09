@@ -86,11 +86,11 @@ export class AdminControle{
             const id = req.params.id
             const idNumber = Number(id)
             const admin = await this.adminServico.buscarporId(idNumber)
-            return res.status(200).json(admin)
+            return res.status(200).json(admin ? { id: admin.id, username: admin.username, cpf: admin.cpf, email: admin.email } : null)
         }
         catch(error){
             return res.status(500).json({
-                mesage:"Erro ao buscar admin"
+                message:"Erro ao buscar admin"
             })
         }
 
@@ -98,11 +98,11 @@ export class AdminControle{
      public async listar(req:Request, res:Response){
         try{
             const usuarios = await this.adminServico.listar()
-            return res.status(200).json(usuarios)
+            return res.status(200).json(usuarios.map((u: any) => ({ id: u.id, username: u.username, cpf: u.cpf, email: u.email })))
         }
         catch{
             return res.status(500).json({
-                mesage:"Erro ao listar Admins"
+                message:"Erro ao listar Admins"
             })
         }
 
@@ -118,11 +118,17 @@ export class AdminControle{
             return res.status(400).json(erros)
         }
 
+        const adminExistente = await this.adminServico.buscarporId(idNumber);
+        if(!adminExistente){
+            return res.status(404).json({ message: "Admin não encontrado" });
+        }
+        const senhaFinal = (adminDto.senha && adminDto.senha.trim() !== "") ? await bcrypt.hash(adminDto.senha, 10) : adminExistente.senha;
+
         const admin = Admin.reconstruir({
             id:idNumber,
             username: adminDto.username,
-            cpf: "",
-            senha: adminDto.senha,
+            cpf: adminExistente.cpf,
+            senha: senhaFinal,
             email: adminDto.email
         }
         
@@ -131,13 +137,13 @@ export class AdminControle{
         )
         await this.adminServico.atualizar(admin)
         return res.json({
-            mesage:"Admin Atualizado com sucesso"
+            message:"Admin Atualizado com sucesso"
         })
 
         }
         catch(error){
             return res.status(500).json({
-                mesage: "Erro ao atualizar Admin"
+                message: "Erro ao atualizar Admin"
             })
         }
         
@@ -151,13 +157,13 @@ export class AdminControle{
             await this.adminServico.deletar(idNumber)
             return res.status(200).json(
                 {
-                    mesage: "Admin Excluido com Sucesso"
+                    message: "Admin Excluido com Sucesso"
                 }
             )
         }
         catch(error){
             return res.status(500).json({
-                mesage: "Erro ao excluir admin"
+                message: "Erro ao excluir admin"
             })
         }
      }

@@ -72,28 +72,29 @@ export class EventosControle{
         try{
             const idNumber = Number(req.params.id)
             if (!Number.isInteger(idNumber) || idNumber <= 0) return res.status(400).json({ message: "ID inválido" })
-            if (!await this.eventosServico.buscarPorId(idNumber)) return res.status(404).json({ message: "Evento não encontrado" })
+            const eventoAtual = await this.eventosServico.buscarPorId(idNumber)
+            if (!eventoAtual) return res.status(404).json({ message: "Evento não encontrado" })
             const eventosDto= plainToInstance(EventosUpdateDto,req.body)
             const erros = await validate(eventosDto)
             if(erros.length > 0){
                 return res.status(400).json(erros)
             }
 
-            const acao = Eventos.reconstruir({
+            const evento = Eventos.reconstruir({
                 id: idNumber,
-                titulo: eventosDto.titulo!,
-                desc: eventosDto.desc!,
-                data_completa: eventosDto.data_completa!,
-                horario: eventosDto.horario!,
-                local: eventosDto.local!,
-                is_highlight: eventosDto.is_highlight!,
-                status: eventosDto.status!
+                titulo: eventosDto.titulo ?? eventoAtual.titulo,
+                desc: eventosDto.desc ?? eventoAtual.desc,
+                data_completa: eventosDto.data_completa ?? eventoAtual.data_completa,
+                horario: eventosDto.horario ?? eventoAtual.horario,
+                local: eventosDto.local ?? eventoAtual.local,
+                is_highlight: eventosDto.is_highlight !== undefined ? eventosDto.is_highlight : eventoAtual.is_highlight,
+                status: eventosDto.status ?? eventoAtual.status
             });
-            await this.eventosServico.atualizar(acao)
+            await this.eventosServico.atualizar(evento)
             return res.status(200).json({ message: "Evento atualizado com sucesso" })
         }
         catch(error){
-            console.log("Erro ao atualizar Evento")
+            console.log("Erro ao atualizar Evento", error)
             return res.status(500).json({ message: "Erro ao atualizar Evento" })
         }
     }
@@ -102,7 +103,8 @@ export class EventosControle{
         try{
             const idNumber = Number(req.params.id)
             if (!Number.isInteger(idNumber) || idNumber <= 0) return res.status(400).json({ message: "ID inválido" })
-            if (!await this.eventosServico.buscarPorId(idNumber)) return res.status(404).json({ message: "Evento não encontrado" })
+            const eventoAtual = await this.eventosServico.buscarPorId(idNumber)
+            if (!eventoAtual) return res.status(404).json({ message: "Evento não encontrado" })
             await this.eventosServico.deletar(idNumber)
             return res.status(200).json({ message: "Evento excluído com sucesso" })
         }

@@ -28,8 +28,8 @@ export class DepoimentoControle{
                 depoimentosDto.url_imagem,
                 depoimentosDto.depoimento
             )
-            await this.depoimentoServico.salvar(depoimento)
-            return res.status(201).json({
+            await this.depoimentoServico.salvar(depoimento);
+            return res.status(200).json({
                 message: "Depoimento salvo com Sucesso"
             })
         }
@@ -87,7 +87,7 @@ export class DepoimentoControle{
 
             await this.depoimentoServico.atualizar(depoimento)
 
-            return res.status(201).json({
+            return res.status(200).json({
                 message: "Depoimento atualizado com sucesso"
             })
         }

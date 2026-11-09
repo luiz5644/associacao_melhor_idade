@@ -39,7 +39,7 @@ export class FotoCreateDto{
     data_upload: string
 }
 
-export class FotoUpadateDto{
+export class FotoUpdateDto{
     
     @IsNotEmpty()
     @IsNumber()
