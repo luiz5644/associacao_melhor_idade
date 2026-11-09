@@ -37,8 +37,8 @@ export class adminCreateDto {
     @MinLength(6, { message: "A senha deve ter pelo menos 6 caracteres" })
     senha?: string;
 
-    @IsNotEmpty()
-    @IsEmail()
+    @IsNotEmpty({ message: "O e-mail é obrigatório" })
+    @IsEmail({}, { message: "Informe um e-mail válido" })
     email: string
     
 }
@@ -54,7 +54,7 @@ export class adminUpdateDto {
     @MinLength(6)
     senha?: string;
 
-    @IsNotEmpty()
-    @IsEmail()
+    @IsNotEmpty({ message: "O e-mail é obrigatório" })
+    @IsEmail({}, { message: "Informe um e-mail válido" })
     email: string
 }

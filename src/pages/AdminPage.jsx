@@ -1819,7 +1819,7 @@ function TabAdmins({ onNavigateToCreate }) {
   const { admins, fetchAdmins, addAdmin, updateAdmin, deleteAdmin, backendConnected } = useData();
   const [showModal, setShowModal] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState(null);
-  const [form, setForm] = useState({ username: '', cpf: '', senha: '' });
+  const [form, setForm] = useState({ username: '', cpf: '', email: '', senha: '' });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -1835,7 +1835,7 @@ function TabAdmins({ onNavigateToCreate }) {
       onNavigateToCreate();
     } else {
       setEditingAdmin(null);
-      setForm({ username: '', cpf: '', senha: '' });
+      setForm({ username: '', cpf: '', email: '', senha: '' });
       setErrors({});
       setShowModal(true);
     }
@@ -1843,7 +1843,7 @@ function TabAdmins({ onNavigateToCreate }) {
 
   const handleOpenEdit = (admin) => {
     setEditingAdmin(admin);
-    setForm({ username: admin.username, cpf: admin.cpf || '', senha: '' });
+    setForm({ username: admin.username, cpf: admin.cpf || '', email: admin.email || '', senha: '' });
     setErrors({});
     setShowModal(true);
   };
@@ -1851,8 +1851,11 @@ function TabAdmins({ onNavigateToCreate }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const next = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!form.username.trim()) next.username = 'Nome de usuário é obrigatório.';
     else if (form.username.trim().length < 3 || /\s/.test(form.username.trim())) next.username = 'Informe um usuário válido, sem espaços e com 3 caracteres ou mais.';
+    if (!form.email.trim()) next.email = 'E-mail é obrigatório.';
+    else if (!emailRegex.test(form.email.trim())) next.email = 'Informe um e-mail válido. Ex: nome@dominio.com';
     if (!editingAdmin && !validateCPF(form.cpf)) next.cpf = 'CPF inválido.';
     if (!editingAdmin && !form.senha) next.senha = 'Senha é obrigatória.';
     else if (!validateAdminPassword(form.senha)) next.senha = 'A senha deve ter pelo menos 6 caracteres.';
@@ -1863,18 +1866,20 @@ function TabAdmins({ onNavigateToCreate }) {
       if (editingAdmin) {
         await updateAdmin(editingAdmin.id, {
           username: form.username.trim(),
+          email: form.email.trim(),
           senha: form.senha.trim() || undefined
         });
       } else {
         await addAdmin({
           username: form.username.trim(),
           cpf: form.cpf.trim(),
+          email: form.email.trim(),
           senha: form.senha.trim() || undefined
         });
       }
       setShowModal(false);
       setEditingAdmin(null);
-      setForm({ username: '', cpf: '', senha: '' });
+      setForm({ username: '', cpf: '', email: '', senha: '' });
     } catch (_) {}
     finally {
       setLoading(false);
@@ -1921,6 +1926,7 @@ function TabAdmins({ onNavigateToCreate }) {
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontWeight:700, fontSize:'0.98rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{adm.username}</div>
                   <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)' }}>CPF: {adm.cpf || 'Não informado'}</div>
+                  <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>E-mail: {adm.email || 'Não informado'}</div>
                 </div>
               </div>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderTop:'1px solid #F0F4F3', paddingTop:12 }}>
@@ -1953,6 +1959,11 @@ function TabAdmins({ onNavigateToCreate }) {
                 <label className="form-label">Nome de Usuário / Login *</label>
                 <input data-field="username" className="form-input" type="text" placeholder="Ex: coord.maria" value={form.username} onChange={e => {setForm(p => ({ ...p, username: e.target.value })); setErrors(p => ({...p,username:''}));}} autoFocus />
                 <FieldError>{errors.username}</FieldError>
+              </div>
+              <div className="form-group">
+                <label className="form-label">E-mail *</label>
+                <input data-field="email" className="form-input" type="email" placeholder="Ex: nome@dominio.com" value={form.email} onChange={e => {setForm(p => ({ ...p, email: e.target.value })); setErrors(p => ({...p,email:''}));}} autoComplete="email" />
+                <FieldError>{errors.email}</FieldError>
               </div>
               {!editingAdmin && (
                 <div className="form-group">

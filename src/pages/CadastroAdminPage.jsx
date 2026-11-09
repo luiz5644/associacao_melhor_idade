@@ -18,7 +18,7 @@ function formatCPF(value) {
 export default function CadastroAdminPage({ onVoltar }) {
   const { addAdmin, backendConnected } = useData();
 
-  const [form, setForm] = useState({ username: '', cpf: '', senha: '', confirmarSenha: '' });
+  const [form, setForm] = useState({ username: '', cpf: '', email: '', senha: '', confirmarSenha: '' });
   const [errors, setErrors] = useState({});
   const [showSenha, setShowSenha] = useState(false);
   const [showConfirmar, setShowConfirmar] = useState(false);
@@ -52,6 +52,12 @@ export default function CadastroAdminPage({ onVoltar }) {
       newErrors.cpf = 'CPF inválido. Verifique os dígitos.';
     }
 
+    if (!form.email.trim()) {
+      newErrors.email = 'E-mail é obrigatório.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      newErrors.email = 'Informe um e-mail válido. Ex: nome@dominio.com';
+    }
+
     if (!form.senha) {
       newErrors.senha = 'Senha é obrigatória.';
     } else if (!validateAdminPassword(form.senha)) {
@@ -79,10 +85,11 @@ export default function CadastroAdminPage({ onVoltar }) {
       await addAdmin({
         username: form.username.trim(),
         cpf: form.cpf.replace(/\D/g, ''),
+        email: form.email.trim(),
         senha: form.senha.trim() || undefined,
       });
       setStatus('success');
-      setForm({ username: '', cpf: '', senha: '', confirmarSenha: '' });
+      setForm({ username: '', cpf: '', email: '', senha: '', confirmarSenha: '' });
     } catch (err) {
       setStatus('error');
       setErrorMsg(err?.message || 'Não foi possível cadastrar o administrador. Tente novamente.');
@@ -93,7 +100,7 @@ export default function CadastroAdminPage({ onVoltar }) {
     setStatus(null);
     setErrorMsg('');
     setErrors({});
-    setForm({ username: '', cpf: '', senha: '', confirmarSenha: '' });
+    setForm({ username: '', cpf: '', email: '', senha: '', confirmarSenha: '' });
   };
 
   // ── Tela de Sucesso ─────────────────────────────────────────────────
@@ -239,6 +246,33 @@ export default function CadastroAdminPage({ onVoltar }) {
             ) : (
               <p style={{ fontSize: '0.78rem', color: 'var(--text-subtle)', marginTop: 5 }}>
                 Se nenhuma senha for definida, os 8 primeiros dígitos do CPF serão a senha padrão.
+              </p>
+            )}
+          </div>
+
+          {/* E-mail */}
+          <div className="form-group" style={{ marginBottom: 20 }}>
+            <label className="form-label" htmlFor="cadastro-email">
+              E-mail <span style={{ color: '#DC2626' }}>*</span>
+            </label>
+            <input
+              id="cadastro-email"
+              type="email"
+              className="form-input"
+              placeholder="Ex: nome@dominio.com"
+              value={form.email}
+              onChange={handleChange('email')}
+              inputMode="email"
+              autoComplete="email"
+              disabled={!backendConnected || status === 'loading'}
+            />
+            {errors.email ? (
+              <p style={{ fontSize: '0.78rem', color: '#DC2626', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <AlertTriangle size={12} /> {errors.email}
+              </p>
+            ) : (
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-subtle)', marginTop: 5 }}>
+                Usado para recuperação de senha e comunicações do sistema.
               </p>
             )}
           </div>

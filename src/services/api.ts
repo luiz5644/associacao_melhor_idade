@@ -95,6 +95,7 @@ export interface Admin {
   id: number;
   username: string;
   cpf: string;
+  email: string;
 }
 
 export interface LoginResponse {
@@ -126,7 +127,7 @@ export const adminApi = {
     return unpackList<Admin>(data);
   },
 
-  create: async (data: { username: string; cpf: string; senha?: string }): Promise<{ message: string }> => {
+  create: async (data: { username: string; cpf: string; email: string; senha?: string }): Promise<{ message: string }> => {
     return fetchApi('/admin', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -138,7 +139,7 @@ export const adminApi = {
     return unpackProps<Admin>(data);
   },
 
-  update: async (id: number, data: { username: string; senha?: string }): Promise<{ message: string }> => {
+  update: async (id: number, data: { username: string; email: string; senha?: string }): Promise<{ message: string }> => {
     return fetchApi(`/admin/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
