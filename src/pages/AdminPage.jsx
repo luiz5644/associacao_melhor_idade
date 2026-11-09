@@ -524,7 +524,7 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="modal-card" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
+      <div className="modal-card" style={{ maxWidth: 540, maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         <button className="modal-close-btn" onClick={onClose} aria-label="Fechar">
           <X size={20} />
         </button>
@@ -533,7 +533,7 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
             <Building2 size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Patrocinadores & Parceiros</span>
           </div>
           <h3 className="modal-title">{item ? 'Editar Patrocinador' : 'Novo Patrocinador'}</h3>
-          <p className="modal-subtitle">Empresa parceira com logo no carrossel da página inicial.</p>
+          <p className="modal-subtitle">Empresa parceira — logo e nome aparecerão no carrossel da página inicial.</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
@@ -584,16 +584,16 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
                 onClick={() => fileRef.current?.click()}
                 data-field="logo"
                 style={{
-                  border:'2px dashed #BED8D3', borderRadius:10, padding:'20px', textAlign:'center',
-                  cursor:'pointer', background:'#F5F9F8', transition:'all 0.2s', marginBottom:10 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor='#2A5C66'; e.currentTarget.style.background='#EAF4F6'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor='#BED8D3'; e.currentTarget.style.background='#F5F9F8'; }}
+                  border:'2px dashed #B0CDD6', borderRadius:10, padding:'22px 20px', textAlign:'center',
+                  cursor:'pointer', background:'#EAF4F6', transition:'all 0.2s', marginBottom:10 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor='#2A5C66'; e.currentTarget.style.background='#E2EFF2'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor='#B0CDD6'; e.currentTarget.style.background='#EAF4F6'; }}
               >
-                <Upload size={22} color="#2A5C66" style={{ marginBottom:6 }} />
-                <p style={{ fontSize:'0.88rem', color:'#2A5C66', fontWeight:700 }}>
+                <Upload size={26} color="#2A5C66" style={{ marginBottom:6 }} />
+                <p style={{ fontSize:'0.9rem', color:'#2A5C66', fontWeight:700 }}>
                   {uploading ? 'Enviando logo...' : 'Escolher arquivo de imagem do computador'}
                 </p>
-                <p style={{ fontSize:'0.76rem', color:'#6E6E6E', marginTop:3 }}>
+                <p style={{ fontSize:'0.76rem', color:'#6E6E6E', marginTop:4 }}>
                   PNG, JPG, WEBP até 5MB
                 </p>
               </div>
@@ -1257,65 +1257,61 @@ function TabSponsors() {
 
   return (
     <div>
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:16 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
         <div>
           <h2 className="admin-section-title">Patrocinadores & Parceiros</h2>
-          <p style={{ color:'var(--text-subtle)', fontSize:'0.95rem' }}>
-            Cadastre as empresas que apoiam a Associação. Os logos e nomes aparecerão no carrossel da página inicial.
+          <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>
+            {sponsorList.length} {sponsorList.length === 1 ? 'patrocinador cadastrado' : 'patrocinadores cadastrados'}
           </p>
         </div>
         <button
           className="btn btn-primary"
           onClick={() => { setEditingSponsor(null); setShowForm(true); }}
-          style={{ display:'flex', alignItems:'center', gap:8 }}
         >
           <Plus size={16} /> Novo Patrocinador
         </button>
       </div>
 
       {/* Filtros e Busca */}
-            <div style={{ display:'flex', gap:12, marginBottom:24, flexWrap:'wrap', alignItems:'center' }}>
-              <div style={{ position:'relative', flex:1, minWidth:220 }}>
-                <Search size={16} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'var(--text-subtle)' }} />
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="Buscar por nome da empresa ou descrição..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  style={{ paddingLeft:38 }}
-                />
-              </div>
-            </div>
+      <div style={{ display:'flex', gap:12, marginBottom:22, flexWrap:'wrap' }}>
+        <div style={{ position:'relative', flex:'1 1 220px' }}>
+          <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
+          <input
+            className="form-input"
+            style={{ paddingLeft:36 }}
+            type="text"
+            placeholder="Buscar por nome da empresa ou descrição..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
 
             {/* Grid de Patrocinadores */}
             {filtered.length === 0 ? (
-              <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:48, textAlign:'center' }}>
-                <Building2 size={40} style={{ opacity:0.25, display:'block', margin:'0 auto 12px' }} />
-                <h3 style={{ fontSize:'1.1rem', marginBottom:6 }}>Nenhum patrocinador encontrado</h3>
-                <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:20 }}>
-                  {search ? 'Tente alterar os termos da busca.' : 'Cadastre sua primeira empresa parceira.'}
-                </p>
-                <button className="btn btn-primary" onClick={() => { setEditingSponsor(null); setShowForm(true); }}>
-                  <Plus size={15} /> Cadastrar Patrocinador
-                </button>
+              <div style={{ textAlign:'center', padding:'48px 20px', color:'var(--text-subtle)' }}>
+                <Building2 size={40} style={{ opacity:0.3, marginBottom:12, display:'block', margin:'0 auto 12px' }} />
+                <p style={{ fontWeight:600 }}>Nenhum patrocinador encontrado.</p>
+                <p style={{ fontSize:'0.85rem', marginTop:4 }}>Clique em "Novo Patrocinador" para adicionar.</p>
               </div>
             ) : (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:18 }}>
           {filtered.map(sponsor => (
             <div
               key={sponsor.id}
               style={{
                 background: '#fff',
                 border: '1px solid #DCE7E5',
-                borderRadius: 16,
-                padding: 20,
+                borderRadius: 14,
+                padding: 16,
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                transition: 'all 0.2s ease'
+                boxShadow: '0 2px 8px rgba(27,37,39,0.04)',
+                transition: 'box-shadow 0.2s'
               }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow='0 8px 24px rgba(27,37,39,0.10)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow='0 2px 8px rgba(27,37,39,0.04)'}
             >
               <div>
                               {/* Header com Badge e Status */}
@@ -1357,12 +1353,12 @@ function TabSponsors() {
                 </div>
 
                 {/* Nome e Dados */}
-                <h4 style={{ fontFamily:'var(--font-serif)', fontSize:'1.15rem', marginBottom:6, color:'var(--text-main)' }}>
+                <h4 style={{ fontFamily:'var(--font-serif)', fontSize:'1rem', marginBottom:4, color:'var(--text-main)' }}>
                   {sponsor.name}
                 </h4>
 
                 {sponsor.description && (
-                  <p style={{ fontSize:'0.83rem', color:'var(--text-subtle)', lineHeight:1.5, marginBottom:10 }}>
+                  <p style={{ fontSize:'0.82rem', color:'var(--text-subtle)', lineHeight:1.55, marginBottom:10 }}>
                     {sponsor.description}
                   </p>
                 )}
@@ -1390,17 +1386,17 @@ function TabSponsors() {
               </div>
 
               {/* Ações */}
-              <div style={{ display:'flex', gap:8, borderTop:'1px solid #F0ECE8', paddingTop:14, marginTop:8, justifyContent:'flex-end' }}>
+              <div style={{ display:'flex', gap:8, marginTop:12, justifyContent:'flex-end' }}>
                 <button
                   className="btn btn-pill"
-                  style={{ padding:'6px 14px', fontSize:'0.8rem' }}
+                  style={{ padding:'5px 14px', fontSize:'0.8rem' }}
                   onClick={() => { setEditingSponsor(sponsor); setShowForm(true); }}
                 >
                   <Pencil size={12} /> Editar
                 </button>
                 <button
                   className="btn"
-                  style={{ padding:'6px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }}
+                  style={{ padding:'5px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }}
                   onClick={() => setDeleteTarget(sponsor)}
                 >
                   <Trash2 size={12} /> Excluir
@@ -1988,7 +1984,7 @@ function TabAdmins({ onNavigateToCreate }) {
 
 // ── PÁGINA PRINCIPAL DO ADMIN ─────────────────────────────────────────────────
 export default function AdminPage({ onClose }) {
-  const { backendConnected, backendLoading, checkBackendConnection, fetchAdmins } = useData();
+  const { backendConnected, backendLoading, checkBackendConnection, fetchAdmins, galleryItems, sponsors } = useData();
   const [isLoggedIn, setIsLoggedIn] = useState(() => adminApi.isAuthenticated());
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -2061,11 +2057,11 @@ export default function AdminPage({ onClose }) {
 
     const navItems = [
           { id: 'overview',        label: 'Visão Geral',         icon: LayoutGrid,    badge: null },
-          { id: 'gallery',         label: 'Álbum de Lembranças', icon: Image,         badge: { text: '5 fotos', type: 'purple' } },
+          { id: 'gallery',         label: 'Álbum de Lembranças', icon: Image,         badge: !backendLoading && backendConnected && galleryItems.length > 0 ? { text: String(galleryItems.length), type: 'purple', ariaLabel: `${galleryItems.length} ${galleryItems.length === 1 ? 'lembrança' : 'lembranças'}` } : null },
           { id: 'calendar',        label: 'Eventos',             icon: Calendar,      badge: null },
           { id: 'actions',         label: 'Ações',                icon: Activity,      badge: null },
           { id: 'admins',          label: 'Administradores',     icon: Users,         badge: null },
-          { id: 'sponsors',        label: 'Patrocinadores & Apoio', icon: Building2,   badge: { text: '6', type: 'gray' } },
+          { id: 'sponsors',        label: 'Patrocinadores & Apoio', icon: Building2,   badge: !backendLoading && backendConnected && (sponsors || []).length > 0 ? { text: String(sponsors.length), type: 'gray', ariaLabel: `${sponsors.length} ${sponsors.length === 1 ? 'patrocinador' : 'patrocinadores'}` } : null },
           { id: 'testimonials',    label: 'Depoimentos',         icon: Heart,         badge: null },
           { id: 'settings',        label: 'Configurações',       icon: Settings,      badge: null },
         ];
@@ -2423,7 +2419,7 @@ export default function AdminPage({ onClose }) {
                                                               <Icon className="nav-icon" size={20} />
                                                               <span>{item.label}</span>
                                                               {item.badge && (
-                                                                <span className={`nav-badge ${item.badge.type}`}>{item.badge.text}</span>
+                                                                <span className={`nav-badge ${item.badge.type}`} aria-label={item.badge.ariaLabel}>{item.badge.text}</span>
                                                               )}
                                                             </button>
                                                           );
@@ -2441,8 +2437,12 @@ export default function AdminPage({ onClose }) {
                                                         </button>
                                                         <div className="admin-mobile-drawer-status-row">
                                                           <div className="admin-mobile-drawer-status">
-                                                            <span className="admin-mobile-drawer-status-dot" aria-hidden="true"></span>
-                                                            <span>Modo Local Ativo</span>
+                                                            <span
+                                                              className="admin-mobile-drawer-status-dot"
+                                                              aria-hidden="true"
+                                                              style={{ background: backendConnected ? '#22c55e' : '#f59e0b' }}
+                                                            ></span>
+                                                            <span>{backendConnected ? 'Conectado ao servidor' : 'Sem conexão com o servidor'}</span>
                                                           </div>
                                                           <button
                                                             className="admin-mobile-drawer-logout"
