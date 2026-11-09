@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DataProvider } from './context/DataContext';
+import AccessibilityBar from './components/AccessibilityBar';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -82,6 +83,9 @@ function AppContent() {
 
   return (
     <div className="app-container">
+      {/* 1. Barra de Acessibilidade Global */}
+      <AccessibilityBar />
+
       {/* 2. Header de Navegação */}
       <Header 
         activePage={activePage}
@@ -116,15 +120,13 @@ function AppContent() {
         )}
 
         {activePage === 'gallery' && (
-                  <GalleryPage 
-                    onSelectPhoto={setSelectedPhoto}
-                  />
-                )}
+          <GalleryPage />
+        )}
 
                 {activePage === 'testimonials' && (
-                  <TestimonialsPage />
-                )}
-              </main>
+          <TestimonialsPage />
+        )}
+      </main>
 
       {donationBanners[activePage] && (
         <DonationBanner

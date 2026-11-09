@@ -9,10 +9,9 @@ import {
   KeyRound, Mail, ArrowLeft
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import { adminApi, uploadApi, resolveImageUrl } from '../services/api';
+import { adminApi, uploadApi, resolveImageUrl, toStoredUrl } from '../services/api';
 import CadastroAdminPage from './CadastroAdminPage';
 import { validateCPF, validateAdminPassword } from '../utils/adminValidation';
-import { toStoredUrl } from '../services/api';
 import DateField, { validateDateValue, MONTHS } from '../components/DateField';
 
 const FieldError = ({ children }) => children ? <p style={{ color:'#DC2626', fontSize:'0.78rem', marginTop:5 }}>{children}</p> : null;
@@ -20,6 +19,13 @@ const focusFirstError = (errors) => {
   const field = Object.keys(errors)[0];
   if (field) Array.from(document.querySelectorAll(`[data-field="${field}"]`))
     .find(element => element.getClientRects().length)?.focus();
+};
+
+// Converte 'YYYY-MM-DD' em partes {day, month (0-11), year} para o DateField
+const parseDateParts = (value) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ''));
+  if (!match) return { day: '', month: '', year: '' };
+  return { day: Number(match[3]), month: Number(match[2]) - 1, year: Number(match[1]) };
 };
 
 // ── Modal de Confirmação de Exclusão ─────────────────────────────────────────
@@ -56,6 +62,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const [dateParts, setDateParts] = useState({ day: '', month: '', year: '' });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -65,6 +72,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
       date: item?.date || '',
       photos: item?.photos?.length ? [...item.photos] : (item?.image ? [item.image] : []),
     });
+    setDateParts(parseDateParts(item?.date));
     setUploading(false);
     setSaving(false);
     setErrors({});
@@ -167,8 +175,9 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
           {/* Campo de Data Padronizado */}
           <DateField
             label="Data do Evento"
-            value={form.date}
-            onChange={({ isoString }) => {
+            value={dateParts}
+            onChange={({ day, month, year, isoString }) => {
+              setDateParts({ day, month, year });
               setField('date', isoString);
               setErrors(p => ({ ...p, date: '' }));
             }}

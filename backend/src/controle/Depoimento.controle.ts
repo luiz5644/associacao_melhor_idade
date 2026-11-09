@@ -87,7 +87,7 @@ export class DepoimentoControle{
 
             await this.depoimentoServico.atualizar(depoimento)
 
-            return res.status(201).json({
+            return res.status(200).json({
                 message: "Depoimento atualizado com sucesso"
             })
         }

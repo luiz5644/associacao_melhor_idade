@@ -56,12 +56,17 @@ export class adminServico {
             throw new Error("Login ou senha inválida");
         }
 
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            throw new Error("JWT_SECRET não está configurado");
+        }
+
         const token = jwt.sign(
             {
                 id: admin.id,
                 username: admin.username
             },
-            "SEGREDO_DO_TOKEN",
+            secret,
             {
                 expiresIn: "1d"
             }
@@ -92,11 +97,7 @@ export class adminServico {
     const data_expiracao = new Date(
         Date.now() + 15 * 60 * 1000
     );
-   
-     console.log("Agora no Node:", new Date().toString());
-console.log("Agora ISO:", new Date().toISOString());
-console.log("Expiração calculada:", data_expiracao.toString());
-console.log("Expiração ISO:", data_expiracao.toISOString());
+
     await this.adminDao.salvarTokenRecuperacao(
         admin.id!,
         token_hash,
@@ -151,10 +152,6 @@ Este link expira em 15 minutos. Se você não solicitou a recuperação, ignore 
         const tokenHash = createHash("sha256")
         .update(token)
         .digest("hex")
-
-        console.log("Token recebido é string:", typeof token === "string");
-console.log("Tamanho do token recebido:", token.length);
-console.log("Tamanho do hash calculado:", tokenHash.length);
 
         const registro = await this.adminDao.buscarTokenRecuperacao(tokenHash)
         if(!registro){

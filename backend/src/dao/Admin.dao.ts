@@ -51,19 +51,24 @@ export class AdminDao{
         
     }
     public async atualizar(admin:Admin): Promise<void>{
-        try{const[result]: any = await conexao.query(
-            'update administradores set username = ?, senha = ?, email=? where id = ?',
-            [admin.username,admin.senha,admin.email,admin.id]
-        )
-        if(result.affectedRows === 0){
-            throw new Error("Admin não encontrado")
-        }}
-        catch(error){
-            console.error(error)
-            throw error
+        try{
+            let query = 'update administradores set username = ?, email = ? where id = ?';
+            let params: any[] = [admin.username, admin.email, admin.id];
+
+            if (admin.senha && admin.senha.trim() !== "") {
+                query = 'update administradores set username = ?, senha = ?, email = ? where id = ?';
+                params = [admin.username, admin.senha, admin.email, admin.id];
+            }
+
+            const [result]: any = await conexao.query(query, params);
+            if(result.affectedRows === 0){
+                throw new Error("Admin não encontrado");
+            }
         }
-        
-        
+        catch(error){
+            console.error(error);
+            throw error;
+        }
     }
     public async deletar(id:number): Promise<void>{
         try{

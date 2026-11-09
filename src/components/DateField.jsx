@@ -46,19 +46,26 @@ export default function DateField({
   const { day, month, year } = useMemo(() => {
     if (!value) return { day: '', month: '', year: '' };
     if (typeof value === 'object') {
+      const rawMonth = value.month;
+      const parsedMonth = rawMonth !== undefined && rawMonth !== null && rawMonth !== ''
+        ? Number(rawMonth)
+        : '';
       return {
-        day: value.day ?? '',
-        month: value.month !== undefined && value.month !== null && value.month !== '' ? String(value.month) : '',
-        year: value.year ?? '',
+        day: value.day !== undefined && value.day !== '' ? Number(value.day) : '',
+        month: parsedMonth,
+        year: value.year !== undefined && value.year !== '' ? Number(value.year) : '',
       };
     }
     if (typeof value === 'string' && value.includes('-')) {
       const parts = value.split('-');
       if (parts.length === 3) {
+        const parsedYear = parts[0] ? Number(parts[0]) : '';
+        const parsedMonth = parts[1] ? Number(parts[1]) - 1 : ''; // 0-indexed, number
+        const parsedDay = parts[2] ? Number(parts[2]) : '';
         return {
-          year: parts[0] ? Number(parts[0]) : '',
-          month: parts[1] ? String(Number(parts[1]) - 1) : '',
-          day: parts[2] ? Number(parts[2]) : '',
+          year: parsedYear,
+          month: parsedMonth !== '' ? Number(parsedMonth) : '',
+          day: parsedDay,
         };
       }
     }

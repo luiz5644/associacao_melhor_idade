@@ -12,10 +12,8 @@ adminRoutes
         async (req, res) => adminControle.listar(req, res)
     )
     .post(
+        authMiddleware,
         async (req, res) => {
-            console.log("BODY NA ROTA:", req.body);
-            console.log("HEADERS:", req.headers);
-
             return adminControle.salvar(req, res);
         }
     );
@@ -40,13 +38,14 @@ adminRoutes
 adminRoutes
 .route("/testar-email")
 .get(
+    authMiddleware,
     async(req,res) => adminControle.testarEmail(req,res)
 )
 adminRoutes
    .route("/:id")
-   .get(async (req,res) => adminControle.buscarporId(req,res))
-   .put(async (req,res) => adminControle.atualizar(req,res))
-   .delete(async (req,res) => adminControle.deletar(req,res))
+   .get(authMiddleware, async (req,res) => adminControle.buscarporId(req,res))
+   .put(authMiddleware, async (req,res) => adminControle.atualizar(req,res))
+   .delete(authMiddleware, async (req,res) => adminControle.deletar(req,res))
 
 
 

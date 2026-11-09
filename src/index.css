@@ -4312,6 +4312,185 @@ Admin drawer estilo publico · CSS
   border-radius: var(--radius-sm);
   font-weight: 600;
 }
+
+/* =========================================================
+   BARRA DE ACESSIBILIDADE E REGRAS DE INCLUSÃO
+   ========================================================= */
+
+/* Escala de fonte global via classe no <html> */
+html.font-normal {
+  font-size: 16px;
+  --font-scale: 1rem;
+}
+
+html.font-large {
+  font-size: 19px;
+  --font-scale: 1.1875rem;
+}
+
+html.font-xlarge {
+  font-size: 22px;
+  --font-scale: 1.375rem;
+}
+
+/* Barra fixa/visível no topo */
+.accessibility-bar {
+  background-color: #1A363D;
+  color: #FFFFFF;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 6px 0;
+  font-size: 0.85rem;
+  position: relative;
+  z-index: 1001;
+}
+
+.accessibility-bar-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.accessibility-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.accessibility-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  color: #D1E8E2;
+  margin-right: 2px;
+}
+
+.accessibility-btn {
+  background: transparent;
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  min-height: 32px;
+  min-width: 32px;
+  justify-content: center;
+}
+
+.accessibility-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #FFFFFF;
+}
+
+.accessibility-btn:focus-visible {
+  outline: 3px solid #E8A87C;
+  outline-offset: 2px;
+}
+
+.accessibility-btn.active {
+  background: #E8A87C;
+  color: #1B2527;
+  border-color: #E8A87C;
+}
+
+.accessibility-speech-btn.active-speaking {
+  background: #DC2626;
+  color: #FFFFFF;
+  border-color: #DC2626;
+  animation: pulseSpeaking 1.5s infinite;
+}
+
+@keyframes pulseSpeaking {
+  0% { opacity: 1; }
+  50% { opacity: 0.75; }
+  100% { opacity: 1; }
+}
+
+/* =========================================================
+   MODO DE ALTO CONTRASTE (WCAG AAA - Contraste mínimo 7:1)
+   ========================================================= */
+
+html.high-contrast {
+  --bg-page: #000000 !important;
+  --bg-surface: #000000 !important;
+  --text-main: #FFFFFF !important;
+  --text-body: #FFFFFF !important;
+  --text-subtle: #FFFF00 !important;
+  --primary: #FFFF00 !important;
+  --primary-hover: #FFFF66 !important;
+  --secondary: #00FFFF !important;
+  --secondary-hover: #66FFFF !important;
+  --tertiary: #FFFF00 !important;
+  --neutral-dark: #000000 !important;
+  --neutral-main: #FFFFFF !important;
+  --neutral-border: #FFFF00 !important;
+  --neutral-border-subtle: #FFFF00 !important;
+  --border-light: #FFFF00 !important;
+  --border-card: #FFFF00 !important;
+}
+
+html.high-contrast body {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+html.high-contrast .site-header,
+html.high-contrast .site-footer,
+html.high-contrast .hero-section,
+html.high-contrast .upcoming-card,
+html.high-contrast .moment-card,
+html.high-contrast .activity-card,
+html.high-contrast .gallery-card,
+html.high-contrast .testimonial-card,
+html.high-contrast .modal-card,
+html.high-contrast .admin-login-card,
+html.high-contrast .calendar-main-box {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 2px solid #FFFF00 !important;
+}
+
+html.high-contrast .accessibility-bar {
+  background-color: #000000 !important;
+  border-bottom: 2px solid #FFFF00 !important;
+}
+
+html.high-contrast .accessibility-btn {
+  border-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+}
+
+html.high-contrast .accessibility-btn.active {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+}
+
+html.high-contrast a,
+html.high-contrast button {
+  color: #FFFF00 !important;
+}
+
+html.high-contrast .btn-primary,
+html.high-contrast .nav-link-btn.active {
+  background: #FFFF00 !important;
+  color: #000000 !important;
+  border: 2px solid #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+html.high-contrast *:focus-visible {
+  outline: 3px solid #00FFFF !important;
+  outline-offset: 3px !important;
+}
+
  
 
  

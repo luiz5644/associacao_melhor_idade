@@ -263,7 +263,7 @@ export function DataProvider({ children }) {
   }, []);
 
   // ── Gestão de Administradores (Backend) ────────────────────────────
-  const fetchAdmins = async () => {
+  const fetchAdmins = useCallback(async () => {
     if (!backendConnected) return [];
     try {
       const data = await adminApi.list();
@@ -273,7 +273,7 @@ export function DataProvider({ children }) {
       console.warn('Erro ao listar administradores:', err);
       return [];
     }
-  };
+  }, [backendConnected]);
 
   const addAdmin = async (data) => {
     if (!backendConnected) {

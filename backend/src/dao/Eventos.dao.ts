@@ -18,8 +18,8 @@ export class EventosDao {
                 ]
             );
         } catch (error) {
-            console.log("Erro ao salvar ação:", error);
-            throw new Error("Erro ao salvar ação");
+            console.error("Erro ao salvar evento:", error);
+            throw new Error("Erro ao salvar evento");
         }
     }
 
@@ -37,8 +37,8 @@ export class EventosDao {
                 is_highlight: Boolean(rows[0].is_highlight)
             });
         } catch (error) {
-            console.log("Erro ao buscar ação:", error);
-            throw new Error("Erro ao buscar ação");
+            console.error("Erro ao buscar evento:", error);
+            throw new Error("Erro ao buscar evento");
         }
     }
 
@@ -52,8 +52,8 @@ export class EventosDao {
                 is_highlight: Boolean(r.is_highlight)
             }));
         } catch (error) {
-            console.log("Erro ao listar ações:", error);
-            throw new Error("Erro ao listar ações");
+            console.error("Erro ao listar eventos:", error);
+            throw new Error("Erro ao listar eventos");
         }
     }
 
@@ -74,11 +74,11 @@ export class EventosDao {
                 ]
             );
             if (result.affectedRows === 0) {
-                throw new Error("Ação não encontrada");
+                throw new Error("Evento não encontrado");
             }
         } catch (error) {
-            console.log("Erro ao atualizar ação:", error);
-            throw new Error("Erro ao atualizar ação");
+            console.error("Erro ao atualizar evento:", error);
+            throw new Error("Erro ao atualizar evento");
         }
     }
 
@@ -89,11 +89,11 @@ export class EventosDao {
                 [id]
             );
             if (result.affectedRows === 0) {
-                throw new Error("Ação não encontrada");
+                throw new Error("Evento não encontrado");
             }
         } catch (error) {
-            console.log("Erro ao deletar ação:", error);
-            throw new Error("Erro ao deletar ação");
+            console.error("Erro ao deletar evento:", error);
+            throw new Error("Erro ao deletar evento");
         }
     }
 }

@@ -1,6 +1,6 @@
 import { plainToInstance } from "class-transformer";
 import { Request,Response } from "express";
-import { FotoCreateDto,FotoUpadateDto } from "../dto/Fotos.dto";
+import { FotoCreateDto,FotoUpdateDto } from "../dto/Fotos.dto";
 import { validate } from "class-validator";
 import { Fotos } from "../modelo/Fotos";
 import { FotosServico } from "../servico/Fotos.servico";
@@ -70,7 +70,7 @@ export class FotosControle{
         try{
             const id = req.params.id
             const idNumber = Number(id)
-            const fotosDto = plainToInstance(FotoUpadateDto,req.body)
+            const fotosDto = plainToInstance(FotoUpdateDto,req.body)
             const erros = await validate(fotosDto)
 
             if(erros.length>0){

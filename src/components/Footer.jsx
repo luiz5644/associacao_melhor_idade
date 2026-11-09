@@ -3,7 +3,7 @@ import { useData } from '../context/DataContext';
 
 export default function Footer({ onNavigatePage, onSelectActivity }) {
   const { brandInfo, activities } = useData();
-  const currentYear = 2026;
+  const currentYear = new Date().getFullYear();
 
   return (
     <footer className="site-footer">

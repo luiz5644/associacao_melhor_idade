@@ -1,6 +1,6 @@
 import {Router } from "express";
-import adminRoutes from "./adimin.routes";
-import eventosRouter from "./Eventos.router";
+import adminRoutes from "./admin.routes";
+import eventosRouter from "./eventos.routes";
 import AlbumRouter from "./Album.routes";
 import fotosRoute from "./Fotos.routes";
 import uploadRoute from "./Upload.routes";

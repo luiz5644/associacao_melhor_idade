@@ -160,7 +160,7 @@ function MemoryDetailModal({ memory, onClose }) {
 }
 
 // ── Página de Galeria ─────────────────────────────────────────────────────────
-export default function GalleryPage({ onSelectPhoto }) {
+export default function GalleryPage() {
   const { gallery } = siteData;
   const { galleryItems } = useData();
   const publicGalleryItems = galleryItems.filter(item => item.photos?.length > 0);

@@ -20,9 +20,13 @@ export function authMiddleware(
         })
     }
     try{
-        const decoded = jwt.verify(
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            return res.status(500).json({ message: "Configuração do servidor incompleta" });
+        }
+        jwt.verify(
             token,
-            "SEGREDO_DO_TOKEN"
+            secret
         )
         next()
     }

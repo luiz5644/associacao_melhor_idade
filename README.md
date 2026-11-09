@@ -51,10 +51,10 @@ A plataforma é um ecossistema completo pensado para atender com excelência tan
 - **Gestão de Patrocinadores:** Cadastro de empresas com upload de logo do computador ou link da web, categorias de patrocínio, link do site e status ativo/oculto.
 - **Configurações Institucionais:** Edição de dados de contato, endereço e chave PIX com sincronização instantânea.
 
-### 8. ♿ Acessibilidade Integrada
-- **Controle de Tamanho de Fonte:** Modos Normal, Aumentado (A+) e Extragrande (A++) para máxima legibilidade.
-- **Alto Contraste:** Alternância para esquema de cores com alto contraste, reduzindo o cansaço visual.
-- **Leitor de Texto por Voz:** Síntese de fala em português para apoio a associados com baixa visão.
+### 8. ♿ Acessibilidade Integrada (Barra Global)
+- **Controle de Tamanho de Fonte:** Modos Normal (A), Grande (A+) e Extragrande (A++), com persistência em localStorage e escala global de tipografia.
+- **Alto Contraste:** Alternância para esquema de cores com contraste elevado (WCAG AAA), fundo preto profundo e realces em amarelo e ciano.
+- **Leitor de Texto por Voz:** Síntese nativa em português (Web Speech API) para ler o texto selecionado ou todo o conteúdo principal da página, com controle de início e parada.
 
 ---
 

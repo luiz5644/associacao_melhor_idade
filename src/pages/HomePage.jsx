@@ -22,7 +22,7 @@ export default function HomePage({ onNavigate, onSelectPhoto }) {
         )
       }))
       .filter(({ date }) => !Number.isNaN(date.getTime()) && date >= now)
-      .sort((a, b) => a.date - b.date);
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
 
     const highlighted = events.filter(({ event }) => event.isHighlight === true);
     const regular = events.filter(({ event }) => event.isHighlight !== true);
