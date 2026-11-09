@@ -74,8 +74,13 @@ CREATE TABLE fotos_lembranca (
     album_id INT NOT NULL,
     url_imagem VARCHAR(500) NOT NULL,
     eh_capa BOOLEAN NOT NULL DEFAULT FALSE,
-    data_upload TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-)ENGINE=InnoDB;
+    data_upload TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_fotos_album
+        FOREIGN KEY (album_id)
+        REFERENCES albuns_lembrancas(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
 
 CREATE TABLE patrocinadores (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -96,19 +101,6 @@ CREATE TABLE depoimentos (
 ) ENGINE=InnoDB;
 
 ALTER TABLE administradores ADD COLUMN email VARCHAR(150) NOT NULL;
-
-  CREATE TABLE fotos_lembranca (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    album_id INT NOT NULL,
-    url_imagem VARCHAR(500) NOT NULL,
-    eh_capa BOOLEAN NOT NULL DEFAULT FALSE,
-    data_upload TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_fotos_album
-        FOREIGN KEY (album_id)
-        REFERENCES albuns_lembrancas(id)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
-) ENGINE=InnoDB;
 
 CREATE TABLE token_recuperacao (
     id INT AUTO_INCREMENT PRIMARY KEY,
