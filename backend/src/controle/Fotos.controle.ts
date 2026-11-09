@@ -5,6 +5,7 @@ import { validate } from "class-validator";
 import { Fotos } from "../modelo/Fotos";
 import { FotosServico } from "../servico/Fotos.servico";
 import { FotosDao } from "../dao/Fotos.dao";
+import { logErro } from "../util/logger";
 
 export class FotosControle{
     private fotosServico: FotosServico
@@ -34,7 +35,7 @@ export class FotosControle{
             })
         }
         catch(error){
-            console.log("Erro:", error)
+            logErro("Erro no controle de Fotos", error)
             return res.status(500).json({
                 message:"Erro ao salvar Fotos"
             })
@@ -48,7 +49,7 @@ export class FotosControle{
             return res.status(200).json(foto)
         }
         catch(error){
-            console.log("Erro:", error)
+            logErro("Erro no controle de Fotos", error)
             return res.status(500).json({
                 message:"Erro ao buscar Foto"
             })
@@ -60,7 +61,7 @@ export class FotosControle{
             return res.status(200).json(fotos)
         }
         catch(error){
-            console.log("Erro:", error)
+            logErro("Erro no controle de Fotos", error)
             return res.status(500).json({
                 message:"Erro ao listar Fotos"
             })
@@ -91,7 +92,7 @@ export class FotosControle{
             })
         }
         catch(error){
-            console.log("Erro:", error)
+            logErro("Erro no controle de Fotos", error)
             return res.status(500).json({
                 message:"Erro ao atualizar Foto"
             })
@@ -107,7 +108,7 @@ export class FotosControle{
             })
         }
         catch(error){
-            console.log("Erro:", error)
+            logErro("Erro no controle de Fotos", error)
             return res.status(500).json({
                 message:"Erro ao deletar Foto"
             })

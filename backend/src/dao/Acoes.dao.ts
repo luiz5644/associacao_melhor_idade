@@ -1,5 +1,6 @@
 import { Acoes } from "../modelo/Acoes";
 import { conexao } from "../util/conexao";
+import { logErro } from "../util/logger";
 
 export class AcoesDao{
     public async salvar(acoes:Acoes):Promise<void>{
@@ -10,7 +11,7 @@ export class AcoesDao{
             )
         }
         catch(error){
-            console.log("Erro ao salvar Ação: ", error)
+            logErro("Erro ao salvar Ação", error)
             throw new Error("Erro ao salvar Ação")
         }
     }
@@ -27,7 +28,7 @@ export class AcoesDao{
 
         }
            catch(error){
-            console.log("Erro ao buscar Ação: ", error)
+            logErro("Erro ao buscar Ação", error)
             throw new Error("Erro ao buscar Ação")
         }
     }
@@ -39,7 +40,7 @@ export class AcoesDao{
             return rows.map((r:any) => Acoes.reconstruir(r))
         }
         catch(error){
-            console.log("Erro ao Listar Ações: ", error)
+            logErro("Erro ao Listar Ações", error)
             throw new Error("Erro ao Listar Ações")
         }
     }
@@ -55,7 +56,7 @@ export class AcoesDao{
             }
         }
         catch(error){
-            console.log("Erro ao Atualizar Ação: ", error)
+            logErro("Erro ao Atualizar Ação", error)
             throw new Error("Erro ao Atualizar Ação")
         }
     }
@@ -70,7 +71,7 @@ export class AcoesDao{
             }
         }
         catch(error){
-            console.log("Erro ao Deletar Ação: ", error)
+            logErro("Erro ao Deletar Ação", error)
             throw new Error("Erro ao Deletar Ação")
         }
     }

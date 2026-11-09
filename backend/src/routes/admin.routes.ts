@@ -1,9 +1,12 @@
 import { Router } from "express";
 import { AdminControle } from "../controle/Admin.controle";
 import { authMiddleware } from "../middleware/auth.middleware";
+import { criarLimitador } from "../middleware/limitador.middleware";
 
 const adminRoutes = Router()
 const adminControle = new AdminControle()
+const limitadorLogin = criarLimitador({ janelaMs: 15 * 60 * 1000, maximo: 10, contarApenasFalhas: true })
+const limitadorSenha = criarLimitador({ janelaMs: 60 * 60 * 1000, maximo: 5 })
 
 adminRoutes
     .route("/")
@@ -19,6 +22,7 @@ adminRoutes
     );
 adminRoutes
    .post("/login",
+     limitadorLogin,
      async (req,res) => adminControle.login(req,res)
 
    )
@@ -26,12 +30,14 @@ adminRoutes
 adminRoutes
 .route("/recuperar-senha",)
 .post(
+    limitadorSenha,
     async (req,res) => adminControle.solicitarRecuperacaoSenha(req,res)
 )
 
 adminRoutes
 .route("/redefinir-senha",)
 .post(
+    limitadorSenha,
     async (req,res) => adminControle.redefinirSenha(req,res)
 )
 

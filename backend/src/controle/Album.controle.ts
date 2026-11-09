@@ -5,6 +5,7 @@ import { validate } from "class-validator";
 import { Album } from "../modelo/Album";
 import { AlbumServico } from "../servico/Album.servico";
 import { Request,Response } from "express";
+import { logErro } from "../util/logger";
 
 export class AlbumControle {
     private albumServico: AlbumServico
@@ -35,7 +36,7 @@ export class AlbumControle {
              })
         }
         catch(error){
-            console.log("Erro: ", error)
+            logErro("Erro no controle de Álbuns", error)
             return res.status(500).json({
                 message:"Erro ao salvar Album"
             })
@@ -52,7 +53,7 @@ export class AlbumControle {
             return res.status(200).json(usuario)
         }
         catch(error){
-            console.log("Erro: ", error)
+            logErro("Erro no controle de Álbuns", error)
             return res.status(500).json(
                 {
                     message:"Erro ao listar Album"
@@ -66,7 +67,7 @@ export class AlbumControle {
             return res.status(200).json(albuns)
         }
         catch(error){
-            console.log("Erro: ", error)
+            logErro("Erro no controle de Álbuns", error)
              return res.status(500).json(
                 {
                     message:"Erro ao listar Albuns"
@@ -99,7 +100,7 @@ export class AlbumControle {
         });
         }
         catch(error){
-            console.log("Erro: ", error)
+            logErro("Erro no controle de Álbuns", error)
             return res.status(500).json({
                 message: "Erro ao atualizar Album"
             })
@@ -116,7 +117,7 @@ export class AlbumControle {
             })
         }
         catch(error){
-            console.log("Erro: ", error)
+            logErro("Erro no controle de Álbuns", error)
             res.status(500).json({
                 message:"Erro ao excluir Album"
             })

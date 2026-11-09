@@ -1,5 +1,6 @@
 import { conexao } from "../util/conexao";
 import { Fotos } from "../modelo/Fotos";
+import { logErro } from "../util/logger";
 
 export class FotosDao{
     public async salvar(fotos:Fotos): Promise<number>{
@@ -11,7 +12,7 @@ export class FotosDao{
             return result.insertId;
         }
         catch(error){
-            console.log("Erro: ", error)
+            logErro("Erro no DAO de Fotos", error)
             throw new Error("Erro ao salvar Foto")
         }
     }
@@ -28,7 +29,7 @@ export class FotosDao{
             return fotos
         }
         catch(error){
-            console.log("Erro: ", error)
+            logErro("Erro no DAO de Fotos", error)
             throw new Error("Erro ao buscar Foto")
         }
     }
@@ -47,7 +48,7 @@ export class FotosDao{
 
         }
         catch(error){
-            console.log("Erro: ", error)
+            logErro("Erro no DAO de Fotos", error)
             throw new Error("Erro ao listar fotos")
         }
     }
@@ -63,7 +64,7 @@ export class FotosDao{
             }
         }
         catch(error){
-            console.log("Erro: ", error)
+            logErro("Erro no DAO de Fotos", error)
             throw new Error("Erro ao atualizar Foto")
         }
 
@@ -79,7 +80,7 @@ export class FotosDao{
             }
         }
          catch(error){
-            console.log("Erro: ", error)
+            logErro("Erro no DAO de Fotos", error)
             throw new Error("Erro ao excluir Foto")
         }
     }

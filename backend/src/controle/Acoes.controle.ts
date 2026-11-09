@@ -5,6 +5,7 @@ import { AcoesDao } from "../dao/Acoes.dao";
 import { Acoes } from "../modelo/Acoes";
 import { AcoesServico } from "../servico/Acoes.servico";
 import { validate } from "class-validator";
+import { logErro } from "../util/logger";
 
 export class AcoesControle{
     private acoesServico: AcoesServico
@@ -40,7 +41,7 @@ export class AcoesControle{
             await this.acoesServico.salvar(acao)
             return res.status(201).json({ message:"Ação salva com sucesso" })
         } catch(error) {
-            console.error("Erro ao salvar ação: ", error)
+            logErro("Erro ao salvar ação", error)
             return res.status(500).json({ message:"Erro ao salvar ação" })
         }
     }
@@ -54,7 +55,7 @@ export class AcoesControle{
             return res.status(200).json(acao)
         }
          catch(error){
-            console.log("Erro ao buscar ação: ", error)
+            logErro("Erro ao buscar ação", error)
             return res.status(500).json({
                 message:"Erro ao buscar Ação"
             })
@@ -66,7 +67,7 @@ export class AcoesControle{
             return res.status(200).json(acoes)
         }
         catch(error){
-            console.log("Erro ao listar ações: ", error)
+            logErro("Erro ao listar ações", error)
             return res.status(500).json({
                 message:"Erro ao listar Ações"
             })
@@ -99,7 +100,7 @@ export class AcoesControle{
         }
          catch(error){
             if (error instanceof Error && error.message.includes("horário")) return res.status(400).json({ message:error.message })
-            console.error("Erro ao atualizar ação: ", error)
+            logErro("Erro ao atualizar ação", error)
             return res.status(500).json({ message:"Erro ao atualizar ação" })
         }
         
@@ -114,7 +115,7 @@ export class AcoesControle{
             return res.status(200).json({ message: "Ação excluída com sucesso" })
         }
          catch(error){
-            console.error("Erro ao excluir ação: ", error)
+            logErro("Erro ao excluir ação", error)
             return res.status(500).json({ message:"Erro ao excluir ação" })
         }
     }

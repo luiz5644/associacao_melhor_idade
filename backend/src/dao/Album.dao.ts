@@ -1,5 +1,6 @@
 import { conexao } from "../util/conexao";
 import { Album } from "../modelo/Album";
+import { logErro } from "../util/logger";
 
 export class AlbumDao {
     public async salvar (album:Album): Promise <number>{
@@ -11,7 +12,7 @@ export class AlbumDao {
             return result.insertId;
         }
         catch(error){
-            console.log("Erro: ", error)
+            logErro("Erro ao salvar Album", error)
             throw new Error('Erro ao salvar no Album')
         }
 
@@ -30,7 +31,7 @@ export class AlbumDao {
             return album
         }
         catch(error){
-            console.log("Erro: ",error)
+            logErro("Erro ao buscar Album", error)
             throw new Error("Erro ao buscar Album")
         }
 
@@ -43,7 +44,7 @@ export class AlbumDao {
             return rows.map((r:any) => Album.reconstruir(r))
         }
         catch(error){
-            console.log("Erro:", error)
+            logErro("Erro ao listar Album", error)
             throw new Error("Erro ao listar Album")
         }
     }
@@ -60,7 +61,7 @@ export class AlbumDao {
             
         }
         catch(error){
-            console.log("Erro",error)
+            logErro("Erro ao atualizar Album", error)
             throw new Error("Erro ao atualizar Album");
         }
        
@@ -76,7 +77,7 @@ export class AlbumDao {
             }
     }
     catch(error){
-        console.log("Error", error)
+        logErro("Erro ao excluir Album", error)
         throw new Error("Erro ao excluir album")
     }
 }}

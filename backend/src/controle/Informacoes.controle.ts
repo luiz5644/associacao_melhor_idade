@@ -4,6 +4,7 @@ import { InformacoesServico } from "../servico/Informacoes.servico";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { InformacoesUpdateDto } from "../dto/Informacoes.dto";
+import { logErro } from "../util/logger";
 
 const servico = new InformacoesServico(new InformacoesDao());
 
@@ -12,7 +13,7 @@ export class InformacoesControle {
     try {
       return res.status(200).json((await servico.get()) || {});
     } catch (error) {
-      console.error("Erro ao carregar informações:", error);
+      logErro("Erro ao carregar informações", error);
       return res.status(500).json({ message: "Erro ao carregar informações" });
     }
   }
@@ -28,7 +29,7 @@ export class InformacoesControle {
       const info = await servico.update(data);
       return res.status(200).json({ message: "Informações atualizadas com sucesso", data: info });
     } catch (error) {
-      console.error("Erro ao atualizar informações:", error);
+      logErro("Erro ao atualizar informações", error);
       return res.status(500).json({ message: "Erro ao atualizar informações" });
     }
   }

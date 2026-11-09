@@ -5,6 +5,7 @@ import { Request,Response } from "express";
 import { validate } from "class-validator";
 import { EventosCreateDto,EventosUpdateDto } from "../dto/Eventos.dto";
 import { Eventos } from "../modelo/Eventos";
+import { logErro } from "../util/logger";
 
 
 export class EventosControle{
@@ -36,7 +37,7 @@ export class EventosControle{
             return res.status(201).json({ message: "Evento salvo com sucesso!" });
         }
         catch (error){
-            console.log("Erro ao salvar Evento", error)
+            logErro("Erro ao salvar Evento", error)
             return res.status(500).json({ message: "Erro ao salvar Evento" })
         }
     }
@@ -52,7 +53,7 @@ export class EventosControle{
             return res.status(200).json(evento)
         }
         catch(error){
-            console.log("Erro ao buscar Evento", error)
+            logErro("Erro ao buscar Evento", error)
             return res.status(500).json({ message: "Erro ao buscar Evento" })
         }
     }
@@ -63,7 +64,7 @@ export class EventosControle{
             return res.status(200).json(eventos)
         }
         catch(error){
-            console.log("Erro ao listar Eventos", error)
+            logErro("Erro ao listar Eventos", error)
             res.status(500).json({ message: "Erro ao listar Eventos" })
         }
     }
@@ -96,7 +97,7 @@ export class EventosControle{
             return res.status(200).json({ message: "Evento atualizado com sucesso" })
         }
         catch(error){
-            console.error("Erro ao atualizar Evento:", error)
+            logErro("Erro ao atualizar Evento", error)
             return res.status(500).json({ message: "Erro ao atualizar Evento" })
         }
     }
@@ -111,7 +112,7 @@ export class EventosControle{
             return res.status(200).json({ message: "Evento excluído com sucesso" })
         }
         catch(error){
-            console.log("Erro ao excluir Evento", error)
+            logErro("Erro ao excluir Evento", error)
             return res.status(500).json({ message: "Erro ao excluir Evento" })
         }
     }

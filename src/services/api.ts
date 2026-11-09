@@ -47,6 +47,15 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (response.status === 401 && endpoint !== '/admin/login') {
+      if (localStorage.getItem('admin_token')) {
+        localStorage.removeItem('admin_token');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('admin-sessao-expirada'));
+        }
+      }
+    }
+
     let errorMsg = data.message;
     if (!errorMsg && Array.isArray(data)) {
       errorMsg = data

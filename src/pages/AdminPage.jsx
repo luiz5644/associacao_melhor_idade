@@ -1990,7 +1990,7 @@ function TabAdmins({ onNavigateToCreate }) {
 export default function AdminPage({ onClose }) {
   const { backendConnected, backendLoading, checkBackendConnection, fetchAdmins } = useData();
   const [isLoggedIn, setIsLoggedIn] = useState(() => adminApi.isAuthenticated());
-  const [username, setUsername] = useState('admin');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [submittingLogin, setSubmittingLogin] = useState(false);
@@ -1999,6 +1999,17 @@ export default function AdminPage({ onClose }) {
   const [recoveryError, setRecoveryError] = useState('');
   const [recoverySuccess, setRecoverySuccess] = useState(false);
   const [submittingRecovery, setSubmittingRecovery] = useState(false);
+
+  useEffect(() => {
+    const handleSessaoExpirada = () => {
+      setIsLoggedIn(false);
+      setAuthView('login');
+      setLoginError('Sessão expirada. Entre novamente.');
+    };
+
+    window.addEventListener('admin-sessao-expirada', handleSessaoExpirada);
+    return () => window.removeEventListener('admin-sessao-expirada', handleSessaoExpirada);
+  }, []);
 
   const handleRecoverySubmit = async (e) => {
     e.preventDefault();

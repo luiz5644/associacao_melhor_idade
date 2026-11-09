@@ -5,6 +5,7 @@ import { PatrocinadorCreateDto, PatrocinadorUpdateDto } from "../dto/Patrocinado
 import { Patrocinador } from "../modelo/Patrocinador";
 import { PatrocinadorDao } from "../dao/Patrocinador.dao";
 import { PatrocinadorServico } from "../servico/Patrocinador.servico";
+import { logErro } from "../util/logger";
 
 export class PatrocinadorControle {
     private patrocinadorServico = new PatrocinadorServico(new PatrocinadorDao());
@@ -26,7 +27,7 @@ export class PatrocinadorControle {
             const id = await this.patrocinadorServico.salvar(patrocinador);
             return res.status(201).json({ message: "Patrocinador cadastrado com sucesso", id });
         } catch (error) {
-            console.error("Erro ao cadastrar patrocinador:", error);
+            logErro("Erro ao cadastrar patrocinador", error);
             return res.status(500).json({ message: "Erro ao cadastrar patrocinador" });
         }
     }
@@ -39,7 +40,7 @@ export class PatrocinadorControle {
             if (!patrocinador) return res.status(404).json({ message: "Patrocinador não encontrado" });
             return res.status(200).json(patrocinador);
         } catch (error) {
-            console.error("Erro ao buscar patrocinador:", error);
+            logErro("Erro ao buscar patrocinador", error);
             return res.status(500).json({ message: "Erro ao buscar patrocinador" });
         }
     }
@@ -48,7 +49,7 @@ export class PatrocinadorControle {
         try {
             return res.status(200).json(await this.patrocinadorServico.listar());
         } catch (error) {
-            console.error("Erro ao listar patrocinadores:", error);
+            logErro("Erro ao listar patrocinadores", error);
             return res.status(500).json({ message: "Erro ao listar patrocinadores" });
         }
     }
@@ -74,7 +75,7 @@ export class PatrocinadorControle {
             await this.patrocinadorServico.atualizar(patrocinador);
             return res.status(200).json({ message: "Patrocinador atualizado com sucesso" });
         } catch (error) {
-            console.error("Erro ao atualizar patrocinador:", error);
+            logErro("Erro ao atualizar patrocinador", error);
             return res.status(500).json({ message: "Erro ao atualizar patrocinador" });
         }
     }
@@ -88,7 +89,7 @@ export class PatrocinadorControle {
             await this.patrocinadorServico.deletar(id);
             return res.status(200).json({ message: "Patrocinador removido com sucesso" });
         } catch (error) {
-            console.error("Erro ao excluir patrocinador:", error);
+            logErro("Erro ao excluir patrocinador", error);
             return res.status(500).json({ message: "Erro ao excluir patrocinador" });
         }
     }

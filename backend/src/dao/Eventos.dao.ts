@@ -1,5 +1,6 @@
 import { Eventos } from "../modelo/Eventos";
 import { conexao } from "../util/conexao";
+import { logErro } from "../util/logger";
 
 export class EventosDao {
     public async salvar(eventos:Eventos): Promise<void> {
@@ -18,7 +19,7 @@ export class EventosDao {
                 ]
             );
         } catch (error) {
-            console.error("Erro ao salvar evento:", error);
+            logErro("Erro ao salvar evento", error);
             throw new Error("Erro ao salvar evento");
         }
     }
@@ -37,7 +38,7 @@ export class EventosDao {
                 is_highlight: Boolean(rows[0].is_highlight)
             });
         } catch (error) {
-            console.error("Erro ao buscar evento:", error);
+            logErro("Erro ao buscar evento", error);
             throw new Error("Erro ao buscar evento");
         }
     }
@@ -52,7 +53,7 @@ export class EventosDao {
                 is_highlight: Boolean(r.is_highlight)
             }));
         } catch (error) {
-            console.error("Erro ao listar eventos:", error);
+            logErro("Erro ao listar eventos", error);
             throw new Error("Erro ao listar eventos");
         }
     }
@@ -77,7 +78,7 @@ export class EventosDao {
                 throw new Error("Evento não encontrado");
             }
         } catch (error) {
-            console.error("Erro ao atualizar evento:", error);
+            logErro("Erro ao atualizar evento", error);
             throw new Error("Erro ao atualizar evento");
         }
     }
@@ -92,7 +93,7 @@ export class EventosDao {
                 throw new Error("Evento não encontrado");
             }
         } catch (error) {
-            console.error("Erro ao deletar evento:", error);
+            logErro("Erro ao deletar evento", error);
             throw new Error("Erro ao deletar evento");
         }
     }

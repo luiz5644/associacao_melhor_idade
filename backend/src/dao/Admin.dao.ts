@@ -1,20 +1,21 @@
 import { conexao } from "../util/conexao";
 import { Admin } from "../modelo/Admin";
+import { logErro } from "../util/logger";
 
 
 export class AdminDao{
     public async salvar(admin:Admin): Promise <void>{
+        if (!admin.senha || admin.senha.trim() === "") {
+            throw new Error("Senha do admin é obrigatória e deve estar com hash")
+        }
         try{
-            const cpfLimpo = admin.cpf ? admin.cpf.replace(/\D/g, "") : "";
-            const senhaFinal = (admin.senha && admin.senha.trim() !== "" )
-            ? admin.senha: cpfLimpo.substring(0, 8);
-            const [results]:any = await conexao.query(
+            await conexao.query(
                 'insert into administradores (username,cpf,senha,email) values (?,?,?,?)',
-                [admin.username, admin.cpf,senhaFinal,admin.email]
+                [admin.username, admin.cpf, admin.senha, admin.email]
             )
         }
         catch(error){
-            console.error("Erro ao salvar Admin",error)
+            logErro("Erro ao salvar Admin", error)
             throw new Error("Erro ao salvar Admin")
         }
     }
@@ -31,7 +32,7 @@ export class AdminDao{
             return admin
         }
         catch(error){
-            console.error("Erro ao Buscar Admin",error)
+            logErro("Erro ao Buscar Admin", error)
             throw new Error("Erro ao Buscar Admin")
         }
     }
@@ -44,7 +45,7 @@ export class AdminDao{
 
         }
         catch(error){
-            console.error(error)
+            logErro("Erro no Admin DAO", error)
             throw error
         }
         
@@ -66,7 +67,7 @@ export class AdminDao{
             }
         }
         catch(error){
-            console.error(error);
+            logErro("Erro no Admin DAO", error);
             throw error;
         }
     }
@@ -81,7 +82,7 @@ export class AdminDao{
             }
         }
         catch(error){
-            console.error(error)
+            logErro("Erro no Admin DAO", error)
             throw error
         }
     }
@@ -103,7 +104,7 @@ export class AdminDao{
 
         }
         catch(error){
-            console.error(error)
+            logErro("Erro no Admin DAO", error)
             throw error
         }
        
@@ -122,7 +123,7 @@ export class AdminDao{
 
         }
         catch(error){
-            console.log("Erro: ", error)
+            logErro("Erro ao Buscar Admin por e-mail", error)
             throw new Error("Erro ao Buscar Admin")
         }
         
@@ -137,7 +138,7 @@ export class AdminDao{
             )
         }
         catch (error) {
-        console.error("Erro ao salvar token de recuperação", error);
+        logErro("Erro ao salvar token de recuperação", error);
         throw new Error("Erro ao salvar token de recuperação");
     }
     }
@@ -161,7 +162,7 @@ export class AdminDao{
 
         return rows[0];
     } catch (error) {
-        console.error("Erro ao buscar token de recuperação", error);
+        logErro("Erro ao buscar token de recuperação", error);
         throw new Error("Erro ao buscar token de recuperação");
     }
 }
@@ -176,7 +177,7 @@ public async atualizarSenha(id:number,senhaHash: string):Promise<void>{
         }
     }
     catch(error){
-            console.error("Erro: ", error)
+            logErro("Erro ao atualizar senha", error)
             throw error
         }
         
@@ -194,7 +195,7 @@ public async marcarTokenComoUtilizado(tokenId: number): Promise<void> {
             throw new Error("Token não encontrado ou já utilizado");
         }
     } catch (error) {
-        console.error("Erro ao invalidar token", error);
+        logErro("Erro ao invalidar token", error);
         throw error;
     }
 }

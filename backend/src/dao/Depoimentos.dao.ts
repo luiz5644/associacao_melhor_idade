@@ -1,5 +1,6 @@
 import { conexao } from "../util/conexao";
 import { Depoimento } from "../modelo/Depoimentos";
+import { logErro } from "../util/logger";
 
 export class DepoimentoDao{
     public async salvar(depoimento:Depoimento):Promise <void>{
@@ -11,7 +12,7 @@ export class DepoimentoDao{
 
         }
         catch(error){
-            console.log("Error: ",error)
+            logErro("Erro no DAO de Depoimentos", error)
             throw new Error("Erro ao Salvar depoimento")
         }
        
@@ -28,7 +29,7 @@ export class DepoimentoDao{
             return Depoimento.reconstruir(rows[0])
         }
          catch(error){
-            console.log("Error: ",error)
+            logErro("Erro no DAO de Depoimentos", error)
             throw new Error("Erro ao Buscar depoimento")
         }
     }
@@ -40,7 +41,7 @@ export class DepoimentoDao{
             return rows.map((r:any) => Depoimento.reconstruir(r))
         }
         catch(error){
-            console.log("Error: ",error)
+            logErro("Erro no DAO de Depoimentos", error)
             throw new Error("Erro ao Listar depoimento")
         }
         
@@ -57,7 +58,7 @@ export class DepoimentoDao{
             }
         }
         catch(error){
-            console.log("Error: ",error)
+            logErro("Erro no DAO de Depoimentos", error)
             throw new Error("Erro ao Atualizar depoimento")
         }
     }
@@ -72,7 +73,7 @@ export class DepoimentoDao{
             }
         }
         catch(error){
-            console.log("Error: ",error)
+            logErro("Erro no DAO de Depoimentos", error)
             throw new Error("Erro ao Excluir depoimento")
         }
     }

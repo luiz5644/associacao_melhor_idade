@@ -5,6 +5,7 @@ import { DepoimentoCreateDto,DepoimentoUpdateDto } from "../dto/Depoimento.dto";
 import { Request,Response } from "express";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
+import { logErro } from "../util/logger";
 
 export class DepoimentoControle{
     private depoimentoServico: DepoimentoServico
@@ -34,7 +35,7 @@ export class DepoimentoControle{
             })
         }
         catch(error){
-            console.log("Erro:",error)
+            logErro("Erro no controle de Depoimentos", error)
             return res.status(500).json({
                 message: "Erro ao salvar depoimento"
             })
@@ -48,7 +49,7 @@ export class DepoimentoControle{
             return res.status(200).json(depoimento)
         }
         catch(error){
-            console.log("Erro:",error)
+            logErro("Erro no controle de Depoimentos", error)
             return res.status(500).json({
                 message: "Erro ao buscar depoimento"
             })
@@ -60,7 +61,7 @@ export class DepoimentoControle{
             return res.status(200).json(depoimentos)
         }
         catch(error){
-            console.log("Erro:",error)
+            logErro("Erro no controle de Depoimentos", error)
             return res.status(500).json({
                 message: "Erro ao listar depoimentos"
             })
@@ -92,7 +93,7 @@ export class DepoimentoControle{
             })
         }
         catch(error){
-            console.log("Erro:",error)
+            logErro("Erro no controle de Depoimentos", error)
             return res.status(500).json({
                 message: "Erro ao atualizar depoimento"
             })
@@ -108,7 +109,7 @@ export class DepoimentoControle{
             })
         }
         catch(error){
-            console.log("Erro:",error)
+            logErro("Erro no controle de Depoimentos", error)
             return res.status(500).json({
                 message: "Erro ao excluir depoimento"
             })

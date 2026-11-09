@@ -6,6 +6,7 @@ import { validate } from "class-validator";
 import { adminServico } from "../servico/Admin.servico";
 import bcrypt from "bcrypt";
 import { Admin } from "../modelo/Admin";
+import { logErro } from "../util/logger";
 
 export class AdminControle{
      private adminServico: adminServico
@@ -54,7 +55,7 @@ export class AdminControle{
         });
 
     } catch (error) {
-        console.error("Erro ao cadastrar Admin:", error);
+        logErro("Erro ao cadastrar Admin", error);
 
         return res.status(500).json({
             message: "Erro ao cadastrar Admin"
@@ -69,6 +70,7 @@ export class AdminControle{
             return res.status(200).json(admin ? { id: admin.id, username: admin.username, cpf: admin.cpf, email: admin.email } : null)
         }
         catch(error){
+            logErro("Erro ao buscar admin", error)
             return res.status(500).json({
                 message:"Erro ao buscar admin"
             })
@@ -80,7 +82,8 @@ export class AdminControle{
             const usuarios = await this.adminServico.listar()
             return res.status(200).json(usuarios.map((u: any) => ({ id: u.id, username: u.username, cpf: u.cpf, email: u.email })))
         }
-        catch{
+        catch(error){
+            logErro("Erro ao listar Admins", error)
             return res.status(500).json({
                 message:"Erro ao listar Admins"
             })
@@ -125,6 +128,7 @@ export class AdminControle{
 
         }
         catch(error){
+            logErro("Erro ao atualizar Admin", error)
             return res.status(500).json({
                 message: "Erro ao atualizar Admin"
             })
@@ -134,6 +138,10 @@ export class AdminControle{
         try{
             const id = req.params.id
             const idNumber = Number(id)
+            const adminExistente = await this.adminServico.buscarporId(idNumber)
+            if(!adminExistente){
+                return res.status(404).json({ message: "Administrador não encontrado" })
+            }
             await this.adminServico.deletar(idNumber)
             return res.status(200).json(
                 {
@@ -142,6 +150,7 @@ export class AdminControle{
             )
         }
         catch(error){
+            logErro("Erro ao excluir admin", error)
             return res.status(500).json({
                 message: "Erro ao excluir admin"
             })
@@ -149,7 +158,18 @@ export class AdminControle{
      }
       public async login(req: Request, res: Response) {
         try {
-            const { login, senha } = req.body;
+            const { login, senha } = req.body || {};
+
+            if (
+                typeof login !== "string" ||
+                login.trim() === "" ||
+                typeof senha !== "string" ||
+                senha === ""
+            ) {
+                return res.status(400).json({
+                    message: "Informe usuário e senha"
+                });
+            }
 
             const token = await this.adminServico.login(login, senha);
 
@@ -163,7 +183,7 @@ export class AdminControle{
                     message: "Usuário ou senha inválidos"
                 });
             }
-            console.error("Erro no login:", error);
+            logErro("Erro no login", error);
 
             return res.status(500).json({
                 message: "Erro interno no servidor ao tentar login"
@@ -182,7 +202,7 @@ export class AdminControle{
             return res.status(200).json({ message: resposta })
         }
         catch(error){
-            console.error("Erro ao solicitar recuperação:", error)
+            logErro("Erro ao solicitar recuperação", error)
             return res.status(500).json({
                 message: "Erro ao solicitar recuperação de senha"
             });
@@ -205,7 +225,7 @@ export class AdminControle{
 
         }
         catch(error){
-            console.error("Erro ao redefinir senha:", error)
+            logErro("Erro ao redefinir senha", error)
             return res.status(500).json({
                 message: "Erro ao solicitar redefinir senha"
             });
@@ -219,7 +239,7 @@ export class AdminControle{
             message: resultado
         });
     } catch (error) {
-        console.error("Erro ao testar SMTP:", error);
+        logErro("Erro ao testar SMTP", error);
 
         return res.status(500).json({
             message: "Falha na conexão SMTP"

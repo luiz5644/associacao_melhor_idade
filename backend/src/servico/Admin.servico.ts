@@ -105,10 +105,13 @@ export class adminServico {
     );
 
     // Monta o link que será enviado por email
-    const frontendUrl = process.env.FRONTEND_URL;
+    const frontendUrl = (process.env.FRONTEND_PUBLIC_URL || process.env.FRONTEND_URL || "")
+        .split(",")[0]
+        ?.trim()
+        .replace(/\/+$/, "") ?? "";
 
     if (!frontendUrl) {
-        throw new Error("FRONTEND_URL não configurada");
+        throw new Error("FRONTEND_PUBLIC_URL/FRONTEND_URL não configurada");
     }
 
     const link = `${frontendUrl}/redefinir-senha?token=${encodeURIComponent(token)}`;
