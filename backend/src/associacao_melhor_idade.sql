@@ -122,3 +122,18 @@ CREATE TABLE token_recuperacao (
         REFERENCES administradores(id)
         ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE patrocinadores_pj (
+    id               INT AUTO_INCREMENT PRIMARY KEY,
+    patrocinador_id  INT NOT NULL,                -- referencia a tabela `patrocinadores`
+    cnpj             VARCHAR(20)  NOT NULL UNIQUE,
+    razao_social     VARCHAR(200) NOT NULL,
+    endereco         VARCHAR(255),
+    telefone         VARCHAR(30),
+    CONSTRAINT fk_pj_pat
+        FOREIGN KEY (patrocinador_id)
+        REFERENCES patrocinadores(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
