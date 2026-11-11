@@ -75,7 +75,7 @@ export default function ImageLightbox({ photo, photosList, onClose, onSelectPhot
               }}
               aria-label="Foto anterior"
             >
-              <ChevronLeft size={24} color="#221E1C" />
+              <ChevronLeft size={24} color="#0B192C" />
             </button>
 
             <button 
@@ -99,7 +99,7 @@ export default function ImageLightbox({ photo, photosList, onClose, onSelectPhot
               }}
               aria-label="Próxima foto"
             >
-              <ChevronRight size={24} color="#221E1C" />
+              <ChevronRight size={24} color="#0B192C" />
             </button>
           </>
         )}
@@ -108,7 +108,7 @@ export default function ImageLightbox({ photo, photosList, onClose, onSelectPhot
 
         <div className="lightbox-caption">
           <h4 style={{ fontSize: '1.25rem', fontFamily: 'var(--font-serif)', marginBottom: '4px' }}>{photo.title}</h4>
-          <p style={{ fontSize: '0.9rem', color: '#DFD8D3' }}>{photo.subtitle || photo.description}</p>
+          <p style={{ fontSize: '0.9rem', color: '#E2E8F0' }}>{photo.subtitle || photo.description}</p>
         </div>
       </div>
     </div>

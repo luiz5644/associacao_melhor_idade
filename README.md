@@ -1,10 +1,10 @@
-# 🌸 Associação Comunitária Melhor Idade
+# 🌸 Associação Comunitária Qualidade de Vida
 
 [![React](https://img.shields.io/badge/React-19-61DAFB.svg?style=for-the-badge&logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8-646CFF.svg?style=for-the-badge&logo=vite)](https://vitejs.dev/)
 [![Status](https://img.shields.io/badge/Status-Ativo-2A5C66.svg?style=for-the-badge)](#)
 
-Aplicação web oficial da **Associação Comunitária Melhor Idade**, desenvolvida para promover a convivência, valorização, saúde, cultura e integração social da melhor idade.
+Aplicação web oficial da **Associação Comunitária Qualidade de Vida**, desenvolvida para promover a convivência, valorização, saúde, cultura e integração social da melhor idade.
 
 O portal foi projetado com base em princípios modernos de experiência do usuário, design afetivo e acessibilidade inclusiva, conectando associados, familiares, diretoria e empresas apoiadoras da comunidade.
 
@@ -121,5 +121,5 @@ A paleta de cores foi construída para evocar calma, afeto, acolhimento e calor 
 
 ## 📄 Licença e Créditos
 
-Desenvolvido com carinho para a **Associação Comunitária Melhor Idade**.  
+Desenvolvido com carinho para a **Associação Comunitária Qualidade de Vida**.  
 Todos os direitos reservados © 2026. Feito com afeto no Brasil 🇧🇷

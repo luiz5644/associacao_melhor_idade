@@ -40,8 +40,19 @@ const donationBanners = {
   }
 };
 
+function getCalendarDateFromUrl() {
+  try {
+    const value = new URLSearchParams(window.location.search).get('data');
+    return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 function AppContent() {
-  const [activePage, setActivePage] = useState('home');
+  const initialCalendarDate = getCalendarDateFromUrl();
+  const [activePage, setActivePage] = useState(initialCalendarDate ? 'calendar' : 'home');
+  const [calendarDate, setCalendarDate] = useState(initialCalendarDate);
   const { galleryItems, activities } = useData();
 
   // Modals state
@@ -54,8 +65,27 @@ function AppContent() {
   const handleCloseDonationModal = () => setDonationModal(prev => ({ ...prev, isOpen: false }));
 
   // Função centralizada para mudar de página e zerar o scroll de todos os possíveis containers
-  const handleNavigate = (page) => {
+  const handleNavigate = (page, options = {}) => {
     setActivePage(page);
+
+    if (page === 'calendar') {
+      setCalendarDate(options?.date || null);
+    } else {
+      setCalendarDate(null);
+    }
+
+    try {
+      const url = new URL(window.location.href);
+      if (page === 'calendar' && options?.date) {
+        url.searchParams.set('data', options.date);
+      } else {
+        url.searchParams.delete('data');
+      }
+      window.history.replaceState({}, '', url);
+    } catch {
+      // Ambiente sem History API: a navegação por estado continua funcionando.
+    }
+
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -116,7 +146,7 @@ function AppContent() {
         )}
 
         {activePage === 'calendar' && (
-          <CalendarPage />
+          <CalendarPage initialDate={calendarDate} />
         )}
 
         {activePage === 'gallery' && (

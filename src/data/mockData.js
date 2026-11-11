@@ -1,8 +1,8 @@
-// Dados completos do projeto Associação Melhor Idade extraídos do design no Figma
+// Dados completos do projeto Associação Qualidade de Vida extraídos do design no Figma
 
 export const siteData = {
   brand: {
-    name: "Melhor Idade",
+    name: "Qualidade de Vida",
     subtitle: "ASSOCIAÇÃO COMUNITÁRIA",
     since: 2011,
     email: "",
@@ -17,7 +17,7 @@ export const siteData = {
       hero: {
         tag: "SEJA BEM-VINDO(A) À NOSSA CASA",
         title: "A vida recomeça todos os dias com afeto e amizade.",
-        description: "A Associação Melhor Idade é um espaço acolhedor e vibrante em nossa comunidade, promovendo encontros, atividades saudáveis e resgatando histórias de vida.",
+        description: "A Associação Qualidade de Vida é um espaço acolhedor e vibrante em nossa comunidade, promovendo encontros, atividades saudáveis e resgatando histórias de vida.",
         image: "https://images.unsplash.com/photo-1516307365426-bea591f05011?q=80&w=1200&auto=format&fit=crop" // Idosos felizes em parque celebrando
       },
       upcoming: {
@@ -42,7 +42,7 @@ export const siteData = {
     },
     cta: {
       title: "Ajude-nos a manter essa chama acesa!",
-      description: "A Associação Melhor Idade é sem fins lucrativos. Sua doação de qualquer valor ou sua ajuda voluntária nos permite expandir as oficinas, organizar mais passeios e fornecer café da tarde comunitário saudável.",
+      description: "A Associação Qualidade de Vida é sem fins lucrativos. Sua doação de qualquer valor ou sua ajuda voluntária nos permite expandir as oficinas, organizar mais passeios e fornecer café da tarde comunitário saudável.",
       buttonText: "Quero Doar ou Apoiar"
     }
   },
@@ -72,14 +72,14 @@ export const siteData = {
   testimonials: {
     tag: "O QUE DIZEM NOSSOS IDOSOS",
     title: "Vidas Transformadas pelo Carinho",
-    subtitle: "Conheça histórias reais de quem encontrou uma nova família na Associação Melhor Idade.",
+    subtitle: "Conheça histórias reais de quem encontrou uma nova família na Associação Qualidade de Vida.",
     items: [
       {
         id: "test-1",
         name: "Dona Alzira, 78 anos",
         role: "Fundadora e Associada",
         avatar: "https://images.unsplash.com/photo-1554151228-14d9def656e4?q=80&w=400&auto=format&fit=crop",
-        text: "Quando vim para a associação pela primeira vez, estava muito sozinha depois que meu marido se foi. Aqui encontrei não só amigas, mas uma família que me abraça todos os dias. O forró de sexta-feira me faz sentir viva de novo — danço, rio e esqueço as dores. A Melhor Idade me devolveu a vontade de sorrir."
+        text: "Quando vim para a associação pela primeira vez, estava muito sozinha depois que meu marido se foi. Aqui encontrei não só amigas, mas uma família que me abraça todos os dias. O forró de sexta-feira me faz sentir viva de novo — danço, rio e esqueço as dores. A Associação Qualidade de Vida me devolveu a vontade de sorrir."
       },
       {
         id: "test-2",

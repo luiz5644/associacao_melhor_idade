@@ -156,7 +156,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
           <X size={20} />
         </button>
         <div className="modal-header">
-          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#0F2A66', marginBottom:6 }}>
             <Images size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Álbum de Lembranças</span>
           </div>
           <h3 className="modal-title">{item ? 'Editar Lembrança' : 'Nova Lembrança'}</h3>
@@ -194,7 +194,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
           </div>
 
           {/* ─── Seção de Fotos (Apenas Upload de Arquivos) ──────────────── */}
-          <div style={{ background:'#F5F9F8', borderRadius:14, padding:'20px', border:'1px solid #DCE7E5', marginBottom:18 }}>
+          <div style={{ background:'#F7F9FB', borderRadius:14, padding:'20px', border:'1px solid #E2E8F0', marginBottom:18 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <label className="form-label" style={{ margin:0 }}>
                 <Camera size={14} style={{ verticalAlign:'middle', marginRight:5 }} />
@@ -219,17 +219,17 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
               onClick={() => fileRef.current?.click()}
               data-field="photos"
               style={{
-                border:'2px dashed #B0CDD6', borderRadius:10, padding:'22px 20px', textAlign:'center',
-                cursor:'pointer', background:'#EAF4F6', transition:'all 0.2s', marginBottom:14 }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor='#2A5C66'; e.currentTarget.style.background='#E2EFF2'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor='#B0CDD6'; e.currentTarget.style.background='#EAF4F6'; }}
+                border:'2px dashed #0088FF', borderRadius:10, padding:'22px 20px', textAlign:'center',
+                cursor:'pointer', background:'#EBF3FC', transition:'all 0.2s', marginBottom:14 }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor='#0F2A66'; e.currentTarget.style.background='#DCEAFB'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor='#0088FF'; e.currentTarget.style.background='#EBF3FC'; }}
             >
               <input ref={fileRef} type="file" accept="image/*" multiple style={{ display:'none' }} onChange={handleFilesChange} />
-              <Upload size={26} color="#2A5C66" style={{ marginBottom:6 }} />
-              <p style={{ fontSize:'0.9rem', color:'#2A5C66', fontWeight:700 }}>
+              <Upload size={26} color="#0F2A66" style={{ marginBottom:6 }} />
+              <p style={{ fontSize:'0.9rem', color:'#0F2A66', fontWeight:700 }}>
                 {uploading ? 'Carregando fotos...' : 'Clique ou arraste para selecionar fotos'}
               </p>
-              <p style={{ fontSize:'0.76rem', color:'#6E6E6E', marginTop:4 }}>
+              <p style={{ fontSize:'0.76rem', color:'#475569', marginTop:4 }}>
                 PNG, JPG, WEBP até 5MB cada • Selecione várias fotos de uma vez
               </p>
             </div>
@@ -240,16 +240,16 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(110px, 1fr))', gap:10 }}>
                 {form.photos.map((photoSrc, idx) => (
                   <div key={idx} style={{ position:'relative', borderRadius:10, overflow:'hidden', aspectRatio:'1',
-                    border: idx === 0 ? '3px solid #2A5C66' : '2px solid #DCE7E5',
-                    boxShadow: idx === 0 ? '0 0 0 2px #EAF4F6' : 'none' }}>
+                    border: idx === 0 ? '3px solid #0F2A66' : '2px solid #E2E8F0',
+                    boxShadow: idx === 0 ? '0 0 0 2px #EBF3FC' : 'none' }}>
                     <img src={photoSrc} alt={`Foto ${idx + 1}`}
                       style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
-                      onError={e => { e.target.style.background='#EEE'; e.target.style.display='none'; }} />
+                      onError={e => { e.target.style.background='#E2E8F0'; e.target.style.display='none'; }} />
 
                     {/* Badge de Capa */}
                     {idx === 0 && (
                       <div style={{ position:'absolute', bottom:0, left:0, right:0,
-                        background:'rgba(42,92,102,0.85)', color:'#fff', fontSize:'0.62rem',
+                        background:'rgba(15, 42, 102, 0.85)', color:'#fff', fontSize:'0.62rem',
                         fontWeight:800, textAlign:'center', padding:'3px 4px', letterSpacing:'0.04em' }}>
                         ★ CAPA
                       </div>
@@ -267,7 +267,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
                       {/* Definir como capa (apenas se não for o índice 0) */}
                       {idx > 0 && (
                         <button type="button"
-                          style={{ width:22, height:22, background:'rgba(42,92,102,0.85)', border:'none', borderRadius:'50%',
+                          style={{ width:22, height:22, background:'rgba(15, 42, 102, 0.85)', border:'none', borderRadius:'50%',
                             display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'#fff', fontSize:'10px', fontWeight:700 }}
                           onClick={() => handleSetCover(idx)} title="Definir como capa">
                           ★
@@ -357,7 +357,7 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
           <X size={20} />
         </button>
         <div className="modal-header">
-          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#0F2A66', marginBottom:6 }}>
             <CalendarDays size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Eventos</span>
           </div>
           <h3 className="modal-title">{item ? 'Editar Evento' : 'Novo Evento'}</h3>
@@ -408,17 +408,17 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
             <FieldError>{errors.desc}</FieldError>
           </div>
 
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'12px 16px', background:'#F5F9F8', borderRadius:10, border:'1px solid #DCE7E5', cursor:'pointer' }}
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'12px 16px', background:'#F7F9FB', borderRadius:10, border:'1px solid #E2E8F0', cursor:'pointer' }}
             onClick={() => setField('isHighlight', !form.isHighlight)}>
-            <div style={{ width:20, height:20, borderRadius:4, border:`2px solid ${form.isHighlight ? '#2A5C66' : '#B0BEB8'}`,
-              background: form.isHighlight ? '#2A5C66' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}>
+            <div style={{ width:20, height:20, borderRadius:4, border:`2px solid ${form.isHighlight ? '#0F2A66' : '#475569'}`,
+              background: form.isHighlight ? '#0F2A66' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}>
               {form.isHighlight && <CheckCircle size={13} color="#fff" />}
             </div>
-            <Star size={15} color={form.isHighlight ? '#E8A87C' : '#B0BEB8'} fill={form.isHighlight ? '#E8A87C' : 'none'} />
-            <span style={{ fontSize:'0.9rem', fontWeight:600, color: form.isHighlight ? '#1B2527' : '#6E6E6E' }}>
+            <Star size={15} color={form.isHighlight ? '#E6007E' : '#475569'} fill={form.isHighlight ? '#E6007E' : 'none'} />
+            <span style={{ fontSize:'0.9rem', fontWeight:600, color: form.isHighlight ? '#0B192C' : '#475569' }}>
               Marcar como Destaque do Mês
             </span>
-            <span style={{ fontSize:'0.78rem', color:'#8E9696', marginLeft:'auto' }}>Aparece na sidebar do calendário</span>
+            <span style={{ fontSize:'0.78rem', color:'#475569', marginLeft:'auto' }}>Aparece na sidebar do calendário</span>
           </div>
 
           <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
@@ -529,7 +529,7 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
           <X size={20} />
         </button>
         <div className="modal-header">
-          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#0F2A66', marginBottom:6 }}>
             <Building2 size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Patrocinadores & Parceiros</span>
           </div>
           <h3 className="modal-title">{item ? 'Editar Patrocinador' : 'Novo Patrocinador'}</h3>
@@ -584,16 +584,16 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
                 onClick={() => fileRef.current?.click()}
                 data-field="logo"
                 style={{
-                  border:'2px dashed #B0CDD6', borderRadius:10, padding:'22px 20px', textAlign:'center',
-                  cursor:'pointer', background:'#EAF4F6', transition:'all 0.2s', marginBottom:10 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor='#2A5C66'; e.currentTarget.style.background='#E2EFF2'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor='#B0CDD6'; e.currentTarget.style.background='#EAF4F6'; }}
+                  border:'2px dashed #0088FF', borderRadius:10, padding:'22px 20px', textAlign:'center',
+                  cursor:'pointer', background:'#EBF3FC', transition:'all 0.2s', marginBottom:10 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor='#0F2A66'; e.currentTarget.style.background='#DCEAFB'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor='#0088FF'; e.currentTarget.style.background='#EBF3FC'; }}
               >
-                <Upload size={26} color="#2A5C66" style={{ marginBottom:6 }} />
-                <p style={{ fontSize:'0.9rem', color:'#2A5C66', fontWeight:700 }}>
+                <Upload size={26} color="#0F2A66" style={{ marginBottom:6 }} />
+                <p style={{ fontSize:'0.9rem', color:'#0F2A66', fontWeight:700 }}>
                   {uploading ? 'Enviando logo...' : 'Escolher arquivo de imagem do computador'}
                 </p>
-                <p style={{ fontSize:'0.76rem', color:'#6E6E6E', marginTop:4 }}>
+                <p style={{ fontSize:'0.76rem', color:'#475569', marginTop:4 }}>
                   PNG, JPG, WEBP até 5MB
                 </p>
               </div>
@@ -601,8 +601,8 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
 
             {/* Preview do Logo */}
             {form.logo && (
-              <div style={{ marginTop:12, padding:14, background:'#FAF7F5', border:'1px solid #DCE7E5', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
-                <div style={{ width:70, height:70, background:'#fff', borderRadius:8, border:'1px solid #E5E7EB', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', padding:6 }}>
+              <div style={{ marginTop:12, padding:14, background:'#F7F9FB', border:'1px solid #E2E8F0', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
+                <div style={{ width:70, height:70, background:'#fff', borderRadius:8, border:'1px solid #E2E8F0', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', padding:6 }}>
                   <img
                     src={resolveImageUrl(form.logo)}
                     alt="Pré-visualização do logo"
@@ -641,14 +641,14 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
           </div>
 
           <div
-            style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'10px 14px', background:'#F5F9F8', borderRadius:10, border:'1px solid #DCE7E5', cursor:'pointer' }}
+            style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'10px 14px', background:'#F7F9FB', borderRadius:10, border:'1px solid #E2E8F0', cursor:'pointer' }}
             onClick={() => setField('active', !form.active)}
           >
-            <div style={{ width:20, height:20, borderRadius:4, border:`2px solid ${form.active ? '#2A5C66' : '#B0BEB8'}`,
-              background: form.active ? '#2A5C66' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}>
+            <div style={{ width:20, height:20, borderRadius:4, border:`2px solid ${form.active ? '#0F2A66' : '#475569'}`,
+              background: form.active ? '#0F2A66' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}>
               {form.active && <CheckCircle size={13} color="#fff" />}
             </div>
-            <span style={{ fontSize:'0.88rem', fontWeight:600, color: form.active ? '#1B2527' : '#6E6E6E' }}>
+            <span style={{ fontSize:'0.88rem', fontWeight:600, color: form.active ? '#0B192C' : '#475569' }}>
               Ativo (visível no carrossel da página inicial)
             </span>
           </div>
@@ -670,10 +670,10 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
 function TabOverview({ setActiveTab }) {
   const { galleryItems, calendarEvents, sponsors } = useData();
   const stats = [
-    { icon: <Users size={22} color="#2A5C66" />, value: 248, label: 'Associados Ativos', bg: '#EAF4F6', border: '#D2ECF0' },
-    { icon: <CalendarCheck size={22} color="#3D6058" />, value: calendarEvents.length, label: 'Eventos Agendados', bg: '#F0F9F5', border: '#CBE8DF' },
-    { icon: <Images size={22} color="#7B5EA7" />, value: galleryItems.length, label: 'Lembranças no Álbum', bg: '#F5F0FB', border: '#E2D4F5' },
-    { icon: <Building2 size={22} color="#B8621A" />, value: (sponsors || []).length, label: 'Patrocinadores & Parceiros', bg: '#FDF6F0', border: '#F8DFC2' }
+    { icon: <Users size={22} color="#0F2A66" />, value: 248, label: 'Associados Ativos', bg: '#EBF3FC', border: '#C7DDF7' },
+    { icon: <CalendarCheck size={22} color="#0088FF" />, value: calendarEvents.length, label: 'Eventos Agendados', bg: '#EBF3FC', border: '#C7DDF7' },
+    { icon: <Images size={22} color="#0066CC" />, value: galleryItems.length, label: 'Lembranças no Álbum', bg: '#EBF3FC', border: '#C7DDF7' },
+    { icon: <Building2 size={22} color="#C9006E" />, value: (sponsors || []).length, label: 'Patrocinadores & Parceiros', bg: '#FDF2F8', border: '#FBD9EC' }
   ];
 
   const upcomingEvents = [...calendarEvents]
@@ -683,7 +683,7 @@ function TabOverview({ setActiveTab }) {
     return (
       <div>
         <h2 className="admin-section-title">Visão Geral</h2>
-        <p style={{ color:'var(--text-subtle)', marginBottom:28, fontSize:'0.95rem' }}>Resumo das ações da Associação Melhor Idade.</p>
+        <p style={{ color:'var(--text-subtle)', marginBottom:28, fontSize:'0.95rem' }}>Resumo das ações da Associação Qualidade de Vida.</p>
 
       {/* Stats */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:32, width:'100%' }}>
@@ -698,10 +698,10 @@ function TabOverview({ setActiveTab }) {
 
       {/* Atalhos rápidos */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(260px, 1fr))', gap:20, marginBottom:32, width:'100%' }}>
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24, minWidth:0 }}>
+        <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:16, padding:24, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:38, height:38, background:'#F5F0FB', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <Images size={20} color="#7B5EA7" />
+            <div style={{ width:38, height:38, background:'#EBF3FC', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <Images size={20} color="#0066CC" />
             </div>
             <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Álbum de Lembranças</h3>
           </div>
@@ -713,10 +713,10 @@ function TabOverview({ setActiveTab }) {
           </button>
         </div>
 
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24, minWidth:0 }}>
+        <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:16, padding:24, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:38, height:38, background:'#EAF4F6', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <CalendarDays size={20} color="#2A5C66" />
+            <div style={{ width:38, height:38, background:'#EBF3FC', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <CalendarDays size={20} color="#0F2A66" />
             </div>
             <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Eventos</h3>
           </div>
@@ -728,10 +728,10 @@ function TabOverview({ setActiveTab }) {
           </button>
         </div>
 
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24, minWidth:0 }}>
+        <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:16, padding:24, minWidth:0 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:38, height:38, background:'#FDF6F0', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <Building2 size={20} color="#B8621A" />
+            <div style={{ width:38, height:38, background:'#FDF2F8', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <Building2 size={20} color="#C9006E" />
             </div>
             <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Patrocinadores & Apoio</h3>
           </div>
@@ -746,12 +746,12 @@ function TabOverview({ setActiveTab }) {
 
       {/* Próximas ações */}
       {upcomingEvents.length > 0 && (
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24, width:'100%' }}>
+        <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:16, padding:24, width:'100%' }}>
           <h3 style={{ fontFamily:'var(--font-sans)', fontSize:'1.1rem', marginBottom:16 }}>Próximas Ações Cadastradas</h3>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {upcomingEvents.map(ev => (
-              <div key={ev.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'10px 14px', background:'#F5F9F8', borderRadius:10, flexWrap:'wrap' }}>
-                              <div style={{ textAlign:'center', minWidth:44, background:'#2A5C66', borderRadius:8, padding:'6px 4px', color:'#fff', flexShrink:0 }}>
+              <div key={ev.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'10px 14px', background:'#F7F9FB', borderRadius:10, flexWrap:'wrap' }}>
+                              <div style={{ textAlign:'center', minWidth:44, background:'#0F2A66', borderRadius:8, padding:'6px 4px', color:'#fff', flexShrink:0 }}>
                                 <div style={{ fontSize:'1.1rem', fontWeight:800, lineHeight:1 }}>{ev.day}</div>
                                 <div style={{ fontSize:'0.65rem', textTransform:'uppercase', letterSpacing:'0.05em' }}>{MONTHS[ev.month]?.slice(0,3)}</div>
                               </div>
@@ -806,7 +806,7 @@ function TabGallery() {
         {/* Busca */}
         <div style={{ display:'flex', gap:12, marginBottom:22, flexWrap:'wrap' }}>
           <div style={{ position:'relative', flex:'1 1 220px' }}>
-            <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
+            <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#475569' }} />
             <input className="form-input" style={{ paddingLeft:36 }} type="text"
               placeholder="Buscar por título ou descrição..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
@@ -821,10 +821,10 @@ function TabGallery() {
       ) : (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:18 }}>
           {filtered.map(item => (
-            <div key={item.id} style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:14, overflow:'hidden', boxShadow:'0 2px 8px rgba(27,37,39,0.04)', transition:'box-shadow 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow='0 8px 24px rgba(27,37,39,0.10)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow='0 2px 8px rgba(27,37,39,0.04)'}>
-              <div style={{ height:160, overflow:'hidden', background:'#EEE', position:'relative' }}>
+            <div key={item.id} style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:14, overflow:'hidden', boxShadow:'0 2px 8px rgba(11, 25, 44, 0.04)', transition:'box-shadow 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow='0 8px 24px rgba(11, 25, 44, 0.10)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow='0 2px 8px rgba(11, 25, 44, 0.04)'}>
+              <div style={{ height:160, overflow:'hidden', background:'#E2E8F0', position:'relative' }}>
                 <img src={item.image} alt={item.title}
                   style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.4s' }}
                   onMouseEnter={e => e.currentTarget.style.transform='scale(1.05)'}
@@ -912,7 +912,7 @@ function TabCalendar() {
         {/* Busca & Filtro de Mês */}
         <div style={{ display:'flex', gap:12, marginBottom:22, flexWrap:'wrap' }}>
           <div style={{ position:'relative', flex:'1 1 200px' }}>
-            <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
+            <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#475569' }} />
             <input className="form-input" style={{ paddingLeft:36 }} type="text"
               placeholder="Buscar ação..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
@@ -931,10 +931,10 @@ function TabCalendar() {
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
           {filtered.map(ev => (
-            <div key={ev.id} style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:14, padding:'16px 20px',
-              display:'flex', gap:16, alignItems:'flex-start', boxShadow:'0 1px 4px rgba(27,37,39,0.04)', transition:'box-shadow 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(27,37,39,0.08)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(27,37,39,0.04)'}>
+            <div key={ev.id} style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:14, padding:'16px 20px',
+              display:'flex', gap:16, alignItems:'flex-start', boxShadow:'0 1px 4px rgba(11, 25, 44, 0.04)', transition:'box-shadow 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(11, 25, 44, 0.08)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(11, 25, 44, 0.04)'}>
               {/* Data */}
               <div style={{ minWidth:52, textAlign:'center', background:'var(--primary)', color:'#fff', borderRadius:10, padding:'8px 6px' }}>
                 <div style={{ fontSize:'1.4rem', fontWeight:800, lineHeight:1 }}>{ev.day}</div>
@@ -1080,7 +1080,7 @@ function ActivityFormModal({ isOpen, item, onSave, onClose }) {
       <div className="modal-card" style={{ maxWidth:620, maxHeight:'90vh', overflowY:'auto' }} onClick={event => event.stopPropagation()}>
         <button className="modal-close-btn" onClick={onClose} aria-label="Fechar"><X size={20} /></button>
         <div className="modal-header">
-          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#0F2A66', marginBottom:6 }}>
             <Activity size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Ações da Associação</span>
           </div>
           <h3 className="modal-title">{item ? 'Editar Ação' : 'Nova Ação'}</h3>
@@ -1117,17 +1117,17 @@ function ActivityFormModal({ isOpen, item, onSave, onClose }) {
             <div
               onClick={() => imageInputRef.current?.click()}
               data-field="image"
-              style={{ border:'2px dashed #BED8D3', borderRadius:10, padding:'20px', textAlign:'center', cursor:'pointer', background:'#F5F9F8', transition:'all 0.2s' }}
-              onMouseEnter={event => { event.currentTarget.style.borderColor='#2A5C66'; event.currentTarget.style.background='#EAF4F6'; }}
-              onMouseLeave={event => { event.currentTarget.style.borderColor='#BED8D3'; event.currentTarget.style.background='#F5F9F8'; }}
+              style={{ border:'2px dashed #0088FF', borderRadius:10, padding:'20px', textAlign:'center', cursor:'pointer', background:'#F7F9FB', transition:'all 0.2s' }}
+              onMouseEnter={event => { event.currentTarget.style.borderColor='#0F2A66'; event.currentTarget.style.background='#EBF3FC'; }}
+              onMouseLeave={event => { event.currentTarget.style.borderColor='#0088FF'; event.currentTarget.style.background='#F7F9FB'; }}
             >
-              <Upload size={22} color="#2A5C66" style={{ marginBottom:6 }} />
-              <p style={{ fontSize:'0.88rem', color:'#2A5C66', fontWeight:700 }}>{uploading ? 'Enviando imagem...' : 'Escolher imagem do computador'}</p>
-              <p style={{ fontSize:'0.76rem', color:'#6E6E6E', marginTop:3 }}>PNG, JPG ou WEBP até 5 MB</p>
+              <Upload size={22} color="#0F2A66" style={{ marginBottom:6 }} />
+              <p style={{ fontSize:'0.88rem', color:'#0F2A66', fontWeight:700 }}>{uploading ? 'Enviando imagem...' : 'Escolher imagem do computador'}</p>
+              <p style={{ fontSize:'0.76rem', color:'#475569', marginTop:3 }}>PNG, JPG ou WEBP até 5 MB</p>
             </div>
             {form.image && (
-              <div style={{ marginTop:12, padding:14, background:'#FAF7F5', border:'1px solid #DCE7E5', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
-                <div style={{ width:110, height:76, background:'#fff', borderRadius:8, border:'1px solid #E5E7EB', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', padding:4 }}>
+              <div style={{ marginTop:12, padding:14, background:'#F7F9FB', border:'1px solid #E2E8F0', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
+                <div style={{ width:110, height:76, background:'#fff', borderRadius:8, border:'1px solid #E2E8F0', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', padding:4 }}>
                   <img src={form.image} alt="Prévia da imagem da ação" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                 </div>
                 <div style={{ flex:1 }}>
@@ -1187,7 +1187,7 @@ function TabActions() {
       </div>
       <div style={{ display:'flex', gap:12, marginBottom:22 }}>
         <div style={{ position:'relative', flex:1 }}>
-          <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
+          <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#475569' }} />
           <input className="form-input" style={{ paddingLeft:36 }} placeholder="Buscar ação..." value={search} onChange={event => setSearch(event.target.value)} />
         </div>
       </div>
@@ -1207,7 +1207,7 @@ function TabActions() {
       ) : (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(270px, 1fr))', gap:18 }}>
           {filtered.map(item => (
-            <article key={item.id} style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:14, padding:20, boxShadow:'0 2px 8px rgba(27,37,39,0.04)' }}>
+            <article key={item.id} style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:14, padding:20, boxShadow:'0 2px 8px rgba(11, 25, 44, 0.04)' }}>
               <h3 style={{ fontSize:'1.05rem', marginBottom:10 }}>{item.title}</h3>
               <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:6 }}>{item.schedule.daysLabel || item.schedule.days}</p>
               <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:6 }}>{item.schedule.time}</p>
@@ -1275,7 +1275,7 @@ function TabSponsors() {
       {/* Filtros e Busca */}
       <div style={{ display:'flex', gap:12, marginBottom:22, flexWrap:'wrap' }}>
         <div style={{ position:'relative', flex:'1 1 220px' }}>
-          <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
+          <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#475569' }} />
           <input
             className="form-input"
             style={{ paddingLeft:36 }}
@@ -1301,17 +1301,17 @@ function TabSponsors() {
               key={sponsor.id}
               style={{
                 background: '#fff',
-                border: '1px solid #DCE7E5',
+                border: '1px solid #E2E8F0',
                 borderRadius: 14,
                 padding: 16,
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                boxShadow: '0 2px 8px rgba(27,37,39,0.04)',
+                boxShadow: '0 2px 8px rgba(11, 25, 44, 0.04)',
                 transition: 'box-shadow 0.2s'
               }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow='0 8px 24px rgba(27,37,39,0.10)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow='0 2px 8px rgba(27,37,39,0.04)'}
+              onMouseEnter={e => e.currentTarget.style.boxShadow='0 8px 24px rgba(11, 25, 44, 0.10)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow='0 2px 8px rgba(11, 25, 44, 0.04)'}
             >
               <div>
                               {/* Header com Badge e Status */}
@@ -1332,9 +1332,9 @@ function TabSponsors() {
                               {/* Logo Frame */}
                 <div style={{
                   height: 100,
-                  background: '#FAF7F5',
+                  background: '#F7F9FB',
                   borderRadius: 10,
-                  border: '1px solid #EAE5E1',
+                  border: '1px solid #E2E8F0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1481,9 +1481,9 @@ function TabTestimonials() {
           {testimonials.map((t) => (
             <div
               key={t.id}
-              style={{ background: '#fff', border: '1px solid #DCE7E5', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(27,37,39,0.04)' }}
+              style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(11, 25, 44, 0.04)' }}
             >
-              <div style={{ height: 150, overflow: 'hidden', background: '#EEE' }}>
+              <div style={{ height: 150, overflow: 'hidden', background: '#E2E8F0' }}>
                 <img
                   src={resolveImageUrl(t.avatar)}
                   alt={`Foto de ${t.name}`}
@@ -1623,7 +1623,7 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
           <X size={20} />
         </button>
         <div className="modal-header">
-          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#0F2A66', marginBottom:6 }}>
             <HeartHandshake size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Depoimentos</span>
           </div>
           <h3 className="modal-title">{item ? 'Editar Depoimento' : 'Novo Depoimento'}</h3>
@@ -1670,27 +1670,27 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
                 onClick={() => fileRef.current?.click()}
                 data-field="avatar"
                 style={{
-                  border:'2px dashed #BED8D3', borderRadius:10, padding:'20px', textAlign:'center',
-                  cursor:'pointer', background:'#F5F9F8', transition:'all 0.2s', marginBottom:8 }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor='#2A5C66'; e.currentTarget.style.background='#EAF4F6'; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor='#BED8D3'; e.currentTarget.style.background='#F5F9F8'; }}
+                  border:'2px dashed #0088FF', borderRadius:10, padding:'20px', textAlign:'center',
+                  cursor:'pointer', background:'#F7F9FB', transition:'all 0.2s', marginBottom:8 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor='#0F2A66'; e.currentTarget.style.background='#EBF3FC'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor='#0088FF'; e.currentTarget.style.background='#F7F9FB'; }}
               >
-                <Upload size={22} color="#2A5C66" style={{ marginBottom:6 }} />
-                <p style={{ fontSize:'0.88rem', color:'#2A5C66', fontWeight:700 }}>
+                <Upload size={22} color="#0F2A66" style={{ marginBottom:6 }} />
+                <p style={{ fontSize:'0.88rem', color:'#0F2A66', fontWeight:700 }}>
                   {uploading ? 'Enviando foto...' : 'Escolher arquivo de imagem do computador'}
                 </p>
-                <p style={{ fontSize:'0.76rem', color:'#6E6E6E', marginTop:3 }}>
+                <p style={{ fontSize:'0.76rem', color:'#475569', marginTop:3 }}>
                   PNG, JPG, WEBP até 5MB
                 </p>
               </div>
             </div>
 
             {form.avatar && (
-              <div style={{ marginTop:12, padding:14, background:'#FAF7F5', border:'1px solid #DCE7E5', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
+              <div style={{ marginTop:12, padding:14, background:'#F7F9FB', border:'1px solid #E2E8F0', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
                 <img
                   src={resolveImageUrl(form.avatar)}
                   alt="Pré-visualização da foto"
-                  style={{ width:60, height:60, objectFit:'cover', borderRadius:'50%', border:'2px solid #2A5C66' }}
+                  style={{ width:60, height:60, objectFit:'cover', borderRadius:'50%', border:'2px solid #0F2A66' }}
                   onError={e => { e.currentTarget.style.display = 'none'; }}
                 />
                 <div style={{ flex:1 }}>
@@ -1746,7 +1746,7 @@ function TabSettings() {
     setForm({
       ...brandInfo,
       ...(brandInfoHasRecord ? {} : (legacyBrandInfo || {})),
-      name: brandInfo.name || 'Melhor Idade',
+      name: brandInfo.name || 'Qualidade de Vida',
       subtitle: brandInfo.subtitle || '',
       mission: brandInfo.mission || '',
       since: brandInfo.since || '',
@@ -1772,9 +1772,9 @@ function TabSettings() {
       <h2 className="admin-section-title">Configurações</h2>
       <p style={{ color:'var(--text-subtle)', marginBottom:28, fontSize:'0.95rem' }}>Informações da Associação.</p>
 
-      <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:28, maxWidth: 640 }}>
+      <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:16, padding:28, maxWidth: 640 }}>
         <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.1rem', marginBottom:20, display:'flex', alignItems:'center', gap:8 }}>
-          <Settings size={18} color="#2A5C66" /> Informações da Associação
+          <Settings size={18} color="#0F2A66" /> Informações da Associação
         </h3>
         <form onSubmit={handleSave} noValidate>
         <div className="form-group">
@@ -1908,8 +1908,8 @@ function TabAdmins({ onNavigateToCreate }) {
       </div>
 
       {admins.length === 0 ? (
-        <div style={{ textAlign:'center', padding:'48px 20px', background:'#fff', border:'1px solid #DCE7E5', borderRadius:14 }}>
-          <UserCheck size={36} color="#8E9696" style={{ margin:'0 auto 12px', display:'block' }} />
+        <div style={{ textAlign:'center', padding:'48px 20px', background:'#fff', border:'1px solid #E2E8F0', borderRadius:14 }}>
+          <UserCheck size={36} color="#475569" style={{ margin:'0 auto 12px', display:'block' }} />
           <h4 style={{ fontWeight:700, fontSize:'1rem', marginBottom:6 }}>Nenhum administrador listado no momento</h4>
           <p style={{ fontSize:'0.85rem', color:'var(--text-subtle)', marginBottom:0 }}>
             {backendConnected ? 'Você pode cadastrar o primeiro administrador da associação clicando no botão acima.' : 'Conecte o backend para carregar os administradores do banco de dados.'}
@@ -1918,9 +1918,9 @@ function TabAdmins({ onNavigateToCreate }) {
       ) : (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:14 }}>
           {admins.map(adm => (
-            <div key={adm.id} style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:14, padding:'18px 20px', boxShadow:'0 1px 4px rgba(27,37,39,0.04)' }}>
+            <div key={adm.id} style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:14, padding:'18px 20px', boxShadow:'0 1px 4px rgba(11, 25, 44, 0.04)' }}>
               <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
-                <div style={{ width:40, height:40, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700 }}>
+                <div style={{ width:40, height:40, background:'linear-gradient(135deg, #0F2A66, #0088FF)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700 }}>
                   {adm.username.slice(0, 2).toUpperCase()}
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
@@ -1929,8 +1929,8 @@ function TabAdmins({ onNavigateToCreate }) {
                   <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>E-mail: {adm.email || 'Não informado'}</div>
                 </div>
               </div>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderTop:'1px solid #F0F4F3', paddingTop:12 }}>
-                <span style={{ fontSize:'0.72rem', background:'#F5F9F8', padding:'3px 8px', borderRadius:6, color:'var(--text-subtle)' }}>ID #{adm.id}</span>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderTop:'1px solid #F0F4F8', paddingTop:12 }}>
+                <span style={{ fontSize:'0.72rem', background:'#F7F9FB', padding:'3px 8px', borderRadius:6, color:'var(--text-subtle)' }}>ID #{adm.id}</span>
                 <div style={{ display:'flex', gap:6 }}>
                   <button className="btn btn-pill" style={{ padding:'5px 12px', fontSize:'0.75rem' }} onClick={() => handleOpenEdit(adm)}>
                     <Pencil size={12} /> Editar
@@ -2179,7 +2179,7 @@ export default function AdminPage({ onClose }) {
                         required
                         autoFocus
                       />
-                      <Mail size={18} color="var(--text-subtle, #6E6E6E)" />
+                      <Mail size={18} color="var(--text-subtle, #475569)" />
                     </div>
                   </div>
 
@@ -2285,7 +2285,7 @@ export default function AdminPage({ onClose }) {
             )}
 
             {(!backendConnected || backendLoading) && (
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-subtle)', marginBottom: 16, background: '#F5F9F8', padding: '10px 14px', borderRadius: 8 }}>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-subtle)', marginBottom: 16, background: '#F7F9FB', padding: '10px 14px', borderRadius: 8 }}>
                 💡 O painel precisa do backend conectado na porta 3000 para autenticar e salvar os dados.
               </p>
             )}
@@ -2309,12 +2309,12 @@ export default function AdminPage({ onClose }) {
       {/* Topbar */}
       <header className="admin-topbar">
               <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
-                <div style={{ width:36, height:36, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <div style={{ width:36, height:36, background:'linear-gradient(135deg, #0F2A66, #0088FF)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                   <Shield size={18} color="#fff" />
                 </div>
                 <div style={{ minWidth:0 }}>
                   <div style={{ fontWeight:700, fontSize:'0.9rem', color:'var(--text-main)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Painel Administrativo</div>
-                  <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Associação Melhor Idade</div>
+                  <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Associação Qualidade de Vida</div>
                 </div>
               </div>
 
@@ -2374,7 +2374,7 @@ export default function AdminPage({ onClose }) {
               </button>
             ))}
           </nav>
-          <div style={{ marginTop:'auto', padding:'16px 12px', borderTop:'1px solid #DCE7E5', width:'100%' }}>
+          <div style={{ marginTop:'auto', padding:'16px 12px', borderTop:'1px solid #E2E8F0', width:'100%' }}>
             <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', lineHeight:1.6, textAlign:'center' }}>
               <strong style={{ display:'block', marginBottom:4 }}>Status da Integração:</strong>
               {backendConnected ? '🟢 Rotas do Backend Ativas (porta 3000)' : '🟠 Modo Armazenamento Local Ativo'}
@@ -2405,9 +2405,15 @@ export default function AdminPage({ onClose }) {
                                                       {/* Header do Drawer */}
                                                       <div className="admin-mobile-drawer-header">
                                                         <div className="admin-mobile-drawer-brand">
-                                                          <div className="admin-mobile-drawer-brand-badge">M</div>
+                                                          <img
+                                                            src="/imgagens/logo.png"
+                                                            alt=""
+                                                            className="admin-mobile-drawer-brand-badge"
+                                                            width="36"
+                                                            height="36"
+                                                          />
                                                           <div className="admin-mobile-drawer-brand-text">
-                                                            <span className="admin-mobile-drawer-brand-title">Melhor Idade</span>
+                                                            <span className="admin-mobile-drawer-brand-title">Qualidade de Vida</span>
                                                             <span className="admin-mobile-drawer-brand-subtitle">PAINEL ADMINISTRATIVO</span>
                                                           </div>
                                                         </div>

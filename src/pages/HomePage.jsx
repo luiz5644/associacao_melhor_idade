@@ -1,44 +1,121 @@
 import React, { useMemo } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Clock, MapPin } from 'lucide-react';
 import { siteData } from '../data/mockData';
 import { useData } from '../context/DataContext';
 
+const HIDDEN_EVENT_STATUSES = new Set(['cancelado', 'cancelada', 'inativo', 'inativa', 'rascunho']);
+const MONTHS_SHORT = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+const MONTHS_LONG = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const WEEKDAYS_LONG = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function pad2(value) {
+  return String(value).padStart(2, '0');
+}
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function parseEventDate(event) {
+  const year = Number(event.year);
+  const month = Number(event.month);
+  const day = Number(event.day);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+  if (month < 0 || month > 11 || day < 1 || day > 31) return null;
+
+  const [hoursPart, minutesPart] = String(event.time || '00:00').split(':');
+  const hours = Number.parseInt(hoursPart, 10);
+  const minutes = Number.parseInt(minutesPart, 10);
+  const date = new Date(
+    year,
+    month,
+    day,
+    Number.isFinite(hours) ? hours : 0,
+    Number.isFinite(minutes) ? minutes : 0,
+    0,
+    0
+  );
+
+  const isValid = !Number.isNaN(date.getTime())
+    && date.getFullYear() === year
+    && date.getMonth() === month
+    && date.getDate() === day;
+  return isValid ? date : null;
+}
+
+function getProximityLabel(dayDiff) {
+  if (dayDiff === 0) return 'Hoje';
+  if (dayDiff === 1) return 'Amanhã';
+  return `Em ${dayDiff} dias`;
+}
+
 export default function HomePage({ onNavigate, onSelectPhoto }) {
   const { home } = siteData;
-  const { calendarEvents, galleryItems, backendConnected, backendLoading } = useData();
+  const {
+    calendarEvents,
+    calendarEventsLoading,
+    calendarEventsError,
+    galleryItems,
+    backendConnected,
+    backendLoading,
+    checkBackendConnection
+  } = useData();
   const upcomingEvents = useMemo(() => {
-    if (!backendConnected || backendLoading) return [];
-
     const now = new Date();
-    const events = calendarEvents
-      .filter(event => event.apiId && event.status === 'ativo')
-      .map(event => ({
-        event,
-        date: new Date(
-          Number(event.year),
-          Number(event.month),
-          Number(event.day),
-          ...String(event.time || '00:00').split(':').map(Number)
-        )
-      }))
-      .filter(({ date }) => !Number.isNaN(date.getTime()) && date >= now)
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
+    const todayStart = startOfDay(now);
 
-    const highlighted = events.filter(({ event }) => event.isHighlight === true);
-    const regular = events.filter(({ event }) => event.isHighlight !== true);
-    const selected = [
-      ...highlighted.slice(0, 3),
-      ...regular.slice(0, Math.max(0, 3 - highlighted.length))
-    ].slice(0, 3);
-    const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    return calendarEvents
+      .filter(event => {
+        if (event.apiId == null) return false;
+        const status = String(event.status || 'ativo').toLowerCase();
+        return !HIDDEN_EVENT_STATUSES.has(status);
+      })
+      .map(event => ({ event, date: parseEventDate(event) }))
+      .filter(({ date }) => date && date >= now)
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .slice(0, 3)
+      .map(({ event, date }) => {
+        const dayDiff = Math.round((startOfDay(date) - todayStart) / MS_PER_DAY);
+        const proximityLabel = getProximityLabel(dayDiff);
+        const timeValue = String(event.time || '00:00').substring(0, 5);
+        const timeLabel = timeValue.replace(':', 'h');
+        const isoDate = `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+        const weekday = WEEKDAYS_LONG[date.getDay()];
+        const location = event.hasLocation === false ? '' : event.location?.trim();
+        const title = event.title?.trim() || 'Encontro da associação';
+        const description = event.desc?.trim();
+        const ariaLabel = `Ver "${title}" no calendário, ${weekday.toLowerCase()}, ${date.getDate()} de ${MONTHS_LONG[date.getMonth()]}, ${timeLabel}, ${proximityLabel.toLowerCase()}${location ? `, ${location}` : ''}`;
 
-    return selected.map(({ event, date }) => ({
-      id: event.id,
-      day: `${weekdays[date.getDay()]}, ${event.time}`,
-      title: event.title,
-      description: event.desc
-    }));
-  }, [calendarEvents, backendConnected, backendLoading]);
+        return {
+          id: event.id ?? event.apiId,
+          title,
+          description,
+          location,
+          dayNumber: date.getDate(),
+          monthShort: MONTHS_SHORT[date.getMonth()],
+          weekday,
+          timeLabel,
+          isoDate,
+          dateTime: `${isoDate}T${timeValue}`,
+          proximityLabel,
+          ariaLabel
+        };
+      });
+  }, [calendarEvents]);
+
+  const eventsLoading = backendLoading || calendarEventsLoading;
+  const eventsError = calendarEventsError;
+
+  const handleCalendarClick = (event) => {
+    event.preventDefault();
+    onNavigate('calendar');
+  };
+
+  const handleEventClick = (event, isoDate) => {
+    event.preventDefault();
+    onNavigate('calendar', { date: isoDate });
+  };
   const recentMomentItems = useMemo(() => {
     if (!backendConnected || backendLoading) return [];
 
@@ -71,33 +148,101 @@ export default function HomePage({ onNavigate, onSelectPhoto }) {
       </section>
 
       {/* 2. PRÓXIMOS ENCONTROS */}
-      <section className="upcoming-section">
+      <section className="upcoming-section" aria-labelledby="upcoming-title" aria-busy={eventsLoading}>
         <div className="container">
           <div className="page-header" style={{ padding: '0 0 28px' }}>
             <span className="section-tag">{home.upcoming.tag}</span>
-            <h2 className="page-title">{home.upcoming.title}</h2>
+            <h2 id="upcoming-title" className="page-title">{home.upcoming.title}</h2>
             <p className="page-subtitle">{home.upcoming.subtitle}</p>
           </div>
 
-          <div className="cards-grid-3">
-            {upcomingEvents.length === 0 ? (
-              <p>Nenhuma ação programada no momento.</p>
-            ) : upcomingEvents.map((item) => (
-              <div 
-                key={item.id} 
-                className="upcoming-card"
-                onClick={() => onNavigate('calendar')}
-                style={{ cursor: 'pointer' }}
-                title="Ver no calendário"
+          {eventsLoading && (
+            <div className="upcoming-feedback" role="status" aria-live="polite">
+              <p className="upcoming-feedback-title">Carregando encontros...</p>
+              <p>Aguarde um instante enquanto buscamos a programação.</p>
+            </div>
+          )}
+
+          {!eventsLoading && eventsError && (
+            <div className="upcoming-feedback upcoming-feedback-error" role="alert">
+              <p className="upcoming-feedback-title">Erro ao buscar encontros</p>
+              <p>{eventsError}</p>
+              <button
+                type="button"
+                className="upcoming-retry"
+                onClick={() => checkBackendConnection(false)}
               >
-                <div className="upcoming-header">
-                                  <span className="upcoming-day">{item.day}</span>
-                                </div>
-                <h3 className="upcoming-title">{item.title}</h3>
-                <p className="upcoming-desc">{item.description}</p>
+                Tentar novamente
+              </button>
+            </div>
+          )}
+
+          {!eventsLoading && !eventsError && upcomingEvents.length === 0 && (
+            <div className="upcoming-feedback">
+              <p className="upcoming-feedback-title">Nenhuma ação programada no momento.</p>
+              <p>Quando a associação cadastrar um novo encontro, ele aparecerá aqui.</p>
+              <a className="upcoming-all-link" href="#calendario" onClick={handleCalendarClick}>
+                Ver calendário completo
+                <ArrowRight size={20} aria-hidden="true" />
+              </a>
+            </div>
+          )}
+
+          {!eventsLoading && !eventsError && upcomingEvents.length > 0 && (
+            <>
+              <ul className="upcoming-grid">
+                {upcomingEvents.map((item) => (
+                  <li key={item.id} className="upcoming-item">
+                    <a
+                      className="upcoming-card"
+                      href={`#calendario?data=${item.isoDate}`}
+                      onClick={(event) => handleEventClick(event, item.isoDate)}
+                      aria-label={item.ariaLabel}
+                    >
+                      <header className="upcoming-card-top">
+                        <time className="upcoming-date" dateTime={item.isoDate}>
+                          <span className="upcoming-date-day">{item.dayNumber}</span>
+                          <span className="upcoming-date-month">{item.monthShort}</span>
+                        </time>
+                        <div className="upcoming-date-meta">
+                          <span className="upcoming-weekday">{item.weekday}</span>
+                          <span className="upcoming-proximity">{item.proximityLabel}</span>
+                        </div>
+                      </header>
+
+                      <p className="upcoming-time">
+                        <Clock size={20} aria-hidden="true" />
+                        <time dateTime={item.dateTime}>{item.timeLabel}</time>
+                      </p>
+
+                      <h3 className="upcoming-title">{item.title}</h3>
+
+                      {item.location && (
+                        <p className="upcoming-location">
+                          <MapPin size={20} aria-hidden="true" />
+                          <span>{item.location}</span>
+                        </p>
+                      )}
+
+                      {item.description && <p className="upcoming-desc">{item.description}</p>}
+
+                      <span className="upcoming-card-footer">
+                        Ver no calendário
+                        <ArrowRight size={20} aria-hidden="true" />
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="upcoming-actions">
+                <a className="upcoming-all-link" href="#calendario" onClick={handleCalendarClick}>
+                  Ver calendário completo
+                  <ArrowRight size={20} aria-hidden="true" />
+                </a>
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
       </section>
 

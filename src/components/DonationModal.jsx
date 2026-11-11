@@ -50,8 +50,8 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
   const whatsappPhone = cleanPhone.startsWith('55') && cleanPhone.length >= 12 ? cleanPhone : `55${cleanPhone}`;
   const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(
     mode === 'sponsor'
-      ? `Olá! Tenho interesse em patrocinar a Associação Melhor Idade com a empresa ${companyName || ''}.`
-      : `Olá! Acabei de fazer uma doação via PIX para a Associação Melhor Idade e gostaria de enviar o comprovante.`
+      ? `Olá! Tenho interesse em patrocinar a Associação Qualidade de Vida com a empresa ${companyName || ''}.`
+      : `Olá! Acabei de fazer uma doação via PIX para a Associação Qualidade de Vida e gostaria de enviar o comprovante.`
   )}`;
 
   const isSponsorMode = mode === 'sponsor';
@@ -67,20 +67,20 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
         <div className="modal-header">
           {isSponsorMode ? (
             <>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#B8621A', marginBottom: '8px' }}>
-                <Building2 size={20} color="#B8621A" />
-                <span style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', color: '#B8621A' }}>Parceria & Patrocínio</span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#C9006E', marginBottom: '8px' }}>
+                <Building2 size={20} color="#C9006E" />
+                <span style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', color: '#C9006E' }}>Parceria & Patrocínio</span>
               </div>
-              <h3 className="modal-title">Sua Empresa Apoiando a Melhor Idade</h3>
+              <h3 className="modal-title">Sua Empresa Apoiando a Qualidade de Vida</h3>
               <p className="modal-subtitle">
                 Faça sua marca aparecer com destaque no carrossel da página inicial e apoie diretamente as oficinas, refeições e passeios dos idosos.
               </p>
             </>
           ) : (
             <>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#2A5C66', marginBottom: '8px' }}>
-                <Heart size={20} fill="#E8A87C" color="#E8A87C" />
-                <span style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', color: '#2A5C66' }}>Doação Comunitária</span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#0F2A66', marginBottom: '8px' }}>
+                <Heart size={20} fill="#E6007E" color="#E6007E" />
+                <span style={{ fontWeight: 700, fontSize: '0.85rem', textTransform: 'uppercase', color: '#0F2A66' }}>Doação Comunitária</span>
               </div>
               <h3 className="modal-title">Ajude-nos a Manter essa Chama Acesa</h3>
               <p className="modal-subtitle">
@@ -105,9 +105,9 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
                     type="button"
                     onClick={() => setSelectedTier(tier.value)}
                     style={{
-                      background: selectedTier === tier.value ? 'var(--primary)' : '#FAF7F5',
+                      background: selectedTier === tier.value ? 'var(--primary)' : '#F7F9FB',
                       color: selectedTier === tier.value ? '#FFFFFF' : 'var(--text-main)',
-                      border: `2px solid ${selectedTier === tier.value ? 'var(--primary)' : '#EAE5E1'}`,
+                      border: `2px solid ${selectedTier === tier.value ? 'var(--primary)' : '#E2E8F0'}`,
                       borderRadius: 12,
                       padding: '12px 8px',
                       cursor: 'pointer',
@@ -126,9 +126,9 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
 
             {/* Box PIX */}
             <div className="pix-box">
-              <QrCode size={44} color="#2A5C66" style={{ margin: '0 auto 8px' }} />
+              <QrCode size={44} color="#0F2A66" style={{ margin: '0 auto 8px' }} />
               <h4 style={{ fontSize: '1.05rem', marginBottom: '4px' }}>Chave PIX Oficial (E-mail)</h4>
-              <p style={{ fontSize: '0.83rem', color: '#5C534E', marginBottom: 12 }}>
+              <p style={{ fontSize: '0.83rem', color: '#475569', marginBottom: 12 }}>
                 Abra o aplicativo do seu banco, escolha PIX e transfira qualquer valor com amor:
               </p>
 
@@ -140,7 +140,7 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
                   aria-disabled={!brandInfo.pixKey}
                   title={!brandInfo.pixKey ? 'Chave PIX ainda não cadastrada.' : undefined}
                   style={{
-                    background: copied ? '#3D6058' : '#2A5C66',
+                    background: copied ? '#065F46' : '#0F2A66',
                     color: '#FFF',
                     border: 'none',
                     borderRadius: '6px',
@@ -161,8 +161,8 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
             </div>
 
             <div style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, background: '#FAF7F5', padding: '12px 14px', borderRadius: '10px', fontSize: '0.8rem', color: '#6A5F59', border: '1px solid #EAE5E1' }}>
-                <strong>Associação Comunitária Melhor Idade</strong><br />
+              <div style={{ flex: 1, background: '#F7F9FB', padding: '12px 14px', borderRadius: '10px', fontSize: '0.8rem', color: '#475569', border: '1px solid #E2E8F0' }}>
+                <strong>Associação Comunitária Qualidade de Vida</strong><br />
                 CNPJ: 12.345.678/0001-90<br />
                 Banco Comunitário (001) | Agência: 1234 | C/C: 56789-0
               </div>
@@ -200,8 +200,8 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
                 <div style={{ width: '60px', height: '60px', background: '#EAF5EF', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   <Building2 size={30} color="#2D7A50" />
                 </div>
-                <h4 style={{ fontSize: '1.25rem', marginBottom: '8px', color: '#221E1C' }}>Proposta enviada com sucesso!</h4>
-                <p style={{ color: '#5C534E', fontSize: '0.92rem', marginBottom: '20px', lineHeight: 1.6 }}>
+                <h4 style={{ fontSize: '1.25rem', marginBottom: '8px', color: '#0B192C' }}>Proposta enviada com sucesso!</h4>
+                <p style={{ color: '#475569', fontSize: '0.92rem', marginBottom: '20px', lineHeight: 1.6 }}>
                   Agradecemos o interesse da <strong>{companyName}</strong>. Nossa equipe de parcerias entrará em contato para alinhar a inserção do logo no carrossel da página inicial e os benefícios aos idosos.
                 </p>
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
@@ -213,7 +213,7 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
               </div>
             ) : (
               <form onSubmit={handleCompanySubmit}>
-                <div style={{ background: '#FDF6F0', border: '1px solid #F8DFC2', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: '0.85rem', color: '#7C4A1E', lineHeight: 1.5 }}>
+                <div style={{ background: '#FDF2F8', border: '1px solid #FBD9EC', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: '0.85rem', color: '#C9006E', lineHeight: 1.5 }}>
                   ✨ <strong>Sua marca no carrossel:</strong> Empresas e comércios amigos ganham destaque contínuo na página inicial do site, com logo, nome e link!
                 </div>
 

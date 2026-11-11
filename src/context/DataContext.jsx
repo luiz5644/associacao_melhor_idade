@@ -53,6 +53,8 @@ export function DataProvider({ children }) {
   const [galleryItems, setGalleryItems] = useState([]);
 
   const [calendarEvents, setCalendarEvents] = useState([]);
+  const [calendarEventsLoading, setCalendarEventsLoading] = useState(true);
+  const [calendarEventsError, setCalendarEventsError] = useState('');
   const [activities, setActivities] = useState([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [activitiesError, setActivitiesError] = useState('');
@@ -159,6 +161,8 @@ export function DataProvider({ children }) {
   // ── Sincronização inicial com o Backend (se ativo na porta 3000) ────
   const checkAndSyncBackend = useCallback(async (silent = false) => {
     setBackendLoading(true);
+    setCalendarEventsLoading(true);
+    setCalendarEventsError('');
     setActivitiesLoading(true);
     setActivitiesError('');
     try {
@@ -210,9 +214,13 @@ export function DataProvider({ children }) {
         try {
           const events = await eventosApi.list();
           setCalendarEvents(Array.isArray(events) ? events.map(adaptEventoToFrontend) : []);
+          setCalendarEventsError('');
         } catch (err) {
           setCalendarEvents([]);
+          setCalendarEventsError('Não foi possível carregar os próximos encontros. Verifique sua conexão e tente novamente.');
           console.warn('[Backend] Erro ao carregar eventos:', err);
+        } finally {
+          setCalendarEventsLoading(false);
         }
         try {
           const actions = await acoesApi.list();
@@ -232,6 +240,8 @@ export function DataProvider({ children }) {
       } else {
         setGalleryItems([]);
         setCalendarEvents([]);
+        setCalendarEventsLoading(false);
+        setCalendarEventsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
         setActivities([]);
         setActivitiesError('Backend desconectado. Não foi possível carregar as ações.');
         setSponsors([]);
@@ -245,6 +255,8 @@ export function DataProvider({ children }) {
       setBackendConnected(false);
       setGalleryItems([]);
       setCalendarEvents([]);
+      setCalendarEventsLoading(false);
+      setCalendarEventsError('Não foi possível carregar os próximos encontros. Verifique sua conexão e tente novamente.');
       setActivities([]);
       setActivitiesError('Não foi possível conectar ao backend para carregar as ações.');
       setSponsors([]);
@@ -253,6 +265,7 @@ export function DataProvider({ children }) {
         showToast('Backend inacessível. Usando armazenamento local.', 'info');
       }
     } finally {
+      setCalendarEventsLoading(false);
       setActivitiesLoading(false);
       setBackendLoading(false);
     }
@@ -741,7 +754,7 @@ export function DataProvider({ children }) {
       deleteAdmin,
 
       // Entidades
-      galleryItems, calendarEvents, activities, activitiesLoading, activitiesError, brandInfo, legacyBrandInfo, brandInfoHasRecord, sponsors, testimonials, toast,
+      galleryItems, calendarEvents, calendarEventsLoading, calendarEventsError, activities, activitiesLoading, activitiesError, brandInfo, legacyBrandInfo, brandInfoHasRecord, sponsors, testimonials, toast,
       reloadGallery,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
       addCalendarEvent, updateCalendarEvent, deleteCalendarEvent,

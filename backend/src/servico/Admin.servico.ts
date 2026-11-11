@@ -120,7 +120,7 @@ export class adminServico {
     await this.transporter.sendMail({
         from: process.env.SMTP_USER,
         to: email,
-        subject: "Recuperação de senha - Associação Melhor Idade",
+        subject: "Recuperação de senha - Associação Qualidade de Vida",
         text: `Você solicitou a recuperação de sua senha.
 
 Acesse o link abaixo para cadastrar uma nova senha:

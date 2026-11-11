@@ -26,7 +26,7 @@ export default function TestimonialsPage() {
           <span className="section-tag">O QUE DIZEM NOSSOS IDOSOS</span>
           <h1 className="page-title">Vidas Transformadas pelo Carinho</h1>
           <p className="page-subtitle">
-            Conheça histórias reais de quem encontrou uma nova família na {brandInfo?.name || 'Associação Melhor Idade'}.
+            Conheça histórias reais de quem encontrou uma nova família na {brandInfo?.name || 'Associação Qualidade de Vida'}.
           </p>
         </div>
 

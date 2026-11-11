@@ -121,8 +121,8 @@ export default function CadastroAdminPage({ onVoltar }) {
           )}
         </div>
 
-        <div style={{ background: '#fff', border: '1px solid #DCE7E5', borderRadius: 16, padding: '40px 24px', maxWidth: 680, textAlign: 'center', boxShadow: '0 1px 4px rgba(27,37,39,0.04)' }}>
-          <div style={{ width: 64, height: 64, background: 'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#fff', boxShadow: '0 8px 24px rgba(42,92,102,0.2)' }}>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '40px 24px', maxWidth: 680, textAlign: 'center', boxShadow: '0 1px 4px rgba(11, 25, 44, 0.04)' }}>
+          <div style={{ width: 64, height: 64, background: 'linear-gradient(135deg, #0F2A66, #0088FF)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#fff', boxShadow: '0 8px 24px rgba(15, 42, 102, 0.2)' }}>
             <CheckCircle size={32} />
           </div>
           <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.35rem', color: 'var(--text-main)', marginBottom: 8 }}>
@@ -182,9 +182,9 @@ export default function CadastroAdminPage({ onVoltar }) {
       </div>
 
       {/* Card Principal do Formulário */}
-      <div style={{ background: '#fff', border: '1px solid #DCE7E5', borderRadius: 16, padding: 28, maxWidth: 680, boxShadow: '0 1px 4px rgba(27,37,39,0.04)' }}>
+      <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: 28, maxWidth: 680, boxShadow: '0 1px 4px rgba(11, 25, 44, 0.04)' }}>
         <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.15rem', color: 'var(--text-main)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Shield size={18} color="#2A5C66" /> Dados de Acesso do Administrador
+          <Shield size={18} color="#0F2A66" /> Dados de Acesso do Administrador
         </h3>
 
         {status === 'error' && (
@@ -278,7 +278,7 @@ export default function CadastroAdminPage({ onVoltar }) {
           </div>
 
           {/* Bloco de Senha */}
-          <div style={{ borderTop: '1px solid #F0F4F3', margin: '22px 0 18px', paddingTop: 18 }}>
+          <div style={{ borderTop: '1px solid #F0F4F8', margin: '22px 0 18px', paddingTop: 18 }}>
             <h4 style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', color: 'var(--text-main)', marginBottom: 4 }}>
               Senha de Acesso (Opcional)
             </h4>
@@ -355,13 +355,13 @@ export default function CadastroAdminPage({ onVoltar }) {
           </div>
 
           {/* Dica do Sistema */}
-          <div style={{ background: '#F5F9F8', border: '1px solid #DCE7E5', borderRadius: 12, padding: '14px 16px', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ background: '#F7F9FB', border: '1px solid #E2E8F0', borderRadius: 12, padding: '14px 16px', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.83rem', color: 'var(--text-body)' }}>
-              <Shield size={14} color="#2A5C66" />
+              <Shield size={14} color="#0F2A66" />
               <span>O administrador terá acesso a <strong>todas as funcionalidades</strong> do painel administrativo.</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.83rem', color: 'var(--text-body)' }}>
-              <Lock size={14} color="#2A5C66" />
+              <Lock size={14} color="#0F2A66" />
               <span>A autenticação utiliza <strong>JWT</strong> com senhas criptografadas no MySQL.</span>
             </div>
           </div>

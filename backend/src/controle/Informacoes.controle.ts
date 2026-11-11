@@ -25,7 +25,7 @@ export class InformacoesControle {
     try {
       const current = await servico.get();
       const body = dto as Record<string, unknown>;
-      const data = { ...current, ...body, name: body.name || current?.name || "Melhor Idade" };
+      const data = { ...current, ...body, name: body.name || current?.name || "Qualidade de Vida" };
       const info = await servico.update(data);
       return res.status(200).json({ message: "Informações atualizadas com sucesso", data: info });
     } catch (error) {

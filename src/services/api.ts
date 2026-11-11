@@ -437,6 +437,7 @@ export function adaptEventoToFrontend(raw: any): any {
     title: api.titulo || '',
     desc: api.desc || '',
     location: api.local || 'Sede da Associação',
+    hasLocation: Boolean(String(api.local || '').trim()),
     isHighlight: Boolean(api.is_highlight),
     status: api.status || 'ativo',
   };

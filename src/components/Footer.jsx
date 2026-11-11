@@ -11,7 +11,12 @@ export default function Footer({ onNavigatePage, onSelectActivity }) {
         <div className="footer-grid">
           <div className="footer-brand">
             <div className="footer-brand-header">
-              <div className="brand-badge" style={{ width: '38px', height: '38px', fontSize: '1.3rem' }}>M</div>
+              <img
+                src="/imgagens/logo.png"
+                alt=""
+                className="brand-badge"
+                style={{ width: '38px', height: '38px' }}
+              />
               <span className="footer-brand-title">{brandInfo.name}</span>
             </div>
             <p className="footer-desc">{brandInfo.mission}</p>
@@ -50,7 +55,7 @@ export default function Footer({ onNavigatePage, onSelectActivity }) {
         </div>
 
         <div className="footer-bottom">
-          <span>© {currentYear} Associação Melhor Idade. Todos os direitos reservados.</span>
+          <span>© {currentYear} Associação Qualidade de Vida. Todos os direitos reservados.</span>
           <div className="footer-badge-flag">
             <span>Feito com afeto no Brasil 🇧🇷</span>
           </div>

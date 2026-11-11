@@ -118,7 +118,7 @@ function MemoryDetailModal({ memory, onClose }) {
                   <img
                     src={src}
                     alt={`Miniatura ${idx + 1}`}
-                    onError={e => { e.target.style.background = '#DDD'; }}
+                    onError={e => { e.target.style.background = '#E2E8F0'; }}
                   />
                 </button>
               ))}

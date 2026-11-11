@@ -30,7 +30,13 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
           className="brand-link" 
           onClick={(e) => { e.preventDefault(); handleNavClick('home'); }}
         >
-          <div className="brand-badge">M</div>
+          <img
+            src="/imgagens/logo.png"
+            alt=""
+            className="brand-badge"
+            width="44"
+            height="44"
+          />
           <div className="brand-text-wrap">
             <span className="brand-title">{brandInfo.name}</span>
             <span className="brand-subtitle">{brandInfo.subtitle}</span>
@@ -81,7 +87,12 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
         <div className="mobile-nav-content" onClick={(e) => e.stopPropagation()}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <div className="brand-link">
-              <div className="brand-badge" style={{ width: '36px', height: '36px', fontSize: '1.2rem' }}>M</div>
+              <img
+                src="/imgagens/logo.png"
+                alt=""
+                className="brand-badge"
+                style={{ width: '36px', height: '36px' }}
+              />
               <span className="brand-title" style={{ fontSize: '1.1rem' }}>{brandInfo.name}</span>
             </div>
             <button 
@@ -103,7 +114,7 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
                       </button>
                     ))}
 
-          <hr style={{ border: 'none', borderTop: '1px solid #EBE1D8', margin: '6px 0' }} />
+          <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: '6px 0' }} />
 
           <button 
                       className="admin-link-btn"
