@@ -51,6 +51,8 @@ export function DataProvider({ children }) {
   const [admins, setAdmins] = useState([]);
 
   const [galleryItems, setGalleryItems] = useState([]);
+  const [galleryLoading, setGalleryLoading] = useState(true);
+  const [galleryError, setGalleryError] = useState('');
 
   const [calendarEvents, setCalendarEvents] = useState([]);
   const [calendarEventsLoading, setCalendarEventsLoading] = useState(true);
@@ -70,8 +72,12 @@ export function DataProvider({ children }) {
   const [brandInfoHasRecord, setBrandInfoHasRecord] = useState(false);
 
   const [sponsors, setSponsors] = useState([]);
+  const [sponsorsLoading, setSponsorsLoading] = useState(true);
+  const [sponsorsError, setSponsorsError] = useState('');
 
   const [testimonials, setTestimonials] = useState([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
+  const [testimonialsError, setTestimonialsError] = useState('');
 
   const [toast, setToast] = useState(null);
 
@@ -99,8 +105,11 @@ export function DataProvider({ children }) {
   }, []);
 
   const reloadGallery = useCallback(async () => {
+    setGalleryLoading(true);
+    setGalleryError('');
     if (!backendConnected) {
       setGalleryItems([]);
+      setGalleryLoading(false);
       return [];
     }
     try {
@@ -109,7 +118,10 @@ export function DataProvider({ children }) {
       return items;
     } catch (error) {
       setGalleryItems([]);
+      setGalleryError('Não foi possível carregar as lembranças. Verifique sua conexão e tente novamente.');
       throw error;
+    } finally {
+      setGalleryLoading(false);
     }
   }, [backendConnected, loadGalleryFromBackend]);
 
@@ -119,8 +131,11 @@ export function DataProvider({ children }) {
   }, []);
 
   const reloadSponsors = useCallback(async () => {
+    setSponsorsLoading(true);
+    setSponsorsError('');
     if (!backendConnected) {
       setSponsors([]);
+      setSponsorsLoading(false);
       return [];
     }
     try {
@@ -129,7 +144,10 @@ export function DataProvider({ children }) {
       return records;
     } catch (error) {
       setSponsors([]);
+      setSponsorsError('Não foi possível carregar os patrocinadores. Verifique sua conexão e tente novamente.');
       throw error;
+    } finally {
+      setSponsorsLoading(false);
     }
   }, [backendConnected, loadSponsorsFromBackend]);
 
@@ -143,8 +161,11 @@ export function DataProvider({ children }) {
   }, []);
 
   const reloadTestimonials = useCallback(async () => {
+    setTestimonialsLoading(true);
+    setTestimonialsError('');
     if (!backendConnected) {
       setTestimonials([]);
+      setTestimonialsLoading(false);
       return [];
     }
     try {
@@ -154,7 +175,10 @@ export function DataProvider({ children }) {
       return items;
     } catch (error) {
       setTestimonials([]);
+      setTestimonialsError('Não foi possível carregar os depoimentos. Verifique sua conexão e tente novamente.');
       throw error;
+    } finally {
+      setTestimonialsLoading(false);
     }
   }, [backendConnected]);
 
@@ -165,6 +189,12 @@ export function DataProvider({ children }) {
     setCalendarEventsError('');
     setActivitiesLoading(true);
     setActivitiesError('');
+    setGalleryLoading(true);
+    setGalleryError('');
+    setSponsorsLoading(true);
+    setSponsorsError('');
+    setTestimonialsLoading(true);
+    setTestimonialsError('');
     try {
       const isOnline = await checkBackendHealth();
       setBackendConnected(isOnline);
@@ -190,24 +220,36 @@ export function DataProvider({ children }) {
         }
         try {
           setGalleryItems(await loadGalleryFromBackend());
+          setGalleryError('');
         } catch (err) {
           setGalleryItems([]);
+          setGalleryError('Não foi possível carregar as lembranças. Verifique sua conexão e tente novamente.');
           console.warn('[Backend] Erro ao carregar álbuns e fotos:', err);
+        } finally {
+          setGalleryLoading(false);
         }
 
         try {
           setSponsors(await loadSponsorsFromBackend());
+          setSponsorsError('');
         } catch (err) {
           setSponsors([]);
+          setSponsorsError('Não foi possível carregar os patrocinadores. Verifique sua conexão e tente novamente.');
           console.warn('[Backend] Erro ao carregar patrocinadores:', err);
+        } finally {
+          setSponsorsLoading(false);
         }
 
         try {
           const records = await depoimentosApi.list();
           setTestimonials(records.map(adaptDepoimentoToFrontend));
+          setTestimonialsError('');
         } catch (err) {
           setTestimonials([]);
+          setTestimonialsError('Não foi possível carregar os depoimentos. Verifique sua conexão e tente novamente.');
           console.warn('[Backend] Erro ao carregar depoimentos:', err);
+        } finally {
+          setTestimonialsLoading(false);
         }
 
         // Carrega eventos do calendário e ações recorrentes separadamente.
@@ -239,13 +281,16 @@ export function DataProvider({ children }) {
         }
       } else {
         setGalleryItems([]);
+        setGalleryError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
         setCalendarEvents([]);
         setCalendarEventsLoading(false);
         setCalendarEventsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
         setActivities([]);
         setActivitiesError('Backend desconectado. Não foi possível carregar as ações.');
         setSponsors([]);
+        setSponsorsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
         setTestimonials([]);
+        setTestimonialsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
         setBrandInfo(EMPTY_BRAND_INFO);
         if (!silent) {
           showToast('Backend offline. Operando em modo de dados locais.', 'info');
@@ -254,19 +299,25 @@ export function DataProvider({ children }) {
     } catch (err) {
       setBackendConnected(false);
       setGalleryItems([]);
+      setGalleryError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
       setCalendarEvents([]);
       setCalendarEventsLoading(false);
       setCalendarEventsError('Não foi possível carregar os próximos encontros. Verifique sua conexão e tente novamente.');
       setActivities([]);
       setActivitiesError('Não foi possível conectar ao backend para carregar as ações.');
       setSponsors([]);
+      setSponsorsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
       setTestimonials([]);
+      setTestimonialsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
       if (!silent) {
         showToast('Backend inacessível. Usando armazenamento local.', 'info');
       }
     } finally {
       setCalendarEventsLoading(false);
       setActivitiesLoading(false);
+      setGalleryLoading(false);
+      setSponsorsLoading(false);
+      setTestimonialsLoading(false);
       setBackendLoading(false);
     }
   }, [loadGalleryFromBackend, loadSponsorsFromBackend, showToast]);
@@ -438,6 +489,28 @@ export function DataProvider({ children }) {
   };
 
   // ── CRUD: Calendário de Ações (Integrado com Backend) ──────────
+  const reloadCalendarEvents = useCallback(async () => {
+    if (!backendConnected) {
+      setCalendarEvents([]);
+      setCalendarEventsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
+      return [];
+    }
+    setCalendarEventsLoading(true);
+    setCalendarEventsError('');
+    try {
+      const events = await eventosApi.list();
+      const items = Array.isArray(events) ? events.map(adaptEventoToFrontend) : [];
+      setCalendarEvents(items);
+      return items;
+    } catch (error) {
+      setCalendarEvents([]);
+      setCalendarEventsError('Não foi possível carregar os próximos encontros. Verifique sua conexão e tente novamente.');
+      throw error;
+    } finally {
+      setCalendarEventsLoading(false);
+    }
+  }, [backendConnected]);
+
   const addCalendarEvent = async (eventData) => {
     if (!backendConnected) {
       showToast('Backend offline. Não é possível cadastrar ação no banco.', 'warning');
@@ -754,13 +827,20 @@ export function DataProvider({ children }) {
       deleteAdmin,
 
       // Entidades
-      galleryItems, calendarEvents, calendarEventsLoading, calendarEventsError, activities, activitiesLoading, activitiesError, brandInfo, legacyBrandInfo, brandInfoHasRecord, sponsors, testimonials, toast,
+      galleryItems, galleryLoading, galleryError,
+      calendarEvents, calendarEventsLoading, calendarEventsError,
+      activities, activitiesLoading, activitiesError,
+      brandInfo, legacyBrandInfo, brandInfoHasRecord,
+      sponsors, sponsorsLoading, sponsorsError,
+      testimonials, testimonialsLoading, testimonialsError,
+      toast,
       reloadGallery,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
+      reloadCalendarEvents,
       addCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
       reloadActivities, addActivity, updateActivity, deleteActivity,
-      addSponsor, updateSponsor, deleteSponsor,
-      addTestimonial, updateTestimonial, deleteTestimonial,
+      reloadSponsors, addSponsor, updateSponsor, deleteSponsor,
+      reloadTestimonials, addTestimonial, updateTestimonial, deleteTestimonial,
       updateBrandInfo, resetToDefaultData, showToast
     }}>
       {children}

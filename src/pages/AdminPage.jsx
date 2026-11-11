@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Shield, LogOut, LayoutDashboard, Images, CalendarDays, Settings,
   Plus, Pencil, Trash2, X, CheckCircle, Users, CalendarCheck,
-  HeartHandshake, Camera, Upload, Link, Clock, MapPin, Star,
+  HeartHandshake, Camera, Upload, Clock, MapPin, Star,
   ChevronRight, Search, AlertTriangle,
   Building2, ExternalLink, Globe, UserCheck, RefreshCw,
   Menu, LayoutGrid, Image, Calendar, Heart, Activity,
@@ -13,6 +13,18 @@ import { adminApi, uploadApi, resolveImageUrl, toStoredUrl } from '../services/a
 import CadastroAdminPage from './CadastroAdminPage';
 import { validateCPF, validateAdminPassword } from '../utils/adminValidation';
 import DateField, { validateDateValue, MONTHS } from '../components/DateField';
+import {
+  pluralize,
+  capitalize,
+  getUpcomingEvents,
+  relativeDayLabel,
+  parseEventDate,
+  toISODate,
+  formatLongDate,
+  greetingFor,
+  getAttentionItems,
+  daysUntil,
+} from '../utils/adminDashboard';
 
 const FieldError = ({ children }) => children ? <p style={{ color:'#DC2626', fontSize:'0.78rem', marginTop:5 }}>{children}</p> : null;
 const focusFirstError = (errors) => {
@@ -667,114 +679,311 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
 
 
 // ── PAINEL: VISÃO GERAL ──────────────────────────────────────────────────────
-function TabOverview({ setActiveTab }) {
-  const { galleryItems, calendarEvents, sponsors } = useData();
+function OverviewSkeleton({ rows = 2 }) {
+  return (
+    <div className="admin-block-skeleton" aria-hidden="true">
+      {Array.from({ length: rows }).map((_, index) => (
+        <span key={index} className="admin-skeleton admin-skeleton--row" />
+      ))}
+    </div>
+  );
+}
+
+function OverviewError({ message, onRetry }) {
+  return (
+    <div className="admin-block-error" role="alert">
+      <p>{message}</p>
+      <button type="button" className="admin-inline-retry" onClick={onRetry}>
+        <RefreshCw size={15} /> Tentar novamente
+      </button>
+    </div>
+  );
+}
+
+function StatCard({ icon, value, singular, plural, actionLabel, onClick, loading, error, onRetry, tone }) {
+  if (loading) {
+    return (
+      <div className={`admin-stat-card admin-stat-card--${tone} admin-stat-card--skeleton`} aria-hidden="true">
+        <span className="admin-skeleton admin-skeleton--icon" />
+        <span className="admin-skeleton admin-skeleton--value" />
+        <span className="admin-skeleton admin-skeleton--label" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`admin-stat-card admin-stat-card--${tone} admin-stat-card--error`}>
+        <span className="admin-stat-label">Não foi possível carregar</span>
+        <button type="button" className="admin-inline-retry" onClick={onRetry}>
+          <RefreshCw size={15} /> Tentar novamente
+        </button>
+      </div>
+    );
+  }
+
+  const label = capitalize(pluralize(value, singular, plural));
+
+  return (
+    <button
+      type="button"
+      className={`admin-stat-card admin-stat-card--${tone}`}
+      onClick={onClick}
+      aria-label={`${label}. ${actionLabel}`}
+    >
+      <span className="admin-stat-icon">{icon}</span>
+      <span className="admin-stat-value">{value}</span>
+      <span className="admin-stat-label">{label}</span>
+      <span className="admin-stat-cta" aria-hidden="true">
+        Abrir <ChevronRight size={15} />
+      </span>
+    </button>
+  );
+}
+
+function TabOverview({ onQuickAction, onEditEvent }) {
+  const {
+    galleryItems,
+    galleryLoading,
+    galleryError,
+    reloadGallery,
+    calendarEvents,
+    calendarEventsLoading,
+    calendarEventsError,
+    reloadCalendarEvents,
+    sponsors,
+    sponsorsLoading,
+    sponsorsError,
+    reloadSponsors,
+  } = useData();
+
+  const [adminName] = useState(() => {
+    try {
+      return (localStorage.getItem('ami_admin_login') || '').trim();
+    } catch (_) {
+      return '';
+    }
+  });
+
+  const now = new Date();
+  const greeting = greetingFor(now);
+  const longDate = formatLongDate(now);
+
+  const retry = (action) => () => {
+    Promise.resolve()
+      .then(action)
+      .catch(() => {});
+  };
+
   const stats = [
-    { icon: <Users size={22} color="#0F2A66" />, value: 248, label: 'Associados Ativos', bg: '#EBF3FC', border: '#C7DDF7' },
-    { icon: <CalendarCheck size={22} color="#0088FF" />, value: calendarEvents.length, label: 'Eventos Agendados', bg: '#EBF3FC', border: '#C7DDF7' },
-    { icon: <Images size={22} color="#0066CC" />, value: galleryItems.length, label: 'Lembranças no Álbum', bg: '#EBF3FC', border: '#C7DDF7' },
-    { icon: <Building2 size={22} color="#C9006E" />, value: (sponsors || []).length, label: 'Patrocinadores & Parceiros', bg: '#FDF2F8', border: '#FBD9EC' }
+    {
+      key: 'events',
+      tone: 'blue',
+      icon: <CalendarCheck size={22} color="#0088FF" />,
+      value: calendarEvents.length,
+      singular: 'evento agendado',
+      plural: 'eventos agendados',
+      actionLabel: 'Abrir a seção de eventos',
+      onClick: () => onQuickAction('calendar'),
+      loading: calendarEventsLoading,
+      error: calendarEventsError,
+      onRetry: retry(reloadCalendarEvents),
+    },
+    {
+      key: 'gallery',
+      tone: 'blue',
+      icon: <Images size={22} color="#0066CC" />,
+      value: galleryItems.length,
+      singular: 'lembrança no álbum',
+      plural: 'lembranças no álbum',
+      actionLabel: 'Abrir o álbum de lembranças',
+      onClick: () => onQuickAction('gallery'),
+      loading: galleryLoading,
+      error: galleryError,
+      onRetry: retry(reloadGallery),
+    },
+    {
+      key: 'sponsors',
+      tone: 'pink',
+      icon: <Building2 size={22} color="#C9006E" />,
+      value: (sponsors || []).length,
+      singular: 'patrocinador & parceiro',
+      plural: 'patrocinadores & parceiros',
+      actionLabel: 'Abrir a seção de patrocinadores',
+      onClick: () => onQuickAction('sponsors'),
+      loading: sponsorsLoading,
+      error: sponsorsError,
+      onRetry: retry(reloadSponsors),
+    },
   ];
 
-  const upcomingEvents = [...calendarEvents]
-      .sort((a, b) => { const da = a.year*10000+a.month*100+a.day, db = b.year*10000+b.month*100+b.day; return da-db; })
-      .slice(0, 4);
+  const quickActions = [
+    { key: 'event', label: 'Novo evento', onClick: () => onQuickAction('calendar') },
+    { key: 'gallery', label: 'Nova lembrança', onClick: () => onQuickAction('gallery') },
+    { key: 'testimonial', label: 'Novo depoimento', onClick: () => onQuickAction('testimonials') },
+    { key: 'sponsor', label: 'Novo patrocinador', onClick: () => onQuickAction('sponsors') },
+  ];
 
-    return (
-      <div>
-        <h2 className="admin-section-title">Visão Geral</h2>
-        <p style={{ color:'var(--text-subtle)', marginBottom:28, fontSize:'0.95rem' }}>Resumo das ações da Associação Qualidade de Vida.</p>
+  const upcomingEvents = getUpcomingEvents(calendarEvents).slice(0, 5);
+  const attentionItems = getAttentionItems(calendarEvents);
 
-      {/* Stats */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:32, width:'100%' }}>
-        {stats.map((s, i) => (
-          <div key={i} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius:14, padding:'20px 18px', minWidth:0 }}>
-            <div style={{ marginBottom:10 }}>{s.icon}</div>
-            <div style={{ fontSize:'2rem', fontWeight:800, color:'var(--text-main)', lineHeight:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.value}</div>
-            <div style={{ fontSize:'0.8rem', color:'var(--text-subtle)', marginTop:6, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
+  return (
+    <div className="admin-overview">
+      <header className="admin-overview-head">
+        <h2 className="admin-section-title admin-greeting-title" id="overview-title">
+          {greeting}{adminName ? `, ${adminName}` : ''}!
+        </h2>
+        <p className="admin-greeting-date">{longDate}</p>
+        <p className="admin-overview-subtitle">Resumo do dia na Associação Qualidade de Vida.</p>
+      </header>
+
+      {/* Números */}
+      <section className="admin-overview-section" aria-labelledby="overview-numbers">
+        <h3 className="admin-visually-hidden" id="overview-numbers">Números do painel</h3>
+        <div className="admin-stats-grid">
+          {stats.map(({ key, ...stat }) => (
+            <StatCard key={key} {...stat} />
+          ))}
+        </div>
+      </section>
 
       {/* Atalhos rápidos */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(260px, 1fr))', gap:20, marginBottom:32, width:'100%' }}>
-        <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:16, padding:24, minWidth:0 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:38, height:38, background:'#EBF3FC', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <Images size={20} color="#0066CC" />
-            </div>
-            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Álbum de Lembranças</h3>
-          </div>
-          <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
-            {galleryItems.length} lembranças cadastradas no álbum público.
-          </p>
-          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px', width:'100%' }} onClick={() => setActiveTab('gallery')}>
-            <Plus size={14} /> Adicionar Lembrança
-          </button>
+      <section className="admin-overview-section" aria-labelledby="overview-quick">
+        <h3 className="admin-panel-title" id="overview-quick">Atalhos rápidos</h3>
+        <div className="admin-quick-actions">
+          {quickActions.map((action) => (
+            <button key={action.key} type="button" className="admin-quick-btn" onClick={action.onClick}>
+              <span className="admin-quick-icon" aria-hidden="true"><Plus size={18} /></span>
+              <span>{action.label}</span>
+            </button>
+          ))}
         </div>
+      </section>
 
-        <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:16, padding:24, minWidth:0 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:38, height:38, background:'#EBF3FC', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <CalendarDays size={20} color="#0F2A66" />
-            </div>
-            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Eventos</h3>
+      <div className="admin-overview-columns">
+        {/* Precisa de atenção */}
+        <section className="admin-panel" aria-labelledby="overview-attention">
+          <div className="admin-panel-head">
+            <h3 className="admin-panel-title" id="overview-attention">Precisa de atenção</h3>
           </div>
-          <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
-            {calendarEvents.length} eventos cadastrados no calendário.
-          </p>
-          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px', width:'100%' }} onClick={() => setActiveTab('calendar')}>
-            <Plus size={14} /> Agendar Evento
-          </button>
-        </div>
 
-        <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:16, padding:24, minWidth:0 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:38, height:38, background:'#FDF2F8', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <Building2 size={20} color="#C9006E" />
+          {calendarEventsLoading ? (
+            <OverviewSkeleton rows={2} />
+          ) : calendarEventsError ? (
+            <OverviewError message={calendarEventsError} onRetry={retry(reloadCalendarEvents)} />
+          ) : attentionItems.length === 0 ? (
+            <div className="admin-empty admin-empty--ok">
+              <CheckCircle size={28} color="#0F2A66" aria-hidden="true" />
+              <p><strong>Tudo em dia!</strong><br />Nenhuma pendência com os próximos eventos.</p>
             </div>
-            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Patrocinadores & Apoio</h3>
+          ) : (
+            <ul className="admin-attention-list">
+              {attentionItems.map((item) => (
+                <li key={item.id} className={`admin-attention-item admin-attention-item--${item.tone}`}>
+                  <span className="admin-attention-icon" aria-hidden="true">
+                    <AlertTriangle size={18} />
+                  </span>
+                  <div className="admin-attention-text">
+                    <strong>{capitalize(item.text)}</strong>
+                    <span>{item.hint}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="admin-attention-action"
+                    onClick={() => (item.event ? onEditEvent(item.event) : onQuickAction('calendar'))}
+                    aria-label={`Revisar: ${item.text}`}
+                  >
+                    Revisar
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Próximos eventos */}
+        <section className="admin-panel" aria-labelledby="overview-upcoming">
+          <div className="admin-panel-head">
+            <h3 className="admin-panel-title" id="overview-upcoming">Próximos eventos</h3>
           </div>
-          <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
-            {(sponsors || []).length} empresas parceiras cadastradas no carrossel.
-          </p>
-          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px', width:'100%' }} onClick={() => setActiveTab('sponsors')}>
-            <Plus size={14} /> Gerenciar Patrocinadores
-          </button>
-        </div>
+
+          {calendarEventsLoading ? (
+            <OverviewSkeleton rows={3} />
+          ) : calendarEventsError ? (
+            <OverviewError message={calendarEventsError} onRetry={retry(reloadCalendarEvents)} />
+          ) : upcomingEvents.length === 0 ? (
+            <div className="admin-empty">
+              <CalendarDays size={30} color="#64748B" aria-hidden="true" />
+              <p>Nenhum evento futuro cadastrado.</p>
+              <button type="button" className="admin-empty-action" onClick={() => onQuickAction('calendar')}>
+                <Plus size={16} /> Novo evento
+              </button>
+            </div>
+          ) : (
+            <>
+              <ul className="admin-upcoming-list">
+                {upcomingEvents.map((event) => {
+                  const diff = daysUntil(event, now);
+                  const badgeTone = diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : 'later';
+                  return (
+                    <li key={event.id} className="admin-upcoming-item">
+                      <time
+                        className="admin-upcoming-date"
+                        dateTime={toISODate(parseEventDate(event))}
+                        aria-label={`${event.day} de ${MONTHS[event.month]}`}
+                      >
+                        <span className="admin-upcoming-day">{event.day}</span>
+                        <span className="admin-upcoming-month">{MONTHS[event.month]?.slice(0, 3)}</span>
+                      </time>
+                      <div className="admin-upcoming-info">
+                        <span className="admin-upcoming-title">{event.title}</span>
+                        <span className="admin-upcoming-meta">
+                          <Clock size={14} aria-hidden="true" /> {event.time}
+                          <MapPin size={14} aria-hidden="true" /> {event.location}
+                        </span>
+                      </div>
+                      <span className={`admin-upcoming-badge admin-upcoming-badge--${badgeTone}`}>
+                        {relativeDayLabel(event, now)}
+                      </span>
+                      <button
+                        type="button"
+                        className="admin-upcoming-edit"
+                        onClick={() => onEditEvent(event)}
+                        aria-label={`Editar evento ${event.title}`}
+                      >
+                        <Pencil size={15} /> Editar
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="admin-panel-footer">
+                <button type="button" className="admin-link-button" onClick={() => onQuickAction('calendar')}>
+                  Ver todos os eventos <ChevronRight size={15} aria-hidden="true" />
+                </button>
+              </div>
+            </>
+          )}
+        </section>
       </div>
-
-      {/* Próximas ações */}
-      {upcomingEvents.length > 0 && (
-        <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:16, padding:24, width:'100%' }}>
-          <h3 style={{ fontFamily:'var(--font-sans)', fontSize:'1.1rem', marginBottom:16 }}>Próximas Ações Cadastradas</h3>
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            {upcomingEvents.map(ev => (
-              <div key={ev.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'10px 14px', background:'#F7F9FB', borderRadius:10, flexWrap:'wrap' }}>
-                              <div style={{ textAlign:'center', minWidth:44, background:'#0F2A66', borderRadius:8, padding:'6px 4px', color:'#fff', flexShrink:0 }}>
-                                <div style={{ fontSize:'1.1rem', fontWeight:800, lineHeight:1 }}>{ev.day}</div>
-                                <div style={{ fontSize:'0.65rem', textTransform:'uppercase', letterSpacing:'0.05em' }}>{MONTHS[ev.month]?.slice(0,3)}</div>
-                              </div>
-                              <div style={{ flex:1, minWidth:0 }}>
-                                <div style={{ fontWeight:700, fontSize:'0.92rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{ev.title}</div>
-                                <div style={{ fontSize:'0.78rem', color:'var(--text-subtle)' }}>{ev.time} • {ev.location}</div>
-                              </div>
-                            </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 // ── PAINEL: ÁLBUM DE LEMBRANÇAS ──────────────────────────────────────────────
-function TabGallery() {
-  const { galleryItems, addGalleryItem, updateGalleryItem, deleteGalleryItem } = useData();
+function TabGallery({ openIntent, onIntentHandled }) {
+  const { galleryItems, galleryLoading, galleryError, reloadGallery, addGalleryItem, updateGalleryItem, deleteGalleryItem } = useData();
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (openIntent?.tab !== 'gallery') return;
+    setEditingItem(null);
+    setShowForm(true);
+    onIntentHandled?.();
+  }, [openIntent?.seq, openIntent?.tab, onIntentHandled]);
 
   const filtered = galleryItems.filter(item => {
     const matchSearch = !search || item.title.toLowerCase().includes(search.toLowerCase()) || item.description?.toLowerCase().includes(search.toLowerCase());
@@ -796,7 +1005,7 @@ function TabGallery() {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
           <div>
             <h2 className="admin-section-title">Álbum de Lembranças</h2>
-            <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{galleryItems.length} lembranças cadastradas</p>
+            <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{capitalize(pluralize(galleryItems.length, 'lembrança cadastrada', 'lembranças cadastradas'))}</p>
           </div>
           <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
             <Plus size={16} /> Nova Lembrança
@@ -812,7 +1021,11 @@ function TabGallery() {
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {galleryLoading ? (
+          <OverviewSkeleton rows={3} />
+        ) : galleryError ? (
+          <OverviewError message={galleryError} onRetry={() => { reloadGallery().catch(() => {}); }} />
+        ) : filtered.length === 0 ? (
         <div style={{ textAlign:'center', padding:'48px 20px', color:'var(--text-subtle)' }}>
           <Images size={40} style={{ opacity:0.3, marginBottom:12, display:'block', margin:'0 auto 12px' }} />
           <p style={{ fontWeight:600 }}>Nenhuma lembrança encontrada.</p>
@@ -869,13 +1082,24 @@ function TabGallery() {
 }
 
 // ── PAINEL: EVENTOS DO CALENDÁRIO ───────────────────────────────────────
-function TabCalendar() {
-  const { calendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent } = useData();
+function TabCalendar({ openIntent, onIntentHandled }) {
+  const { calendarEvents, calendarEventsLoading, calendarEventsError, reloadCalendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent } = useData();
   const [search, setSearch] = useState('');
   const [filterMonth, setFilterMonth] = useState('Todos');
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (openIntent?.tab !== 'calendar') return;
+    if (openIntent.mode === 'edit' && openIntent.event) {
+      setEditingEvent(openIntent.event);
+    } else {
+      setEditingEvent(null);
+    }
+    setShowForm(true);
+    onIntentHandled?.();
+  }, [openIntent?.seq, openIntent?.tab, openIntent?.mode, openIntent?.event, onIntentHandled]);
 
   const filtered = calendarEvents.filter(ev => {
     const matchMonth = filterMonth === 'Todos' || String(ev.month) === filterMonth;
@@ -902,7 +1126,7 @@ function TabCalendar() {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
           <div>
             <h2 className="admin-section-title">Eventos</h2>
-                      <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{calendarEvents.length} eventos cadastrados</p>
+                      <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{capitalize(pluralize(calendarEvents.length, 'evento cadastrado', 'eventos cadastrados'))}</p>
                     </div>
                     <button className="btn btn-primary" onClick={() => { setEditingEvent(null); setShowForm(true); }}>
                       <Plus size={16} /> Novo Evento
@@ -922,7 +1146,11 @@ function TabCalendar() {
           </select>
         </div>
 
-        {filtered.length === 0 ? (
+        {calendarEventsLoading ? (
+          <OverviewSkeleton rows={3} />
+        ) : calendarEventsError ? (
+          <OverviewError message={calendarEventsError} onRetry={() => { reloadCalendarEvents().catch(() => {}); }} />
+        ) : filtered.length === 0 ? (
         <div style={{ textAlign:'center', padding:'48px 20px', color:'var(--text-subtle)' }}>
           <CalendarDays size={40} style={{ opacity:0.3, marginBottom:12, display:'block', margin:'0 auto 12px' }} />
           <p style={{ fontWeight:600 }}>Nenhuma ação encontrada.</p>
@@ -1181,7 +1409,7 @@ function TabActions() {
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:14 }}>
         <div>
           <h2 className="admin-section-title">Ações</h2>
-          <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{activities.length} ações cadastradas</p>
+          <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{capitalize(pluralize(activities.length, 'ação cadastrada', 'ações cadastradas'))}</p>
         </div>
         <button className="btn btn-primary" onClick={() => { setEditing(null); setShowForm(true); }}><Plus size={16} /> Adicionar ação</button>
       </div>
@@ -1231,12 +1459,19 @@ function TabActions() {
 }
 
 // ── PAINEL: PATROCINADORES & PARCEIROS ───────────────────────────────────────
-function TabSponsors() {
-  const { sponsors, addSponsor, updateSponsor, deleteSponsor } = useData();
+function TabSponsors({ openIntent, onIntentHandled }) {
+  const { sponsors, sponsorsLoading, sponsorsError, reloadSponsors, addSponsor, updateSponsor, deleteSponsor } = useData();
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingSponsor, setEditingSponsor] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (openIntent?.tab !== 'sponsors') return;
+    setEditingSponsor(null);
+    setShowForm(true);
+    onIntentHandled?.();
+  }, [openIntent?.seq, openIntent?.tab, onIntentHandled]);
 
   const sponsorList = sponsors || [];
 
@@ -1261,7 +1496,7 @@ function TabSponsors() {
         <div>
           <h2 className="admin-section-title">Patrocinadores & Parceiros</h2>
           <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>
-            {sponsorList.length} {sponsorList.length === 1 ? 'patrocinador cadastrado' : 'patrocinadores cadastrados'}
+            {capitalize(pluralize(sponsorList.length, 'patrocinador cadastrado', 'patrocinadores cadastrados'))}
           </p>
         </div>
         <button
@@ -1288,7 +1523,11 @@ function TabSponsors() {
       </div>
 
             {/* Grid de Patrocinadores */}
-            {filtered.length === 0 ? (
+            {sponsorsLoading ? (
+              <OverviewSkeleton rows={3} />
+            ) : sponsorsError ? (
+              <OverviewError message={sponsorsError} onRetry={() => { reloadSponsors().catch(() => {}); }} />
+            ) : filtered.length === 0 ? (
               <div style={{ textAlign:'center', padding:'48px 20px', color:'var(--text-subtle)' }}>
                 <Building2 size={40} style={{ opacity:0.3, marginBottom:12, display:'block', margin:'0 auto 12px' }} />
                 <p style={{ fontWeight:600 }}>Nenhum patrocinador encontrado.</p>
@@ -1427,11 +1666,18 @@ function TabSponsors() {
 }
 
 // ── PAINEL: DEPOIMENTOS ───────────────────────────────────────────────────────
-function TabTestimonials() {
-  const { testimonials, addTestimonial, updateTestimonial, deleteTestimonial } = useData();
+function TabTestimonials({ openIntent, onIntentHandled }) {
+  const { testimonials, testimonialsLoading, testimonialsError, reloadTestimonials, addTestimonial, updateTestimonial, deleteTestimonial } = useData();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (openIntent?.tab !== 'testimonials') return;
+    setEditingItem(null);
+    setShowForm(true);
+    onIntentHandled?.();
+  }, [openIntent?.seq, openIntent?.tab, onIntentHandled]);
 
   const handleSave = async (data) => {
     try {
@@ -1463,14 +1709,18 @@ function TabTestimonials() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h2 className="admin-section-title">Depoimentos</h2>
-          <p style={{ color: 'var(--text-subtle)', fontSize: '0.9rem' }}>{testimonials.length} depoimentos cadastrados</p>
+          <p style={{ color: 'var(--text-subtle)', fontSize: '0.9rem' }}>{capitalize(pluralize(testimonials.length, 'depoimento cadastrado', 'depoimentos cadastrados'))}</p>
         </div>
         <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
           <Plus size={16} /> Novo Depoimento
         </button>
       </div>
 
-      {testimonials.length === 0 ? (
+      {testimonialsLoading ? (
+        <OverviewSkeleton rows={3} />
+      ) : testimonialsError ? (
+        <OverviewError message={testimonialsError} onRetry={() => { reloadTestimonials().catch(() => {}); }} />
+      ) : testimonials.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-subtle)' }}>
           <HeartHandshake size={40} style={{ opacity: 0.3, marginBottom: 12, display: 'block', margin: '0 auto 12px' }} />
           <p style={{ fontWeight: 600 }}>Nenhum depoimento encontrado.</p>
@@ -2046,6 +2296,27 @@ export default function AdminPage({ onClose }) {
   };
   const [activeTab, setActiveTab] = useState('overview');
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+    const [openIntent, setOpenIntent] = useState(null);
+    const menuButtonRef = useRef(null);
+
+    const closeDrawer = useCallback(() => {
+      setMobileDrawerOpen(false);
+      menuButtonRef.current?.focus?.();
+    }, []);
+
+    const openSection = (tab, intent = {}) => {
+      setOpenIntent({
+        tab,
+        mode: intent.mode || 'create',
+        event: intent.event || null,
+        seq: Date.now(),
+      });
+      setActiveTab(tab);
+      setMobileDrawerOpen(false);
+    };
+
+    const editEvent = (event) => openSection('calendar', { mode: 'edit', event });
+    const clearIntent = useCallback(() => setOpenIntent(null), []);
 
     // Lock body scroll when drawer is open
     useEffect(() => {
@@ -2060,11 +2331,11 @@ export default function AdminPage({ onClose }) {
     // Close drawer on ESC key
     useEffect(() => {
       const handleKeyDown = (e) => {
-        if (e.key === 'Escape') setMobileDrawerOpen(false);
+        if (e.key === 'Escape' && mobileDrawerOpen) closeDrawer();
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [closeDrawer, mobileDrawerOpen]);
 
     const navItems = [
           { id: 'overview',        label: 'Visão Geral',         icon: LayoutGrid,    badge: null },
@@ -2072,7 +2343,7 @@ export default function AdminPage({ onClose }) {
           { id: 'calendar',        label: 'Eventos',             icon: Calendar,      badge: null },
           { id: 'actions',         label: 'Ações',                icon: Activity,      badge: null },
           { id: 'admins',          label: 'Administradores',     icon: Users,         badge: null },
-          { id: 'sponsors',        label: 'Patrocinadores & Apoio', icon: Building2,   badge: !backendLoading && backendConnected && (sponsors || []).length > 0 ? { text: String(sponsors.length), type: 'gray', ariaLabel: `${sponsors.length} ${sponsors.length === 1 ? 'patrocinador' : 'patrocinadores'}` } : null },
+          { id: 'sponsors',        label: 'Patrocinadores & Parceiros', icon: Building2,   badge: !backendLoading && backendConnected && (sponsors || []).length > 0 ? { text: String(sponsors.length), type: 'gray', ariaLabel: `${sponsors.length} ${sponsors.length === 1 ? 'patrocinador' : 'patrocinadores'}` } : null },
           { id: 'testimonials',    label: 'Depoimentos',         icon: Heart,         badge: null },
           { id: 'settings',        label: 'Configurações',       icon: Settings,      badge: null },
         ];
@@ -2083,7 +2354,7 @@ export default function AdminPage({ onClose }) {
         { id: 'calendar',        label: 'Eventos',                  icon: <CalendarDays size={17} /> },
         { id: 'actions',         label: 'Ações',                    icon: <Activity size={17} /> },
         { id: 'admins',          label: 'Administradores',          icon: <UserCheck size={17} /> },
-        { id: 'sponsors',        label: 'Patrocinadores & Apoio',   icon: <Building2 size={17} /> },
+        { id: 'sponsors',        label: 'Patrocinadores & Parceiros',   icon: <Building2 size={17} /> },
         { id: 'testimonials',    label: 'Depoimentos',              icon: <HeartHandshake size={17} /> },
         { id: 'settings',        label: 'Configurações',            icon: <Settings size={17} /> },
       ];
@@ -2098,6 +2369,9 @@ export default function AdminPage({ onClose }) {
         throw new Error('O backend precisa estar conectado para autenticar e cadastrar dados.');
       }
       await adminApi.login(username, password);
+      try {
+        localStorage.setItem('ami_admin_login', username.trim());
+      } catch (_) {}
       await fetchAdmins();
       setIsLoggedIn(true);
     } catch (err) {
@@ -2109,6 +2383,9 @@ export default function AdminPage({ onClose }) {
 
   const handleLogout = () => {
     adminApi.logout();
+    try {
+      localStorage.removeItem('ami_admin_login');
+    } catch (_) {}
     setIsLoggedIn(false);
   };
 
@@ -2319,45 +2596,60 @@ export default function AdminPage({ onClose }) {
               </div>
 
               <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', justifyContent:'flex-end' }}>
-                {/* Badge de status do backend */}
-                          <div style={{
-                            display:'inline-flex', alignItems:'center', gap:6, fontSize:'0.75rem', fontWeight:600,
-                            padding:'4px 10px', borderRadius:99,
-                            background: backendConnected ? '#ECFDF5' : '#FFFBEB',
-                            color: backendConnected ? '#065F46' : '#92400E',
-                            border: `1px solid ${backendConnected ? '#A7F3D0' : '#FDE68A'}`
-                          }}>
-                            <span style={{ width:8, height:8, borderRadius:'50%', background: backendConnected ? '#10B981' : '#F59E0B' }} />
-                            <span>{backendConnected ? 'Backend Conectado' : 'Modo Local'}</span>
-                            <button
-                              onClick={() => checkBackendConnection(false)}
-                              style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex', alignItems:'center', color:'inherit' }}
-                              title="Recarregar status de conexão com backend"
-                            >
-                              <RefreshCw size={11} className={backendLoading ? 'spin' : ''} />
-                            </button>
-                          </div>
+                {/* Indicador único de sistema */}
+                <div
+                  className="admin-system-status"
+                  data-state={backendLoading ? 'checking' : backendConnected ? 'online' : 'offline'}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className="admin-system-dot" aria-hidden="true" />
+                  <span className="admin-system-label">
+                    {backendLoading ? 'Verificando sistema...' : backendConnected ? 'Sistema online' : 'Sistema offline'}
+                  </span>
+                  {!backendLoading && !backendConnected && (
+                    <span className="admin-system-detail">Backend na porta 3000</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => checkBackendConnection(false)}
+                    className="admin-system-refresh"
+                    aria-label="Verificar conexão novamente"
+                    title="Verificar conexão novamente"
+                  >
+                    <RefreshCw size={13} className={backendLoading ? 'spin' : ''} />
+                  </button>
+                </div>
 
-                          {/* Mobile menu button - hamburger */}
-                          <button
-                            className="admin-mobile-menu-btn"
-                            onClick={() => setMobileDrawerOpen(true)}
-                            style={{ display:'none', background:'none', border:'none', cursor:'pointer', padding:8, color:'var(--text-main)' }}
-                            aria-label="Abrir menu de navegação"
-                          >
-                            <Menu size={22} />
-                          </button>
+                {/* Mobile menu button - hamburger */}
+                <button
+                  ref={menuButtonRef}
+                  className="admin-mobile-menu-btn"
+                  onClick={() => setMobileDrawerOpen(true)}
+                  style={{ display:'none', background:'none', border:'none', cursor:'pointer', padding:13, minWidth:48, minHeight:48, color:'var(--text-main)' }}
+                  aria-label="Abrir menu de navegação"
+                  aria-expanded={mobileDrawerOpen}
+                  aria-controls="admin-mobile-drawer"
+                >
+                  <Menu size={22} />
+                </button>
 
-                          {/* Desktop only: Ver Site and Sair buttons */}
-                          <div className="admin-topbar-desktop-actions">
-                            <button className="btn btn-pill" style={{ fontSize:'0.78rem', padding:'6px 12px' }} onClick={onClose}>
-                              <ChevronRight size={12} /> Ver Site
-                            </button>
-                            <button className="btn" style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5', fontSize:'0.78rem', padding:'6px 12px' }}
-                              onClick={handleLogout}>
-                              <LogOut size={12} /> Sair
-                            </button>
-                          </div>
+                {/* Desktop only: Ver Site and Sair buttons */}
+                <div className="admin-topbar-desktop-actions">
+                  <a
+                    className="btn btn-pill"
+                    style={{ fontSize:'0.82rem', padding:'8px 14px', textDecoration:'none' }}
+                    href="/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink size={14} /> Ver Site
+                  </a>
+                  <button className="btn" style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5', fontSize:'0.82rem', padding:'8px 14px' }}
+                    onClick={handleLogout}>
+                    <LogOut size={14} /> Sair
+                  </button>
+                </div>
               </div>
             </header>
 
@@ -2368,40 +2660,35 @@ export default function AdminPage({ onClose }) {
             {tabs.map(tab => (
               <button key={tab.id} className={`admin-nav-item ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
+                aria-current={activeTab === tab.id ? 'page' : undefined}
                 style={{ textAlign: 'left', padding: '12px 16px', fontSize: '0.9rem', gap: 12, justifyContent: 'flex-start', borderRadius: 10 }}>
                 {tab.icon}
                 <span>{tab.label}</span>
               </button>
             ))}
           </nav>
-          <div style={{ marginTop:'auto', padding:'16px 12px', borderTop:'1px solid #E2E8F0', width:'100%' }}>
-            <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', lineHeight:1.6, textAlign:'center' }}>
-              <strong style={{ display:'block', marginBottom:4 }}>Status da Integração:</strong>
-              {backendConnected ? '🟢 Rotas do Backend Ativas (porta 3000)' : '🟠 Modo Armazenamento Local Ativo'}
-            </div>
-          </div>
         </aside>
 
         {/* Conteúdo Principal */}
                 <main className="admin-content">
-                  {activeTab === 'overview' && <TabOverview setActiveTab={setActiveTab} />}
-                  {activeTab === 'gallery' && <TabGallery />}
-                  {activeTab === 'calendar' && <TabCalendar />}
+                  {activeTab === 'overview' && <TabOverview onQuickAction={openSection} onEditEvent={editEvent} />}
+                  {activeTab === 'gallery' && <TabGallery openIntent={openIntent} onIntentHandled={clearIntent} />}
+                  {activeTab === 'calendar' && <TabCalendar openIntent={openIntent} onIntentHandled={clearIntent} />}
                   {activeTab === 'actions' && <TabActions />}
                   {activeTab === 'admins' && <TabAdmins onNavigateToCreate={() => setActiveTab('cadastrar-admin')} />}
                   {activeTab === 'cadastrar-admin' && (
                     <CadastroAdminPage onVoltar={() => setActiveTab('admins')} />
                   )}
-                  {activeTab === 'sponsors' && <TabSponsors />}
-                  {activeTab === 'testimonials' && <TabTestimonials />}
+                  {activeTab === 'sponsors' && <TabSponsors openIntent={openIntent} onIntentHandled={clearIntent} />}
+                  {activeTab === 'testimonials' && <TabTestimonials openIntent={openIntent} onIntentHandled={clearIntent} />}
                   {activeTab === 'settings' && <TabSettings />}
                                   </main>
                         </div>
 
                         {/* Mobile Drawer Navigation */}
                                                 {mobileDrawerOpen && (
-                                                  <div className="admin-mobile-drawer-overlay" onClick={() => setMobileDrawerOpen(false)} aria-hidden="true">
-                                                    <div className="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu de navegação">
+                                                  <div className="admin-mobile-drawer-overlay" onClick={closeDrawer}>
+                                                    <div id="admin-mobile-drawer" className="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu de navegação" onClick={(e) => e.stopPropagation()}>
                                                       {/* Header do Drawer */}
                                                       <div className="admin-mobile-drawer-header">
                                                         <div className="admin-mobile-drawer-brand">
@@ -2417,7 +2704,7 @@ export default function AdminPage({ onClose }) {
                                                             <span className="admin-mobile-drawer-brand-subtitle">PAINEL ADMINISTRATIVO</span>
                                                           </div>
                                                         </div>
-                                                        <button className="admin-mobile-drawer-close" onClick={() => setMobileDrawerOpen(false)} aria-label="Fechar menu">
+                                                        <button className="admin-mobile-drawer-close" onClick={closeDrawer} aria-label="Fechar menu" autoFocus>
                                                           <X size={24} />
                                                         </button>
                                                       </div>
@@ -2431,7 +2718,8 @@ export default function AdminPage({ onClose }) {
                                                             <button
                                                               key={item.id}
                                                               className={`admin-mobile-nav-item ${isActive ? 'active' : ''}`}
-                                                              onClick={() => { setActiveTab(item.id); setMobileDrawerOpen(false); }}
+                                                              onClick={() => { setActiveTab(item.id); closeDrawer(); }}
+                                                              aria-current={isActive ? 'page' : undefined}
                                                             >
                                                               <Icon className="nav-icon" size={20} />
                                                               <span>{item.label}</span>
@@ -2446,12 +2734,15 @@ export default function AdminPage({ onClose }) {
                                                       <hr className="admin-mobile-drawer-divider" />
 
                                                       <div className="admin-mobile-drawer-footer">
-                                                        <button
+                                                        <a
                                                           className="admin-mobile-drawer-view-site"
-                                                          onClick={() => { setMobileDrawerOpen(false); onClose(); }}
+                                                          href="/"
+                                                          target="_blank"
+                                                          rel="noopener noreferrer"
+                                                          onClick={closeDrawer}
                                                         >
                                                           <ExternalLink size={18} /> Ver Site Público
-                                                        </button>
+                                                        </a>
                                                         <div className="admin-mobile-drawer-status-row">
                                                           <div className="admin-mobile-drawer-status">
                                                             <span
@@ -2459,7 +2750,7 @@ export default function AdminPage({ onClose }) {
                                                               aria-hidden="true"
                                                               style={{ background: backendConnected ? '#22c55e' : '#f59e0b' }}
                                                             ></span>
-                                                            <span>{backendConnected ? 'Conectado ao servidor' : 'Sem conexão com o servidor'}</span>
+                                                            <span>{backendConnected ? 'Sistema online' : 'Sistema offline'}</span>
                                                           </div>
                                                           <button
                                                             className="admin-mobile-drawer-logout"
