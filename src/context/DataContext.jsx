@@ -2,36 +2,45 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { siteData } from '../data/mockData';
 import {
   adminApi,
-  atividadeApi,
+  acoesApi,
+  eventosApi,
+  albumApi,
+  fotosApi,
   checkBackendHealth,
-  adaptAtividadeToFrontend,
-  adaptAtividadeToBackend,
+  adaptEventoToFrontend,
+  adaptEventoToBackend,
+  adaptAcaoRecorrenteToFrontend,
+  adaptAlbumToFrontend,
+  patrocinadoresApi,
+  adaptSponsorToFrontend,
+  adaptSponsorToBackend,
+  toStoredUrl,
+  informacoesApi,
+  depoimentosApi,
+  adaptDepoimentoToFrontend,
+  adaptDepoimentoToBackend,
 } from '../services/api';
 
-const STORAGE_KEY_GALLERY = 'ami_gallery_items_v1';
-const STORAGE_KEY_CALENDAR = 'ami_calendar_events_v1';
-const STORAGE_KEY_HIGHLIGHTS = 'ami_calendar_highlights_v1';
 const STORAGE_KEY_BRAND = 'ami_brand_info_v1';
-const STORAGE_KEY_SPONSORS = 'ami_sponsors_v1';
-const STORAGE_KEY_TESTIMONIALS = 'ami_testimonials_v1';
+const EMPTY_BRAND_INFO = { ...siteData.brand, email: '', address: '', phone: '', pixKey: '' };
+
+function normalizeBrandInfo(info, current) {
+  const hasOutdatedHistory = Number(info?.since) === 2005 || /desde 2005|garagem da dona alzira/i.test(info?.mission || '');
+  return {
+    ...current,
+    ...info,
+    name: info.name || current.name,
+    subtitle: info.subtitle || current.subtitle,
+    mission: hasOutdatedHistory ? siteData.brand.mission : (info.mission || current.mission),
+    since: hasOutdatedHistory ? siteData.brand.since : (info.since || current.since),
+    email: info.email || '',
+    address: info.address || '',
+    phone: info.phone || '',
+    pixKey: info.pixKey || '',
+  };
+}
 
 const DataContext = createContext(null);
-
-function seedCalendarEvents() {
-  return siteData.calendar.eventsOctober2026.map((ev, index) => ({
-    id: `cal-seed-${index + 1}`,
-    year: 2026,
-    month: 9,
-    day: ev.day,
-    time: ev.time,
-    title: ev.title,
-    category: ev.category,
-    desc: ev.desc,
-    location: 'Sede da Associação',
-    isHighlight: index < 3,
-    status: 'ativo',
-  }));
-}
 
 export function DataProvider({ children }) {
   // Estado de conexão com backend
@@ -41,54 +50,34 @@ export function DataProvider({ children }) {
   // Administradores (do backend)
   const [admins, setAdmins] = useState([]);
 
-  // Dados com persistência local (fallback / entidades não implementadas no backend)
-  const [galleryItems, setGalleryItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_GALLERY);
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
-    return siteData.gallery.items;
-  });
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [galleryLoading, setGalleryLoading] = useState(true);
+  const [galleryError, setGalleryError] = useState('');
 
-  const [calendarEvents, setCalendarEvents] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_CALENDAR);
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
-    return seedCalendarEvents();
-  });
+  const [calendarEvents, setCalendarEvents] = useState([]);
+  const [calendarEventsLoading, setCalendarEventsLoading] = useState(true);
+  const [calendarEventsError, setCalendarEventsError] = useState('');
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [activitiesError, setActivitiesError] = useState('');
 
-  const [calendarHighlights, setCalendarHighlights] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_HIGHLIGHTS);
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
-    return siteData.calendar.highlights;
-  });
-
-  const [brandInfo, setBrandInfo] = useState(() => {
+  const [brandInfo, setBrandInfo] = useState(EMPTY_BRAND_INFO);
+  const [legacyBrandInfo, setLegacyBrandInfo] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_BRAND);
       if (saved) return JSON.parse(saved);
     } catch (_) {}
-    return siteData.brand;
+    return null;
   });
+  const [brandInfoHasRecord, setBrandInfoHasRecord] = useState(false);
 
-  const [sponsors, setSponsors] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_SPONSORS);
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
-    return siteData.sponsors || [];
-  });
+  const [sponsors, setSponsors] = useState([]);
+  const [sponsorsLoading, setSponsorsLoading] = useState(true);
+  const [sponsorsError, setSponsorsError] = useState('');
 
-  const [testimonials, setTestimonials] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_TESTIMONIALS);
-      if (saved) return JSON.parse(saved);
-    } catch (_) {}
-    return siteData.testimonials.items;
-  });
+  const [testimonials, setTestimonials] = useState([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
+  const [testimonialsError, setTestimonialsError] = useState('');
 
   const [toast, setToast] = useState(null);
 
@@ -97,85 +86,248 @@ export function DataProvider({ children }) {
     setTimeout(() => setToast(null), 4000);
   }, []);
 
-  // ── Salvar caches locais ───────────────────────────────────────────
+  // Limpa os exemplos de galeria salvos por versões anteriores.
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_GALLERY, JSON.stringify(galleryItems)); } catch (_) {}
-  }, [galleryItems]);
+    localStorage.removeItem('ami_gallery_items_v1');
+    localStorage.removeItem('ami_sponsors_v1');
+  }, []);
+
+  const loadGalleryFromBackend = useCallback(async () => {
+    const [albums, photos] = await Promise.all([albumApi.list(), fotosApi.list()]);
+    const photosByAlbum = new Map();
+    photos.forEach(photo => {
+      const albumId = Number(photo.album_id);
+      photosByAlbum.set(albumId, [...(photosByAlbum.get(albumId) || []), photo]);
+    });
+    return albums
+      .map(album => adaptAlbumToFrontend(album, photosByAlbum.get(Number(album.id)) || []))
+      .sort((a, b) => b.date.localeCompare(a.date) || b.apiId - a.apiId);
+  }, []);
+
+  const reloadGallery = useCallback(async () => {
+    setGalleryLoading(true);
+    setGalleryError('');
+    if (!backendConnected) {
+      setGalleryItems([]);
+      setGalleryLoading(false);
+      return [];
+    }
+    try {
+      const items = await loadGalleryFromBackend();
+      setGalleryItems(items);
+      return items;
+    } catch (error) {
+      setGalleryItems([]);
+      setGalleryError('Não foi possível carregar as lembranças. Verifique sua conexão e tente novamente.');
+      throw error;
+    } finally {
+      setGalleryLoading(false);
+    }
+  }, [backendConnected, loadGalleryFromBackend]);
+
+  const loadSponsorsFromBackend = useCallback(async () => {
+    const records = await patrocinadoresApi.list();
+    return records.map(adaptSponsorToFrontend);
+  }, []);
+
+  const reloadSponsors = useCallback(async () => {
+    setSponsorsLoading(true);
+    setSponsorsError('');
+    if (!backendConnected) {
+      setSponsors([]);
+      setSponsorsLoading(false);
+      return [];
+    }
+    try {
+      const records = await loadSponsorsFromBackend();
+      setSponsors(records);
+      return records;
+    } catch (error) {
+      setSponsors([]);
+      setSponsorsError('Não foi possível carregar os patrocinadores. Verifique sua conexão e tente novamente.');
+      throw error;
+    } finally {
+      setSponsorsLoading(false);
+    }
+  }, [backendConnected, loadSponsorsFromBackend]);
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_CALENDAR, JSON.stringify(calendarEvents)); } catch (_) {}
-  }, [calendarEvents]);
+    localStorage.removeItem('ami_calendar_events_v1');
+    localStorage.removeItem('ami_calendar_highlights_v1');
+  }, []);
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_HIGHLIGHTS, JSON.stringify(calendarHighlights)); } catch (_) {}
-  }, [calendarHighlights]);
+    localStorage.removeItem('ami_testimonials_v1');
+  }, []);
 
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_BRAND, JSON.stringify(brandInfo)); } catch (_) {}
-  }, [brandInfo]);
-
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_SPONSORS, JSON.stringify(sponsors)); } catch (_) {}
-  }, [sponsors]);
-
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY_TESTIMONIALS, JSON.stringify(testimonials)); } catch (_) {}
-  }, [testimonials]);
+  const reloadTestimonials = useCallback(async () => {
+    setTestimonialsLoading(true);
+    setTestimonialsError('');
+    if (!backendConnected) {
+      setTestimonials([]);
+      setTestimonialsLoading(false);
+      return [];
+    }
+    try {
+      const records = await depoimentosApi.list();
+      const items = records.map(adaptDepoimentoToFrontend);
+      setTestimonials(items);
+      return items;
+    } catch (error) {
+      setTestimonials([]);
+      setTestimonialsError('Não foi possível carregar os depoimentos. Verifique sua conexão e tente novamente.');
+      throw error;
+    } finally {
+      setTestimonialsLoading(false);
+    }
+  }, [backendConnected]);
 
   // ── Sincronização inicial com o Backend (se ativo na porta 3000) ────
   const checkAndSyncBackend = useCallback(async (silent = false) => {
     setBackendLoading(true);
+    setCalendarEventsLoading(true);
+    setCalendarEventsError('');
+    setActivitiesLoading(true);
+    setActivitiesError('');
+    setGalleryLoading(true);
+    setGalleryError('');
+    setSponsorsLoading(true);
+    setSponsorsError('');
+    setTestimonialsLoading(true);
+    setTestimonialsError('');
     try {
       const isOnline = await checkBackendHealth();
       setBackendConnected(isOnline);
 
       if (isOnline) {
-        // Carrega atividades do calendário do backend
         try {
-          const ativsData = await atividadeApi.list();
-          if (Array.isArray(ativsData) && ativsData.length > 0) {
-            const adapted = ativsData.map(a => adaptAtividadeToFrontend(a));
-            setCalendarEvents(adapted);
-
-            // Atualiza highlights
-            const hl = adapted.filter(a => a.isHighlight).map(a => ({
-              id: `hl-${a.id}`,
-              dateLabel: `${a.day} de Outubro - ${a.time}`,
-              category: a.category,
-              title: a.title,
-              description: a.desc,
-              color: '#2A5C66',
-            }));
-            if (hl.length > 0) setCalendarHighlights(hl);
+          const info = await informacoesApi.get();
+          const hasRecord = Boolean(info && Object.keys(info).length);
+          setBrandInfoHasRecord(hasRecord);
+          if (hasRecord) {
+            setBrandInfo(current => normalizeBrandInfo(info, current));
+            setLegacyBrandInfo(null);
+          } else {
+            setBrandInfo(EMPTY_BRAND_INFO);
+            try {
+              const old = localStorage.getItem(STORAGE_KEY_BRAND);
+              setLegacyBrandInfo(old ? JSON.parse(old) : null);
+            } catch (_) { setLegacyBrandInfo(null); }
           }
         } catch (err) {
-          console.warn('[Backend] Erro ao carregar atividades:', err);
+          console.warn('[Backend] Erro ao carregar informações:', err);
+          setBrandInfo(EMPTY_BRAND_INFO);
+        }
+        try {
+          setGalleryItems(await loadGalleryFromBackend());
+          setGalleryError('');
+        } catch (err) {
+          setGalleryItems([]);
+          setGalleryError('Não foi possível carregar as lembranças. Verifique sua conexão e tente novamente.');
+          console.warn('[Backend] Erro ao carregar álbuns e fotos:', err);
+        } finally {
+          setGalleryLoading(false);
+        }
+
+        try {
+          setSponsors(await loadSponsorsFromBackend());
+          setSponsorsError('');
+        } catch (err) {
+          setSponsors([]);
+          setSponsorsError('Não foi possível carregar os patrocinadores. Verifique sua conexão e tente novamente.');
+          console.warn('[Backend] Erro ao carregar patrocinadores:', err);
+        } finally {
+          setSponsorsLoading(false);
+        }
+
+        try {
+          const records = await depoimentosApi.list();
+          setTestimonials(records.map(adaptDepoimentoToFrontend));
+          setTestimonialsError('');
+        } catch (err) {
+          setTestimonials([]);
+          setTestimonialsError('Não foi possível carregar os depoimentos. Verifique sua conexão e tente novamente.');
+          console.warn('[Backend] Erro ao carregar depoimentos:', err);
+        } finally {
+          setTestimonialsLoading(false);
+        }
+
+        // Carrega eventos do calendário e ações recorrentes separadamente.
+        try {
+          const events = await eventosApi.list();
+          setCalendarEvents(Array.isArray(events) ? events.map(adaptEventoToFrontend) : []);
+          setCalendarEventsError('');
+        } catch (err) {
+          setCalendarEvents([]);
+          setCalendarEventsError('Não foi possível carregar os próximos encontros. Verifique sua conexão e tente novamente.');
+          console.warn('[Backend] Erro ao carregar eventos:', err);
+        } finally {
+          setCalendarEventsLoading(false);
+        }
+        try {
+          const actions = await acoesApi.list();
+          setActivities(Array.isArray(actions) ? actions.map(adaptAcaoRecorrenteToFrontend) : []);
+          setActivitiesError('');
+        } catch (err) {
+          setActivities([]);
+          setActivitiesError(err.message || 'Não foi possível carregar as ações.');
+          console.warn('[Backend] Erro ao carregar ações:', err);
+        } finally {
+          setActivitiesLoading(false);
         }
 
         if (!silent) {
           showToast('Conectado com sucesso ao backend (porta 3000)!', 'success');
         }
       } else {
+        setGalleryItems([]);
+        setGalleryError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
+        setCalendarEvents([]);
+        setCalendarEventsLoading(false);
+        setCalendarEventsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
+        setActivities([]);
+        setActivitiesError('Backend desconectado. Não foi possível carregar as ações.');
+        setSponsors([]);
+        setSponsorsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
+        setTestimonials([]);
+        setTestimonialsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
+        setBrandInfo(EMPTY_BRAND_INFO);
         if (!silent) {
           showToast('Backend offline. Operando em modo de dados locais.', 'info');
         }
       }
     } catch (err) {
       setBackendConnected(false);
+      setGalleryItems([]);
+      setGalleryError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
+      setCalendarEvents([]);
+      setCalendarEventsLoading(false);
+      setCalendarEventsError('Não foi possível carregar os próximos encontros. Verifique sua conexão e tente novamente.');
+      setActivities([]);
+      setActivitiesError('Não foi possível conectar ao backend para carregar as ações.');
+      setSponsors([]);
+      setSponsorsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
+      setTestimonials([]);
+      setTestimonialsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
       if (!silent) {
         showToast('Backend inacessível. Usando armazenamento local.', 'info');
       }
     } finally {
+      setCalendarEventsLoading(false);
+      setActivitiesLoading(false);
+      setGalleryLoading(false);
+      setSponsorsLoading(false);
+      setTestimonialsLoading(false);
       setBackendLoading(false);
     }
-  }, [showToast]);
+  }, [loadGalleryFromBackend, loadSponsorsFromBackend, showToast]);
 
   useEffect(() => {
     checkAndSyncBackend(true);
   }, []);
 
   // ── Gestão de Administradores (Backend) ────────────────────────────
-  const fetchAdmins = async () => {
+  const fetchAdmins = useCallback(async () => {
     if (!backendConnected) return [];
     try {
       const data = await adminApi.list();
@@ -185,7 +337,7 @@ export function DataProvider({ children }) {
       console.warn('Erro ao listar administradores:', err);
       return [];
     }
-  };
+  }, [backendConnected]);
 
   const addAdmin = async (data) => {
     if (!backendConnected) {
@@ -227,247 +379,436 @@ export function DataProvider({ children }) {
   };
 
   // ── CRUD: Álbum de Lembranças (Galeria) ─────────────────────────────
-  const addGalleryItem = (itemData) => {
+  const addGalleryItem = async (itemData) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível salvar lembranças no banco.', 'warning');
+      return;
+    }
+    const today = new Date();
+    const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const photos = Array.isArray(itemData.photos) && itemData.photos.length > 0
       ? itemData.photos
       : [itemData.image].filter(Boolean);
-    const newItem = {
-      id: `gal-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      photos,
-      image: photos[0] || 'https://images.unsplash.com/photo-1516307365426-bea591f05011?q=80&w=900',
-      title: itemData.title.trim(),
-      subtitle: itemData.date || 'Lembrança Especial',
-      date: itemData.date || new Date().toISOString().split('T')[0],
-      category: itemData.category || 'Celebracoes',
-      description: itemData.description || '',
-    };
-    setGalleryItems(prev => [newItem, ...prev]);
-    showToast('Lembrança adicionada ao álbum com sucesso!', 'success');
-    return newItem;
+    let albumId;
+    const createdPhotoIds = [];
+    try {
+      const createdAlbum = await albumApi.create({
+        titulo: itemData.title.trim(),
+        description: itemData.description || '',
+        date: itemData.date || localDate,
+      });
+      albumId = Number(createdAlbum.id);
+      if (!Number.isInteger(albumId) || albumId <= 0) throw new Error('O backend não retornou o ID do álbum.');
+
+      for (const [index, url] of photos.entries()) {
+        const createdPhoto = await fotosApi.create({
+          album_id: albumId,
+          url_imagem: toStoredUrl(url),
+          eh_capa: index === 0,
+        });
+        createdPhotoIds.push(Number(createdPhoto.id));
+      }
+      await reloadGallery();
+      showToast('Lembrança adicionada ao álbum com sucesso!', 'success');
+    } catch (error) {
+      for (const photoId of createdPhotoIds) {
+        if (Number.isInteger(photoId) && photoId > 0) {
+          try { await fotosApi.delete(photoId); } catch (_) {}
+        }
+      }
+      if (albumId) {
+        try { await albumApi.delete(albumId); } catch (_) {}
+      }
+      try { await reloadGallery(); } catch (_) { setGalleryItems([]); }
+      showToast(error.message || 'Erro ao salvar lembrança no backend.', 'warning');
+    }
   };
 
-  const updateGalleryItem = (id, updatedData) => {
-    setGalleryItems(prev => prev.map(item => {
-      if (item.id !== id) return item;
-      const photos = Array.isArray(updatedData.photos) && updatedData.photos.length > 0
-        ? updatedData.photos : [updatedData.image || item.image];
-      return {
-        ...item,
-        ...updatedData,
-        photos,
-        image: photos[0] || item.image,
-        subtitle: updatedData.date || item.subtitle,
-        updatedAt: new Date().toISOString()
-      };
-    }));
-    showToast('Lembrança atualizada com sucesso!', 'info');
+  const updateGalleryItem = async (id, updatedData) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível atualizar lembranças no banco.', 'warning');
+      return;
+    }
+    const item = galleryItems.find(entry => entry.id === id || entry.apiId === id);
+    const albumId = Number(item?.apiId ?? String(id).replace(/^alb-/, ''));
+    if (!item || !Number.isInteger(albumId) || albumId <= 0) return;
+
+    const photos = Array.isArray(updatedData.photos) && updatedData.photos.length > 0
+      ? updatedData.photos
+      : [updatedData.image].filter(Boolean);
+    const desiredUrls = photos.map(toStoredUrl);
+    const unusedRecords = new Set((item.photoRecords || []).map(record => record.id));
+    try {
+      await albumApi.update(albumId, {
+        titulo: updatedData.title.trim(),
+        description: updatedData.description || '',
+        date: updatedData.date || item.date,
+      });
+
+      for (const [index, url] of desiredUrls.entries()) {
+        const matchingRecord = (item.photoRecords || []).find(record =>
+          unusedRecords.has(record.id) && record.url === url
+        );
+        const isCover = index === 0;
+        if (matchingRecord) {
+          unusedRecords.delete(matchingRecord.id);
+          if (matchingRecord.isCover !== isCover) {
+            await fotosApi.update(matchingRecord.id, { album_id: albumId, url_imagem: url, eh_capa: isCover });
+          }
+        } else {
+          await fotosApi.create({ album_id: albumId, url_imagem: url, eh_capa: isCover });
+        }
+      }
+
+      for (const recordId of unusedRecords) await fotosApi.delete(recordId);
+      await reloadGallery();
+      showToast('Lembrança atualizada com sucesso!', 'info');
+    } catch (error) {
+      try { await reloadGallery(); } catch (_) { setGalleryItems([]); }
+      showToast(error.message || 'Erro ao atualizar lembrança no backend.', 'warning');
+    }
   };
 
-  const deleteGalleryItem = (id) => {
-    setGalleryItems(prev => prev.filter(item => item.id !== id));
-    showToast('Lembrança removida do álbum.', 'warning');
+  const deleteGalleryItem = async (id) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível remover lembranças do banco.', 'warning');
+      return;
+    }
+    const item = galleryItems.find(entry => entry.id === id || entry.apiId === id);
+    const albumId = Number(item?.apiId ?? String(id).replace(/^alb-/, ''));
+    if (!item || !Number.isInteger(albumId) || albumId <= 0) return;
+    try {
+      for (const record of item.photoRecords || []) await fotosApi.delete(record.id);
+      await albumApi.delete(albumId);
+      await reloadGallery();
+      showToast('Lembrança removida do álbum.', 'warning');
+    } catch (error) {
+      try { await reloadGallery(); } catch (_) { setGalleryItems([]); }
+      showToast(error.message || 'Erro ao remover lembrança do backend.', 'warning');
+    }
   };
 
-  // ── CRUD: Calendário de Atividades (Integrado com Backend) ──────────
-  const MONTH_SHORT = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-  const CAT_COLORS = { Música: '#E8A87C', Coral: '#2A5C66', Lazer: '#3D6058', Artes: '#7B5EA7', Saúde: '#4A9B6F' };
+  // ── CRUD: Calendário de Ações (Integrado com Backend) ──────────
+  const reloadCalendarEvents = useCallback(async () => {
+    if (!backendConnected) {
+      setCalendarEvents([]);
+      setCalendarEventsError('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.');
+      return [];
+    }
+    setCalendarEventsLoading(true);
+    setCalendarEventsError('');
+    try {
+      const events = await eventosApi.list();
+      const items = Array.isArray(events) ? events.map(adaptEventoToFrontend) : [];
+      setCalendarEvents(items);
+      return items;
+    } catch (error) {
+      setCalendarEvents([]);
+      setCalendarEventsError('Não foi possível carregar os próximos encontros. Verifique sua conexão e tente novamente.');
+      throw error;
+    } finally {
+      setCalendarEventsLoading(false);
+    }
+  }, [backendConnected]);
 
   const addCalendarEvent = async (eventData) => {
-    let newEvent = {
-      id: `cal-${Date.now()}`,
-      createdAt: new Date().toISOString(),
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível cadastrar ação no banco.', 'warning');
+      return;
+    }
+    const newEvent = {
       year: parseInt(eventData.year || 2026, 10),
       month: parseInt(eventData.month !== undefined ? eventData.month : 9, 10),
       day: parseInt(eventData.day || 1, 10),
       time: eventData.time || '14:00',
       title: eventData.title.trim(),
-      category: eventData.category || 'Lazer',
       desc: eventData.desc || '',
       location: eventData.location || 'Sede da Associação',
       isHighlight: Boolean(eventData.isHighlight),
       status: eventData.status || 'ativo',
     };
 
-    if (backendConnected) {
-      try {
-        const payload = adaptAtividadeToBackend(newEvent);
-        await atividadeApi.create(payload);
-        const ativs = await atividadeApi.list();
-        if (Array.isArray(ativs) && ativs.length > 0) {
-          const adapted = ativs.map(a => adaptAtividadeToFrontend(a));
-          setCalendarEvents(adapted);
-          showToast('Atividade salva com sucesso no banco de dados!', 'success');
-          return;
-        }
-      } catch (err) {
-        console.error('Erro ao salvar atividade no backend:', err);
-        showToast('Erro no backend ao agendar. Salvo em armazenamento local.', 'warning');
-      }
+    try {
+      await eventosApi.create(adaptEventoToBackend(newEvent));
+      const events = await eventosApi.list();
+      setCalendarEvents(Array.isArray(events) ? events.map(adaptEventoToFrontend) : []);
+      showToast('Ação salva com sucesso no banco de dados!', 'success');
+    } catch (err) {
+      showToast(err.message || 'Erro ao cadastrar ação no backend.', 'warning');
     }
-
-    setCalendarEvents(prev => [...prev, newEvent]);
-
-    if (newEvent.isHighlight) {
-      const newHighlight = {
-        id: `hl-${newEvent.id}`,
-        dateLabel: `${newEvent.day} de ${MONTH_SHORT[newEvent.month]} - ${newEvent.time}`,
-        category: newEvent.category,
-        title: newEvent.title,
-        description: newEvent.desc,
-        color: CAT_COLORS[newEvent.category] || '#2A5C66'
-      };
-      setCalendarHighlights(prev => [newHighlight, ...prev]);
-    }
-    showToast('Atividade agendada no calendário com sucesso!', 'success');
-    return newEvent;
   };
 
   const updateCalendarEvent = async (id, updatedData) => {
-    // Tenta atualizar no backend se tiver ID numérico
-    if (backendConnected) {
-      const numericId = typeof id === 'number' ? id : parseInt(String(id).replace('cal-', ''), 10);
-      if (!isNaN(numericId) && numericId > 0 && !String(id).includes('seed')) {
-        try {
-          const payload = adaptAtividadeToBackend({ ...updatedData, id: numericId });
-          await atividadeApi.update(numericId, payload);
-          const ativs = await atividadeApi.list();
-          const adapted = ativs.map(a => adaptAtividadeToFrontend(a));
-          setCalendarEvents(adapted);
-          showToast('Atividade atualizada com sucesso no backend!', 'info');
-          return;
-        } catch (err) {
-          console.error('Erro ao atualizar no backend:', err);
-          showToast('Erro no backend. Atualizando localmente.', 'warning');
-        }
-      }
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível atualizar ação no banco.', 'warning');
+      return;
     }
-
-    setCalendarEvents(prev => prev.map(ev => {
-      if (ev.id !== id) return ev;
-      return {
-        ...ev,
-        ...updatedData,
-        year: parseInt(updatedData.year !== undefined ? updatedData.year : ev.year, 10),
-        month: parseInt(updatedData.month !== undefined ? updatedData.month : ev.month, 10),
-        day: parseInt(updatedData.day !== undefined ? updatedData.day : ev.day, 10),
-        updatedAt: new Date().toISOString()
-      };
-    }));
-    showToast('Atividade do calendário atualizada!', 'info');
+    const event = calendarEvents.find(item => item.id === id || item.apiId === id);
+    const numericId = Number(event?.apiId ?? id);
+    if (!Number.isInteger(numericId) || numericId <= 0) return;
+    try {
+      await eventosApi.update(numericId, adaptEventoToBackend({ ...event, ...updatedData, id: numericId }));
+      const events = await eventosApi.list();
+      setCalendarEvents(Array.isArray(events) ? events.map(adaptEventoToFrontend) : []);
+      showToast('Ação atualizada com sucesso no backend!', 'info');
+    } catch (err) {
+      showToast(err.message || 'Erro ao atualizar ação no backend.', 'warning');
+    }
   };
 
   const deleteCalendarEvent = async (id) => {
-    if (backendConnected) {
-      const numericId = typeof id === 'number' ? id : parseInt(String(id).replace('cal-', ''), 10);
-      if (!isNaN(numericId) && numericId > 0 && !String(id).includes('seed')) {
-        try {
-          await atividadeApi.delete(numericId);
-          const ativs = await atividadeApi.list();
-          const adapted = ativs.map(a => adaptAtividadeToFrontend(a));
-          setCalendarEvents(adapted);
-          setCalendarHighlights(prev => prev.filter(hl => hl.id !== `hl-${id}`));
-          showToast('Atividade excluída com sucesso do backend!', 'warning');
-          return;
-        } catch (err) {
-          console.error('Erro ao deletar no backend:', err);
-          showToast('Erro ao remover no backend. Removendo localmente.', 'warning');
-        }
-      }
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível remover ação do banco.', 'warning');
+      return;
     }
+    const event = calendarEvents.find(item => item.id === id || item.apiId === id);
+    const numericId = Number(event?.apiId ?? id);
+    if (!Number.isInteger(numericId) || numericId <= 0) return;
+    try {
+      await eventosApi.delete(numericId);
+      const events = await eventosApi.list();
+      setCalendarEvents(Array.isArray(events) ? events.map(adaptEventoToFrontend) : []);
+      showToast('Ação excluída com sucesso do backend!', 'warning');
+    } catch (err) {
+      showToast(err.message || 'Erro ao remover ação do backend.', 'warning');
+    }
+  };
 
-    setCalendarEvents(prev => prev.filter(ev => ev.id !== id));
-    setCalendarHighlights(prev => prev.filter(hl => hl.id !== `hl-${id}`));
-    showToast('Atividade removida do calendário.', 'warning');
+  const reloadActivities = useCallback(async () => {
+    if (!backendConnected) {
+      setActivities([]);
+      setActivitiesError('Backend desconectado. Não foi possível carregar as ações.');
+      return [];
+    }
+    setActivitiesLoading(true);
+    setActivitiesError('');
+    try {
+      const records = await acoesApi.list();
+      const items = Array.isArray(records) ? records.map(adaptAcaoRecorrenteToFrontend) : [];
+      setActivities(items);
+      return items;
+    } catch (error) {
+      setActivities([]);
+      setActivitiesError(error.message || 'Não foi possível carregar as ações.');
+      throw error;
+    } finally {
+      setActivitiesLoading(false);
+    }
+  }, [backendConnected]);
+
+  const addActivity = async (data) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível cadastrar ação no banco.', 'warning');
+      throw new Error('Backend offline');
+    }
+    try {
+      await acoesApi.create({
+        titulo: data.title.trim(), dia_semana: data.days.trim(),
+        horario_inicio: data.startTime, horario_fim: data.endTime,
+        local: data.location.trim(), responsavel: data.responsible.trim(),
+        url_imagem: toStoredUrl(data.image || ''),
+        descricao_curta: data.description.trim(), orientacoes: data.details.trim(),
+      });
+      await reloadActivities();
+      showToast('Ação cadastrada com sucesso!', 'success');
+    } catch (error) {
+      showToast(error.message || 'Erro ao cadastrar ação.', 'warning');
+      throw error;
+    }
+  };
+
+  const updateActivity = async (id, data) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível atualizar ação no banco.', 'warning');
+      throw new Error('Backend offline');
+    }
+    const current = activities.find(item => item.id === id || item.apiId === id);
+    const apiId = Number(current?.apiId ?? id);
+    if (!Number.isInteger(apiId) || apiId <= 0) throw new Error('Ação inválida.');
+    try {
+      await acoesApi.update(apiId, {
+        titulo: data.title.trim(), dia_semana: data.days.trim(),
+        horario_inicio: data.startTime, horario_fim: data.endTime,
+        local: data.location.trim(), responsavel: data.responsible.trim(),
+        url_imagem: toStoredUrl(data.image || ''),
+        descricao_curta: data.description.trim(), orientacoes: data.details.trim(),
+      });
+      await reloadActivities();
+      showToast('Ação atualizada com sucesso!', 'info');
+    } catch (error) {
+      showToast(error.message || 'Erro ao atualizar ação.', 'warning');
+      throw error;
+    }
+  };
+
+  const deleteActivity = async (id) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível excluir ação do banco.', 'warning');
+      return;
+    }
+    const current = activities.find(item => item.id === id || item.apiId === id);
+    const apiId = Number(current?.apiId ?? id);
+    if (!Number.isInteger(apiId) || apiId <= 0) return;
+    try {
+      await acoesApi.delete(apiId);
+      await reloadActivities();
+      showToast('Ação excluída com sucesso.', 'warning');
+    } catch (error) {
+      showToast(error.message || 'Erro ao excluir ação.', 'warning');
+      throw error;
+    }
   };
 
   // ── CRUD: Patrocinadores & Parceiros ─────────────────────────────
-  const addSponsor = (sponsorData) => {
-    const newSponsor = {
-      id: `sp-${Date.now()}`,
-      createdAt: new Date().toISOString(),
+  const addSponsor = async (sponsorData) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível cadastrar patrocinador no banco.', 'warning');
+      return;
+    }
+    const normalized = {
+      ...sponsorData,
       name: sponsorData.name.trim(),
-      logo: sponsorData.logo || 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop',
-      category: sponsorData.category || 'Apoiador Comunitário',
       websiteUrl: sponsorData.websiteUrl ? (sponsorData.websiteUrl.startsWith('http') ? sponsorData.websiteUrl : `https://${sponsorData.websiteUrl}`) : '',
       description: sponsorData.description ? sponsorData.description.trim() : '',
-      active: sponsorData.active !== undefined ? Boolean(sponsorData.active) : true
+      active: sponsorData.active !== undefined ? Boolean(sponsorData.active) : true,
     };
-    setSponsors(prev => [newSponsor, ...prev]);
-    showToast(`Patrocinador "${newSponsor.name}" cadastrado com sucesso!`, 'success');
-    return newSponsor;
+    try {
+      await patrocinadoresApi.create(adaptSponsorToBackend(normalized));
+      await reloadSponsors();
+      showToast(`Patrocinador "${normalized.name}" cadastrado com sucesso!`, 'success');
+    } catch (error) {
+      showToast(error.message || 'Erro ao cadastrar patrocinador no backend.', 'warning');
+    }
   };
 
-  const updateSponsor = (id, updatedData) => {
-    setSponsors(prev => prev.map(sp => {
-      if (sp.id !== id) return sp;
-      return {
-        ...sp,
-        ...updatedData,
-        name: updatedData.name ? updatedData.name.trim() : sp.name,
-        websiteUrl: updatedData.websiteUrl ? (updatedData.websiteUrl.startsWith('http') ? updatedData.websiteUrl : `https://${updatedData.websiteUrl}`) : '',
-        description: updatedData.description !== undefined ? updatedData.description.trim() : sp.description,
-        updatedAt: new Date().toISOString()
-      };
-    }));
-    showToast('Dados do patrocinador atualizados com sucesso!', 'info');
+  const updateSponsor = async (id, updatedData) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível atualizar patrocinador no banco.', 'warning');
+      return;
+    }
+    const current = sponsors.find(sponsor => sponsor.id === id || sponsor.apiId === id);
+    const apiId = Number(current?.apiId ?? String(id).replace(/^spn-/, ''));
+    if (!current || !Number.isInteger(apiId) || apiId <= 0) return;
+    const normalized = {
+      ...current,
+      ...updatedData,
+      name: updatedData.name ? updatedData.name.trim() : current.name,
+      websiteUrl: updatedData.websiteUrl ? (updatedData.websiteUrl.startsWith('http') ? updatedData.websiteUrl : `https://${updatedData.websiteUrl}`) : '',
+      description: updatedData.description !== undefined ? updatedData.description.trim() : current.description,
+      active: updatedData.active !== undefined ? Boolean(updatedData.active) : current.active,
+    };
+    try {
+      await patrocinadoresApi.update(apiId, adaptSponsorToBackend(normalized));
+      await reloadSponsors();
+      showToast('Dados do patrocinador atualizados com sucesso!', 'info');
+    } catch (error) {
+      showToast(error.message || 'Erro ao atualizar patrocinador no backend.', 'warning');
+    }
   };
 
-  const deleteSponsor = (id) => {
-    setSponsors(prev => prev.filter(sp => sp.id !== id));
-    showToast('Patrocinador removido com sucesso.', 'warning');
+  const deleteSponsor = async (id) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível remover patrocinador do banco.', 'warning');
+      return;
+    }
+    const current = sponsors.find(sponsor => sponsor.id === id || sponsor.apiId === id);
+    const apiId = Number(current?.apiId ?? String(id).replace(/^spn-/, ''));
+    if (!current || !Number.isInteger(apiId) || apiId <= 0) return;
+    try {
+      await patrocinadoresApi.delete(apiId);
+      await reloadSponsors();
+      showToast('Patrocinador removido com sucesso.', 'warning');
+    } catch (error) {
+      showToast(error.message || 'Erro ao remover patrocinador do backend.', 'warning');
+    }
   };
 
   // ── CRUD: Depoimentos ─────────────────────────────────────────────
-  const addTestimonial = (testimonialData) => {
-    const newTestimonial = {
-      id: `test-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      name: testimonialData.name.trim(),
-      role: testimonialData.role || '',
-      avatar: testimonialData.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop',
-      text: testimonialData.text.trim()
-    };
-    setTestimonials(prev => [newTestimonial, ...prev]);
-    showToast('Depoimento adicionado com sucesso!', 'success');
-    return newTestimonial;
+  const addTestimonial = async (testimonialData) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível cadastrar depoimento no banco.', 'warning');
+      throw new Error('Backend offline');
+    }
+    try {
+      await depoimentosApi.create(adaptDepoimentoToBackend(testimonialData));
+      await reloadTestimonials();
+      showToast('Depoimento adicionado com sucesso!', 'success');
+    } catch (error) {
+      showToast(error.message || 'Erro ao cadastrar depoimento.', 'warning');
+      throw error;
+    }
   };
 
-  const updateTestimonial = (id, updatedData) => {
-    setTestimonials(prev => prev.map(t => {
-      if (t.id !== id) return t;
-      return {
-        ...t,
-        ...updatedData,
-        name: updatedData.name ? updatedData.name.trim() : t.name,
-        role: updatedData.role !== undefined ? updatedData.role : t.role,
-        avatar: updatedData.avatar || t.avatar,
-        text: updatedData.text ? updatedData.text.trim() : t.text,
-        updatedAt: new Date().toISOString()
-      };
-    }));
-    showToast('Depoimento atualizado com sucesso!', 'info');
+  const updateTestimonial = async (id, updatedData) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível atualizar depoimento no banco.', 'warning');
+      throw new Error('Backend offline');
+    }
+    const current = testimonials.find(item => item.id === id || item.apiId === id);
+    const apiId = Number(current?.apiId ?? String(id).replace(/^test-/, ''));
+    if (!current || !Number.isInteger(apiId) || apiId <= 0) throw new Error('Depoimento inválido.');
+    try {
+      await depoimentosApi.update(apiId, adaptDepoimentoToBackend({ ...current, ...updatedData }));
+      await reloadTestimonials();
+      showToast('Depoimento atualizado com sucesso!', 'info');
+    } catch (error) {
+      showToast(error.message || 'Erro ao atualizar depoimento.', 'warning');
+      throw error;
+    }
   };
 
-  const deleteTestimonial = (id) => {
-    setTestimonials(prev => prev.filter(t => t.id !== id));
-    showToast('Depoimento removido.', 'warning');
+  const deleteTestimonial = async (id) => {
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível remover depoimento do banco.', 'warning');
+      throw new Error('Backend offline');
+    }
+    const current = testimonials.find(item => item.id === id || item.apiId === id);
+    const apiId = Number(current?.apiId ?? String(id).replace(/^test-/, ''));
+    if (!current || !Number.isInteger(apiId) || apiId <= 0) throw new Error('Depoimento inválido.');
+    try {
+      await depoimentosApi.delete(apiId);
+      await reloadTestimonials();
+      showToast('Depoimento removido.', 'warning');
+    } catch (error) {
+      showToast(error.message || 'Erro ao remover depoimento.', 'warning');
+      throw error;
+    }
   };
 
-  const updateBrandInfo = (newInfo) => {
-    setBrandInfo(prev => ({ ...prev, ...newInfo }));
-    showToast('Informações da Associação salvas com sucesso!', 'success');
+  const updateBrandInfo = async (newInfo) => {
+    if (!backendConnected) {
+      showToast('Backend offline. As informações não foram alteradas.', 'warning');
+      throw new Error('Backend offline');
+    }
+    try {
+      await informacoesApi.update({
+        name: newInfo.name,
+        subtitle: newInfo.subtitle,
+        email: newInfo.email,
+        phone: newInfo.phone,
+        address: newInfo.address,
+        pixKey: newInfo.pixKey,
+        mission: newInfo.mission,
+        since: Number(newInfo.since) || undefined,
+      });
+      const refreshed = await informacoesApi.get();
+      setBrandInfo(current => normalizeBrandInfo(refreshed || {}, current));
+      setBrandInfoHasRecord(Boolean(Object.keys(refreshed || {}).length));
+      setLegacyBrandInfo(null);
+      localStorage.removeItem(STORAGE_KEY_BRAND);
+      showToast('Informações da Associação salvas com sucesso!', 'success');
+    } catch (error) {
+      showToast(error.message || 'Erro ao salvar informações da Associação.', 'warning');
+      throw error;
+    }
   };
 
   const resetToDefaultData = () => {
-    [STORAGE_KEY_GALLERY, STORAGE_KEY_CALENDAR, STORAGE_KEY_HIGHLIGHTS, STORAGE_KEY_BRAND, STORAGE_KEY_SPONSORS, STORAGE_KEY_TESTIMONIALS]
+    [STORAGE_KEY_BRAND, 'ami_testimonials_v1']
       .forEach(k => localStorage.removeItem(k));
-    setGalleryItems(siteData.gallery.items);
-    setCalendarEvents(seedCalendarEvents());
-    setCalendarHighlights(siteData.calendar.highlights);
-    setBrandInfo(siteData.brand);
-    setSponsors(siteData.sponsors || []);
-    setTestimonials(siteData.testimonials.items);
+    setCalendarEvents([]);
+    setBrandInfo(EMPTY_BRAND_INFO);
+    setTestimonials([]);
     showToast('Dados restaurados para o padrão original!', 'info');
   };
 
@@ -486,11 +827,20 @@ export function DataProvider({ children }) {
       deleteAdmin,
 
       // Entidades
-      galleryItems, calendarEvents, calendarHighlights, brandInfo, sponsors, testimonials, toast,
+      galleryItems, galleryLoading, galleryError,
+      calendarEvents, calendarEventsLoading, calendarEventsError,
+      activities, activitiesLoading, activitiesError,
+      brandInfo, legacyBrandInfo, brandInfoHasRecord,
+      sponsors, sponsorsLoading, sponsorsError,
+      testimonials, testimonialsLoading, testimonialsError,
+      toast,
+      reloadGallery,
       addGalleryItem, updateGalleryItem, deleteGalleryItem,
+      reloadCalendarEvents,
       addCalendarEvent, updateCalendarEvent, deleteCalendarEvent,
-      addSponsor, updateSponsor, deleteSponsor,
-      addTestimonial, updateTestimonial, deleteTestimonial,
+      reloadActivities, addActivity, updateActivity, deleteActivity,
+      reloadSponsors, addSponsor, updateSponsor, deleteSponsor,
+      reloadTestimonials, addTestimonial, updateTestimonial, deleteTestimonial,
       updateBrandInfo, resetToDefaultData, showToast
     }}>
       {children}

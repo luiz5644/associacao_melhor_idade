@@ -1,17 +1,44 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Shield, LogOut, LayoutDashboard, Images, CalendarDays, Settings,
   Plus, Pencil, Trash2, X, CheckCircle, Users, CalendarCheck,
-  HeartHandshake, Camera, Upload, Link, Clock, MapPin, Star,
+  HeartHandshake, Camera, Upload, Clock, MapPin, Star,
   ChevronRight, Search, AlertTriangle,
   Building2, ExternalLink, Globe, UserCheck, RefreshCw,
-  Menu, LayoutGrid, Image, Calendar, Heart
+  Menu, LayoutGrid, Image, Calendar, Heart, Activity,
+  KeyRound, Mail, ArrowLeft
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import { adminApi } from '../services/api';
+import { adminApi, uploadApi, resolveImageUrl, toStoredUrl } from '../services/api';
 import CadastroAdminPage from './CadastroAdminPage';
+import { validateCPF, validateAdminPassword } from '../utils/adminValidation';
+import DateField, { validateDateValue, MONTHS } from '../components/DateField';
+import {
+  pluralize,
+  capitalize,
+  getUpcomingEvents,
+  relativeDayLabel,
+  parseEventDate,
+  toISODate,
+  formatLongDate,
+  greetingFor,
+  getAttentionItems,
+  daysUntil,
+} from '../utils/adminDashboard';
 
-const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const FieldError = ({ children }) => children ? <p style={{ color:'#DC2626', fontSize:'0.85rem', marginTop:5 }}>{children}</p> : null;
+const focusFirstError = (errors) => {
+  const field = Object.keys(errors)[0];
+  if (field) Array.from(document.querySelectorAll(`[data-field="${field}"]`))
+    .find(element => element.getClientRects().length)?.focus();
+};
+
+// Converte 'YYYY-MM-DD' em partes {day, month (0-11), year} para o DateField
+const parseDateParts = (value) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ''));
+  if (!match) return { day: '', month: '', year: '' };
+  return { day: Number(match[3]), month: Number(match[2]) - 1, year: Number(match[1]) };
+};
 
 // ── Modal de Confirmação de Exclusão ─────────────────────────────────────────
 function ConfirmDeleteModal({ isOpen, onConfirm, onCancel, title, subtitle }) {
@@ -34,50 +61,68 @@ function ConfirmDeleteModal({ isOpen, onConfirm, onCancel, title, subtitle }) {
   );
 }
 
-// ── Formulário de Lembrança (Álbum) — suporte a múltiplas fotos ──────────────
+// ── Formulário de Lembrança (Álbum) — upload direto e data padronizada ───────
 function GalleryFormModal({ isOpen, item, onSave, onClose }) {
   const fileRef = useRef(null);
+  const { backendConnected, showToast } = useData();
   const [form, setForm] = useState({
     title: item?.title || '',
     description: item?.description || '',
     date: item?.date || '',
     photos: item?.photos?.length > 0 ? [...item.photos] : (item?.image ? [item.image] : []),
   });
-  const [urlInput, setUrlInput] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [uploadMode, setUploadMode] = useState('url'); // 'url' | 'file'
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [dateParts, setDateParts] = useState({ day: '', month: '', year: '' });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setForm({
+      title: item?.title || '',
+      description: item?.description || '',
+      date: item?.date || '',
+      photos: item?.photos?.length ? [...item.photos] : (item?.image ? [item.image] : []),
+    });
+    setDateParts(parseDateParts(item?.date));
+    setUploading(false);
+    setSaving(false);
+    setErrors({});
+  }, [item, isOpen]);
 
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
-  // Adiciona foto por URL
-  const handleAddUrl = () => {
-    const url = urlInput.trim();
-    if (!url) return;
-    setField('photos', [...form.photos, url]);
-    setUrlInput('');
-  };
-
   // Adiciona uma ou várias fotos por upload de arquivo(s)
-  const handleFilesChange = (e) => {
-    const files = Array.from(e.target.files);
+  const handleFilesChange = async (e) => {
+    const input = e.currentTarget;
+    const files = Array.from(input.files || []);
+    input.value = '';
     if (!files.length) return;
+    const invalidFile = files.find(file => !file.type.startsWith('image/') || file.size > 5 * 1024 * 1024);
+    if (invalidFile) {
+      showToast(invalidFile.size > 5 * 1024 * 1024
+        ? 'Cada imagem deve ter no máximo 5 MB.'
+        : 'Selecione apenas arquivos de imagem.', 'warning');
+      return;
+    }
+    if (!backendConnected) {
+      showToast('Backend offline. Não foi possível enviar as imagens.', 'warning');
+      return;
+    }
+
     setUploading(true);
-    let loaded = 0;
-    const newPhotos = [];
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        newPhotos.push(ev.target.result);
-        loaded++;
-        if (loaded === files.length) {
-          setField('photos', [...form.photos, ...newPhotos]);
-          setUploading(false);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-    // reset input para permitir reenvio do mesmo arquivo
-    e.target.value = '';
+    try {
+      const uploadedUrls = [];
+      for (const file of files) {
+        uploadedUrls.push(resolveImageUrl(await uploadApi.upload(file)));
+      }
+      setForm(current => ({ ...current, photos: [...current.photos, ...uploadedUrls] }));
+      setErrors(current => ({ ...current, photos: '' }));
+    } catch (error) {
+      showToast(error.message || 'Erro ao enviar imagem.', 'warning');
+    } finally {
+      setUploading(false);
+    }
   };
 
   // Remove foto pelo índice
@@ -92,17 +137,26 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
     setField('photos', reordered);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
-    onSave({
-      title: form.title.trim(),
-      description: form.description,
-      date: form.date,
-      image: form.photos[0] || '',
-      photos: form.photos,
-    });
-    onClose();
+    const nextErrors = {};
+    if (!form.title.trim()) nextErrors.title = 'Título é obrigatório.';
+    const dateErr = validateDateValue(form.date, false);
+    if (dateErr) nextErrors.date = dateErr;
+    if (!form.photos.length) nextErrors.photos = 'Adicione pelo menos uma foto.';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) { focusFirstError(nextErrors); return; }
+    setSaving(true);
+    try {
+      await onSave({
+        title: form.title.trim(),
+        description: form.description,
+        date: form.date,
+        image: form.photos[0] || '',
+        photos: form.photos,
+      });
+      onClose();
+    } finally { setSaving(false); }
   };
 
   if (!isOpen) return null;
@@ -114,106 +168,100 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
           <X size={20} />
         </button>
         <div className="modal-header">
-          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#0F2A66', marginBottom:6 }}>
             <Images size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Álbum de Lembranças</span>
           </div>
           <h3 className="modal-title">{item ? 'Editar Lembrança' : 'Nova Lembrança'}</h3>
-          <p className="modal-subtitle">Adicione quantas fotos quiser — a primeira é a capa da lembrança.</p>
+          <p className="modal-subtitle">Adicione fotos do seu computador — a primeira é a capa da lembrança.</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           {/* Dados da Lembrança */}
           <div className="form-group">
-                      <label className="form-label">Título <span style={{ color:'#DC2626' }}>*</span></label>
-                      <input className="form-input" type="text" placeholder="Ex: Festa de São João 2026" required
-                        value={form.title} onChange={e => setField('title', e.target.value)} />
-                    </div>
+            <label className="form-label">Título <span style={{ color:'#DC2626' }}>*</span></label>
+            <input data-field="title" className="form-input" type="text" placeholder="Ex.: Quadrilha da Melhor Idade no Limoeiro Junino"
+              value={form.title} onChange={e => { setField('title', e.target.value); setErrors(p => ({...p, title:''})); }} />
+            <FieldError>{errors.title}</FieldError>
+          </div>
 
-                    <div className="form-group">
-                      <label className="form-label">Data do Evento</label>
-                      <input className="form-input" type="date" value={form.date} onChange={e => setField('date', e.target.value)} />
-                    </div>
+          {/* Campo de Data Padronizado */}
+          <DateField
+            label="Data do Evento"
+            value={dateParts}
+            onChange={({ day, month, year, isoString }) => {
+              setDateParts({ day, month, year });
+              setField('date', isoString);
+              setErrors(p => ({ ...p, date: '' }));
+            }}
+            error={errors.date}
+            dataField="date"
+            idPrefix="gallery-date"
+          />
 
-                    <div className="form-group">
-                      <label className="form-label">Sobre / Descrição</label>
-                      <textarea className="form-input" rows={3} placeholder="Conte sobre o momento especial capturado nesta lembrança..."
-                        value={form.description} onChange={e => setField('description', e.target.value)}
-                        style={{ resize:'vertical', lineHeight:1.6 }} />
-                    </div>
+          <div className="form-group">
+            <label className="form-label">Sobre / Descrição</label>
+            <textarea className="form-input" rows={3} placeholder="Identifique a atividade e a ocasião. Ex.: Apresentação da Quadrilha da Melhor Idade na abertura do Limoeiro Junino, 2026."
+              value={form.description} onChange={e => setField('description', e.target.value)}
+              style={{ resize:'vertical', lineHeight:1.6 }} />
+          </div>
 
-          {/* ─── Seção de Fotos ──────────────────────────────── */}
-          <div style={{ background:'#F5F9F8', borderRadius:14, padding:'20px', border:'1px solid #DCE7E5', marginBottom:18 }}>
+          {/* ─── Seção de Fotos (Apenas Upload de Arquivos) ──────────────── */}
+          <div style={{ background:'#F7F9FB', borderRadius:14, padding:'20px', border:'1px solid #E2E8F0', marginBottom:18 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <label className="form-label" style={{ margin:0 }}>
                 <Camera size={14} style={{ verticalAlign:'middle', marginRight:5 }} />
                 Fotos da Lembrança
-                <span style={{ marginLeft:8, fontWeight:400, color:'var(--text-subtle)', fontSize:'0.78rem' }}>
+                <span style={{ marginLeft:8, fontWeight:400, color:'var(--text-subtle)', fontSize:'0.85rem' }}>
                   ({form.photos.length} {form.photos.length === 1 ? 'foto' : 'fotos'} • primeira = capa)
                 </span>
               </label>
-              <div style={{ display:'flex', gap:6 }}>
-                <button type="button"
-                  className={`btn ${uploadMode === 'url' ? 'btn-primary' : 'btn-pill'}`}
-                  style={{ padding:'5px 12px', fontSize:'0.78rem' }}
-                  onClick={() => setUploadMode('url')}>
-                  <Link size={12} /> URL
-                </button>
-                <button type="button"
-                  className={`btn ${uploadMode === 'file' ? 'btn-primary' : 'btn-pill'}`}
-                  style={{ padding:'5px 12px', fontSize:'0.78rem' }}
-                  onClick={() => setUploadMode('file')}>
-                  <Upload size={12} /> Arquivo
-                </button>
-              </div>
+              <button
+                type="button"
+                className="btn btn-pill"
+                style={{ padding:'6px 14px', fontSize:'0.85rem' }}
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+              >
+                <Upload size={13} /> Adicionar fotos
+              </button>
             </div>
 
-            {/* Input de URL */}
-            {uploadMode === 'url' && (
-              <div style={{ display:'flex', gap:8, marginBottom:14 }}>
-                <input className="form-input" type="url" placeholder="https://exemplo.com/foto.jpg"
-                  value={urlInput} onChange={e => setUrlInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddUrl(); } }}
-                  style={{ flex:1 }} />
-                <button type="button" className="btn btn-primary" style={{ padding:'10px 16px', whiteSpace:'nowrap' }}
-                  onClick={handleAddUrl} disabled={!urlInput.trim()}>
-                  <Plus size={14} /> Adicionar
-                </button>
-              </div>
-            )}
-
-            {/* Área de Upload de Arquivos (múltiplos) */}
-            {uploadMode === 'file' && (
-              <div onClick={() => fileRef.current?.click()} style={{
-                border:'2px dashed #B0CDD6', borderRadius:10, padding:'20px', textAlign:'center',
-                cursor:'pointer', background:'#EAF4F6', transition:'border-color 0.2s', marginBottom:14 }}
-                onMouseEnter={e => e.currentTarget.style.borderColor='#2A5C66'}
-                onMouseLeave={e => e.currentTarget.style.borderColor='#B0CDD6'}>
-                <input ref={fileRef} type="file" accept="image/*" multiple style={{ display:'none' }} onChange={handleFilesChange} />
-                <Upload size={24} color="#2A5C66" style={{ marginBottom:6 }} />
-                <p style={{ fontSize:'0.88rem', color:'#2A5C66', fontWeight:700 }}>
-                  {uploading ? 'Carregando fotos...' : 'Clique para selecionar fotos'}
-                </p>
-                <p style={{ fontSize:'0.76rem', color:'#6E6E6E', marginTop:3 }}>
-                  PNG, JPG, WEBP até 5MB cada • Você pode selecionar várias de uma vez
-                </p>
-              </div>
-            )}
+            {/* Área de Upload Direto de Arquivos (múltiplos) */}
+            <div
+              onClick={() => fileRef.current?.click()}
+              data-field="photos"
+              style={{
+                border:'2px dashed #0088FF', borderRadius:10, padding:'22px 20px', textAlign:'center',
+                cursor:'pointer', background:'#EBF3FC', transition:'all 0.2s', marginBottom:14 }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor='#0F2A66'; e.currentTarget.style.background='#DCEAFB'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor='#0088FF'; e.currentTarget.style.background='#EBF3FC'; }}
+            >
+              <input ref={fileRef} type="file" accept="image/*" multiple style={{ display:'none' }} onChange={handleFilesChange} />
+              <Upload size={26} color="#0F2A66" style={{ marginBottom:6 }} />
+              <p style={{ fontSize:'0.9rem', color:'#0F2A66', fontWeight:700 }}>
+                {uploading ? 'Carregando fotos...' : 'Clique ou arraste para selecionar fotos'}
+              </p>
+              <p style={{ fontSize:'0.76rem', color:'#475569', marginTop:4 }}>
+                PNG, JPG, WEBP até 5MB cada • Selecione várias fotos de uma vez
+              </p>
+            </div>
+            <FieldError>{errors.photos}</FieldError>
 
             {/* Grade de Miniaturas das Fotos Adicionadas */}
             {form.photos.length > 0 ? (
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(110px, 1fr))', gap:10 }}>
                 {form.photos.map((photoSrc, idx) => (
                   <div key={idx} style={{ position:'relative', borderRadius:10, overflow:'hidden', aspectRatio:'1',
-                    border: idx === 0 ? '3px solid #2A5C66' : '2px solid #DCE7E5',
-                    boxShadow: idx === 0 ? '0 0 0 2px #EAF4F6' : 'none' }}>
+                    border: idx === 0 ? '3px solid #0F2A66' : '2px solid #E2E8F0',
+                    boxShadow: idx === 0 ? '0 0 0 2px #EBF3FC' : 'none' }}>
                     <img src={photoSrc} alt={`Foto ${idx + 1}`}
                       style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}
-                      onError={e => { e.target.style.background='#EEE'; e.target.style.display='none'; }} />
+                      onError={e => { e.target.style.background='#E2E8F0'; e.target.style.display='none'; }} />
 
                     {/* Badge de Capa */}
                     {idx === 0 && (
                       <div style={{ position:'absolute', bottom:0, left:0, right:0,
-                        background:'rgba(42,92,102,0.85)', color:'#fff', fontSize:'0.62rem',
+                        background:'rgba(15, 42, 102, 0.85)', color:'#fff', fontSize:'0.62rem',
                         fontWeight:800, textAlign:'center', padding:'3px 4px', letterSpacing:'0.04em' }}>
                         ★ CAPA
                       </div>
@@ -231,7 +279,7 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
                       {/* Definir como capa (apenas se não for o índice 0) */}
                       {idx > 0 && (
                         <button type="button"
-                          style={{ width:22, height:22, background:'rgba(42,92,102,0.85)', border:'none', borderRadius:'50%',
+                          style={{ width:22, height:22, background:'rgba(15, 42, 102, 0.85)', border:'none', borderRadius:'50%',
                             display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'#fff', fontSize:'10px', fontWeight:700 }}
                           onClick={() => handleSetCover(idx)} title="Definir como capa">
                           ★
@@ -250,14 +298,14 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
             ) : (
               <div style={{ textAlign:'center', padding:'18px', color:'var(--text-subtle)', fontSize:'0.85rem' }}>
                 <Camera size={28} style={{ opacity:0.3, display:'block', margin:'0 auto 8px' }} />
-                Nenhuma foto adicionada ainda. Use os botões acima para inserir fotos.
+                Nenhuma foto adicionada ainda. Clique na área acima para enviar fotos do seu computador.
               </div>
             )}
           </div>
 
           <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
             <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn btn-primary" disabled={uploading || saving}>
               <CheckCircle size={15} /> {item ? 'Salvar Alterações' : 'Adicionar ao Álbum'}
             </button>
           </div>
@@ -269,26 +317,37 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
 
 
 function CalendarFormModal({ isOpen, item, onSave, onClose }) {
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    title: item?.title || '',
-    desc: item?.desc || '',
-    day: item?.day || 1,
-    month: item?.month !== undefined ? item.month : 9,
-    year: item?.year || 2026,
-    time: item?.time || '14:00',
-    location: item?.location || 'Sede da Associação',
-    isHighlight: item?.isHighlight || false
+    title: '', desc: '', day: '', month: '', year: '', time: '', location: '', isHighlight: false
   });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setForm(item ? {
+      title: item.title || '', desc: item.desc || '', day: item.day ?? '', month: item.month ?? '',
+      year: item.year ?? '', time: item.time || '', location: item.location || '', isHighlight: Boolean(item.isHighlight),
+    } : { title:'', desc:'', day:'', month:'', year:'', time:'', location:'', isHighlight:false });
+    setErrors({});
+    setSaving(false);
+  }, [item, isOpen]);
 
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
-  const daysInMonth = (month, year) => new Date(year, month + 1, 0).getDate();
-  const numDays = daysInMonth(parseInt(form.month), parseInt(form.year));
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
-    onSave({
+    const nextErrors = {};
+    if (!form.title.trim()) nextErrors.title = 'Título é obrigatório.';
+    const dateErr = validateDateValue({ day: form.day, month: form.month, year: form.year }, true);
+    if (dateErr) nextErrors.date = dateErr;
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.time)) nextErrors.time = 'Informe um horário válido.';
+    if (!form.location.trim()) nextErrors.location = 'Local é obrigatório.';
+    if (!form.desc.trim()) nextErrors.desc = 'Descrição é obrigatória.';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) { focusFirstError(nextErrors); return; }
+    setSaving(true);
+    try { await onSave({
       title: form.title.trim(),
       desc: form.desc,
       day: parseInt(form.day, 10),
@@ -296,9 +355,9 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
       year: parseInt(form.year, 10),
       time: form.time,
       location: form.location,
-      isHighlight: form.isHighlight
-    });
-    onClose();
+      isHighlight: form.isHighlight,
+      status: item?.status || 'ativo'
+    }); onClose(); } finally { setSaving(false); }
   };
 
   if (!isOpen) return null;
@@ -310,80 +369,74 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
           <X size={20} />
         </button>
         <div className="modal-header">
-          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#2A5C66', marginBottom:6 }}>
-            <CalendarDays size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Calendário de Ações</span>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#0F2A66', marginBottom:6 }}>
+            <CalendarDays size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Eventos</span>
           </div>
-          <h3 className="modal-title">{item ? 'Editar Atividade' : 'Nova Atividade'}</h3>
+          <h3 className="modal-title">{item ? 'Editar Evento' : 'Novo Evento'}</h3>
           <p className="modal-subtitle">Cadastre um encontro ou evento para o calendário público.</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
-            <label className="form-label">Título da Atividade <span style={{ color:'#DC2626' }}>*</span></label>
+            <label className="form-label">Título da Ação <span style={{ color:'#DC2626' }}>*</span></label>
             <input className="form-input" type="text" placeholder="Ex: Tarde de Bingo Beneficente"
-              required value={form.title} onChange={e => setField('title', e.target.value)} />
+              data-field="title" value={form.title} onChange={e => { setField('title', e.target.value); setErrors(p => ({...p,title:''})); }} />
+            <FieldError>{errors.title}</FieldError>
           </div>
 
-          {/* Data e Horário */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12 }}>
-            <div className="form-group">
-              <label className="form-label">Mês</label>
-              <select className="form-select" value={form.month} onChange={e => { setField('month', e.target.value); setField('day', 1); }}>
-                {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Dia</label>
-              <select className="form-select" value={form.day} onChange={e => setField('day', e.target.value)}>
-                {Array.from({ length: numDays }, (_, i) => i + 1).map(d => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Ano</label>
-              <select className="form-select" value={form.year} onChange={e => setField('year', e.target.value)}>
-                {[2026, 2027, 2028].map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </div>
-          </div>
+          {/* Campo de Data Padronizado */}
+          <DateField
+            label="Data da Ação / Evento"
+            required
+            value={{ day: form.day, month: form.month, year: form.year }}
+            onChange={({ day, month, year }) => {
+              setForm(p => ({ ...p, day, month, year }));
+              setErrors(p => ({ ...p, date: '' }));
+            }}
+            error={errors.date}
+            dataField="date"
+            idPrefix="calendar-event-date"
+          />
 
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
             <div className="form-group">
               <label className="form-label"><Clock size={13} style={{ verticalAlign:'middle', marginRight:4 }} />Horário</label>
-              <input className="form-input" type="time" value={form.time} onChange={e => setField('time', e.target.value)} />
+              <input data-field="time" className="form-input" type="time" value={form.time} onChange={e => {setField('time', e.target.value); setErrors(p => ({...p,time:''}));}} />
+              <FieldError>{errors.time}</FieldError>
             </div>
             <div className="form-group">
-              <label className="form-label"><MapPin size={13} style={{ verticalAlign:'middle', marginRight:4 }} />Local da Atividade</label>
+              <label className="form-label"><MapPin size={13} style={{ verticalAlign:'middle', marginRight:4 }} />Local da Ação</label>
               <input className="form-input" type="text" placeholder="Ex: Salão Nobre, Sala de Música, Pátio Externo..."
-                value={form.location} onChange={e => setField('location', e.target.value)} />
+                data-field="location" value={form.location} onChange={e => {setField('location', e.target.value); setErrors(p => ({...p,location:''}));}} />
+              <FieldError>{errors.location}</FieldError>
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Sobre a Atividade</label>
+            <label className="form-label">Sobre a Ação</label>
             <textarea className="form-input" rows={3} placeholder="Descreva detalhes do encontro para os associados..."
-              value={form.desc} onChange={e => setField('desc', e.target.value)}
+              data-field="desc" value={form.desc} onChange={e => {setField('desc', e.target.value); setErrors(p => ({...p,desc:''}));}}
               style={{ resize:'vertical', lineHeight:1.6 }} />
+            <FieldError>{errors.desc}</FieldError>
           </div>
 
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'12px 16px', background:'#F5F9F8', borderRadius:10, border:'1px solid #DCE7E5', cursor:'pointer' }}
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'12px 16px', background:'#F7F9FB', borderRadius:10, border:'1px solid #E2E8F0', cursor:'pointer' }}
             onClick={() => setField('isHighlight', !form.isHighlight)}>
-            <div style={{ width:20, height:20, borderRadius:4, border:`2px solid ${form.isHighlight ? '#2A5C66' : '#B0BEB8'}`,
-              background: form.isHighlight ? '#2A5C66' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}>
+            <div style={{ width:20, height:20, borderRadius:4, border:`2px solid ${form.isHighlight ? '#0F2A66' : '#475569'}`,
+              background: form.isHighlight ? '#0F2A66' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}>
               {form.isHighlight && <CheckCircle size={13} color="#fff" />}
             </div>
-            <Star size={15} color={form.isHighlight ? '#E8A87C' : '#B0BEB8'} fill={form.isHighlight ? '#E8A87C' : 'none'} />
-            <span style={{ fontSize:'0.9rem', fontWeight:600, color: form.isHighlight ? '#1B2527' : '#6E6E6E' }}>
+            <Star size={15} color={form.isHighlight ? '#E6007E' : '#475569'} fill={form.isHighlight ? '#E6007E' : 'none'} />
+            <span style={{ fontSize:'0.9rem', fontWeight:600, color: form.isHighlight ? '#0B192C' : '#475569' }}>
               Marcar como Destaque do Mês
             </span>
-            <span style={{ fontSize:'0.78rem', color:'#8E9696', marginLeft:'auto' }}>Aparece na sidebar do calendário</span>
+            <span style={{ fontSize:'0.85rem', color:'#475569', marginLeft:'auto' }}>Aparece na sidebar do calendário</span>
           </div>
 
           <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
             <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">
-              <CheckCircle size={15} /> {item ? 'Salvar Alterações' : 'Agendar no Calendário'}
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              <CheckCircle size={15} /> {saving ? 'Salvando...' : (item ? 'Salvar Alterações' : 'Agendar no Calendário')}
             </button>
           </div>
         </form>
@@ -392,8 +445,10 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
   );
 }
 
+
 // ── Formulário de Patrocinador (Modal) ──────────────────────────────────────
 function SponsorFormModal({ isOpen, item, onSave, onClose }) {
+  const { backendConnected, showToast } = useData();
   const fileRef = useRef(null);
   const [form, setForm] = useState({
     name: '',
@@ -402,10 +457,12 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
     description: '',
     active: true
   });
-  const [uploadMode, setUploadMode] = useState('file');
-  const [urlInput, setUrlInput] = useState('');
+  const [errors, setErrors] = useState({});
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!isOpen) return;
     if (item) {
       setForm({
         name: item.name || '',
@@ -414,7 +471,6 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
         description: item.description || '',
         active: item.active !== undefined ? item.active : true
       });
-      setUrlInput(item.logo || '');
     } else {
       setForm({
         name: '',
@@ -423,161 +479,145 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
         description: '',
         active: true
       });
-      setUrlInput('');
     }
+    setErrors({});
+    setUploading(false);
+    setSaving(false);
   }, [item, isOpen]);
 
   if (!isOpen) return null;
 
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setField('logo', ev.target.result);
-    };
-    reader.readAsDataURL(file);
+    if (!file.type.startsWith('image/')) {
+      showToast('Selecione um arquivo de imagem válido.', 'warning');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('A imagem deve ter no máximo 5 MB.', 'warning');
+      e.target.value = '';
+      return;
+    }
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível enviar a logo agora.', 'warning');
+      e.target.value = '';
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadApi.upload(file);
+      setField('logo', resolveImageUrl(url));
+    } catch (error) {
+      showToast(error.message || 'Não foi possível enviar a logo.', 'warning');
+    }
+    finally { setUploading(false); }
     e.target.value = '';
   };
 
-  const handleApplyUrl = () => {
-    if (urlInput.trim()) {
-      setField('logo', urlInput.trim());
-    }
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
-    onSave({
+    const websiteUrl = form.websiteUrl.trim() && !/^https?:\/\//i.test(form.websiteUrl.trim()) ? `https://${form.websiteUrl.trim()}` : form.websiteUrl.trim();
+    const nextErrors = {};
+    if (!form.name.trim()) nextErrors.name = 'Nome é obrigatório.';
+    if (websiteUrl && !/^https?:\/\/[^\s.]+(?:\.[^\s.]+)+/i.test(websiteUrl)) nextErrors.websiteUrl = 'Informe um endereço válido.';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) { focusFirstError(nextErrors); return; }
+    setSaving(true);
+    try { await onSave({
       ...form,
+      websiteUrl,
       logo: form.logo.trim() || 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?q=80&w=400&auto=format&fit=crop'
-    });
+    }); } finally { setSaving(false); }
   };
 
   return (
-      <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-        <div className="modal-card" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:38, height:38, background:'#FDF6F0', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <Building2 size={20} color="#B8621A" />
-              </div>
-              <div>
-                <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.25rem' }}>
-                  {item ? 'Editar Patrocinador' : 'Novo Patrocinador'}
-                </h3>
-                <p style={{ fontSize:'0.82rem', color:'var(--text-subtle)' }}>
-                  Empresa parceira com logo no carrossel da página inicial
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="modal-card" style={{ maxWidth: 540, maxHeight: '92vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+        <button className="modal-close-btn" onClick={onClose} aria-label="Fechar">
+          <X size={20} />
+        </button>
+        <div className="modal-header">
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#0F2A66', marginBottom:6 }}>
+            <Building2 size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Patrocinadores & Parceiros</span>
+          </div>
+          <h3 className="modal-title">{item ? 'Editar Patrocinador' : 'Novo Patrocinador'}</h3>
+          <p className="modal-subtitle">Empresa parceira — logo e nome aparecerão no carrossel da página inicial.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="form-group">
+            <label className="form-label">Nome da Empresa ou Comércio <span style={{ color:'#DC2626' }}>*</span></label>
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Ex: Farmácia São Lucas, Padaria Central..."
+              data-field="name"
+              value={form.name}
+              onChange={e => {setField('name', e.target.value); setErrors(p => ({...p,name:''}));}}
+            />
+            <FieldError>{errors.name}</FieldError>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              <Globe size={13} style={{ verticalAlign:'middle', marginRight:4 }} />
+              Website ou Rede Social
+            </label>
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Ex: https://instagram.com/empresa"
+              data-field="websiteUrl" value={form.websiteUrl}
+              onChange={e => {setField('websiteUrl', e.target.value); setErrors(p => ({...p,websiteUrl:''}));}}
+            />
+            <FieldError>{errors.websiteUrl}</FieldError>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              <Camera size={14} style={{ verticalAlign:'middle', marginRight:5 }} />
+              Logo da Empresa / Patrocinador
+            </label>
+
+            {/* Upload Direto de Imagem */}
+            <div>
+              <input
+                type="file"
+                ref={fileRef}
+                accept="image/*"
+                style={{ display:'none' }}
+                onChange={handleFileUpload}
+              />
+              <div
+                onClick={() => fileRef.current?.click()}
+                data-field="logo"
+                style={{
+                  border:'2px dashed #0088FF', borderRadius:10, padding:'22px 20px', textAlign:'center',
+                  cursor:'pointer', background:'#EBF3FC', transition:'all 0.2s', marginBottom:10 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor='#0F2A66'; e.currentTarget.style.background='#DCEAFB'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor='#0088FF'; e.currentTarget.style.background='#EBF3FC'; }}
+              >
+                <Upload size={26} color="#0F2A66" style={{ marginBottom:6 }} />
+                <p style={{ fontSize:'0.9rem', color:'#0F2A66', fontWeight:700 }}>
+                  {uploading ? 'Enviando logo...' : 'Escolher arquivo de imagem do computador'}
+                </p>
+                <p style={{ fontSize:'0.76rem', color:'#475569', marginTop:4 }}>
+                  PNG, JPG, WEBP até 5MB
                 </p>
               </div>
             </div>
-            <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text-subtle)' }}>
-              <X size={20} />
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label">Nome da Empresa ou Comércio *</label>
-              <input 
-                className="form-input" 
-                type="text" 
-                required 
-                placeholder="Ex: Farmácia São Lucas, Padaria Central..."
-                value={form.name} 
-                onChange={e => setField('name', e.target.value)} 
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">
-                <Globe size={13} style={{ verticalAlign:'middle', marginRight:4 }} />
-                Website ou Rede Social
-              </label>
-              <input 
-                className="form-input" 
-                type="text" 
-                placeholder="Ex: https://instagram.com/empresa"
-                value={form.websiteUrl} 
-                onChange={e => setField('websiteUrl', e.target.value)} 
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">
-                <Camera size={14} style={{ verticalAlign:'middle', marginRight:5 }} />
-                Logo da Empresa / Patrocinador
-              </label>
-
-              {/* Alternar modo Arquivo / URL */}
-                            <div style={{ display:'flex', gap:8, marginBottom:10 }}>
-                              <button 
-                                type="button"
-                                className={`btn btn-pill ${uploadMode === 'file' ? 'active' : ''}`}
-                                style={{ fontSize:'0.8rem', padding:'5px 12px' }}
-                                onClick={() => setUploadMode('file')}
-                              >
-                                <Upload size={13} /> Enviar do Computador
-                              </button>
-                              <button
-                type="button"
-                className={`btn btn-pill ${uploadMode === 'url' ? 'active' : ''}`}
-                style={{ fontSize:'0.8rem', padding:'5px 12px' }}
-                onClick={() => setUploadMode('url')}
-              >
-                <Link size={13} /> Inserir Link (URL)
-              </button>
-            </div>
-
-            {uploadMode === 'file' ? (
-              <div>
-                <input 
-                  type="file" 
-                  ref={fileRef} 
-                  accept="image/*" 
-                  style={{ display:'none' }}
-                  onChange={handleFileUpload} 
-                />
-                <button 
-                  type="button" 
-                  className="btn"
-                  style={{ width:'100%', background:'#F5F9F8', border:'2px dashed #BED8D3', color:'#2A5C66', padding:'14px', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', gap:8, cursor:'pointer' }}
-                  onClick={() => fileRef.current?.click()}
-                >
-                  <Upload size={18} />
-                  <span>Escolher arquivo de imagem do computador</span>
-                </button>
-              </div>
-            ) : (
-              <div style={{ display:'flex', gap:8 }}>
-                <input 
-                  className="form-input" 
-                  type="url" 
-                  placeholder="https://exemplo.com/logo.png"
-                  value={urlInput} 
-                  onChange={e => setUrlInput(e.target.value)} 
-                />
-                <button 
-                  type="button" 
-                  className="btn btn-pill" 
-                  style={{ whiteSpace:'nowrap' }} 
-                  onClick={handleApplyUrl}
-                >
-                  Aplicar
-                </button>
-              </div>
-            )}
 
             {/* Preview do Logo */}
             {form.logo && (
-              <div style={{ marginTop:12, padding:14, background:'#FAF7F5', border:'1px solid #DCE7E5', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
-                <div style={{ width:70, height:70, background:'#fff', borderRadius:8, border:'1px solid #E5E7EB', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', padding:6 }}>
-                  <img 
-                    src={form.logo} 
-                    alt="Pré-visualização do logo" 
+              <div style={{ marginTop:12, padding:14, background:'#F7F9FB', border:'1px solid #E2E8F0', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
+                <div style={{ width:70, height:70, background:'#fff', borderRadius:8, border:'1px solid #E2E8F0', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', padding:6 }}>
+                  <img
+                    src={resolveImageUrl(form.logo)}
+                    alt="Pré-visualização do logo"
                     style={{ maxWidth:'100%', maxHeight:'100%', objectFit:'contain' }}
                     onError={(e) => {
                       e.currentTarget.onerror = null;
@@ -587,11 +627,11 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-main)' }}>Prévia do Logo</div>
-                  <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)' }}>Esta imagem será exibida no carrossel da página inicial.</div>
-                  <button 
-                    type="button" 
+                  <div style={{ fontSize:'0.85rem', color:'var(--text-subtle)' }}>Esta imagem será exibida no carrossel da página inicial.</div>
+                  <button
+                    type="button"
                     onClick={() => setField('logo', '')}
-                    style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.75rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}
+                    style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.85rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}
                   >
                     Remover logo
                   </button>
@@ -602,33 +642,33 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
 
           <div className="form-group">
             <label className="form-label">Breve Descrição ou Contrapartida (Opcional)</label>
-            <textarea 
-              className="form-input" 
-              rows={2} 
+            <textarea
+              className="form-input"
+              rows={2}
               placeholder="Ex: Apoia nossos cafés comunitários e festividades do forró..."
-              value={form.description} 
+              value={form.description}
               onChange={e => setField('description', e.target.value)}
-              style={{ resize:'vertical', lineHeight:1.5 }} 
+              style={{ resize:'vertical', lineHeight:1.5 }}
             />
           </div>
 
-          <div 
-            style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'10px 14px', background:'#F5F9F8', borderRadius:10, border:'1px solid #DCE7E5', cursor:'pointer' }}
+          <div
+            style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20, padding:'10px 14px', background:'#F7F9FB', borderRadius:10, border:'1px solid #E2E8F0', cursor:'pointer' }}
             onClick={() => setField('active', !form.active)}
           >
-            <div style={{ width:20, height:20, borderRadius:4, border:`2px solid ${form.active ? '#2A5C66' : '#B0BEB8'}`,
-              background: form.active ? '#2A5C66' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}>
+            <div style={{ width:20, height:20, borderRadius:4, border:`2px solid ${form.active ? '#0F2A66' : '#475569'}`,
+              background: form.active ? '#0F2A66' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s' }}>
               {form.active && <CheckCircle size={13} color="#fff" />}
             </div>
-            <span style={{ fontSize:'0.88rem', fontWeight:600, color: form.active ? '#1B2527' : '#6E6E6E' }}>
+            <span style={{ fontSize:'0.88rem', fontWeight:600, color: form.active ? '#0B192C' : '#475569' }}>
               Ativo (visível no carrossel da página inicial)
             </span>
           </div>
 
           <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
             <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">
-              <CheckCircle size={15} /> {item ? 'Salvar Alterações' : 'Cadastrar Patrocinador'}
+            <button type="submit" className="btn btn-primary" disabled={uploading || saving}>
+              <CheckCircle size={15} /> {saving ? 'Salvando...' : (item ? 'Salvar Alterações' : 'Cadastrar Patrocinador')}
             </button>
           </div>
         </form>
@@ -637,126 +677,324 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
   );
 }
 
-// ── PAINEL: VISÃO GERAL ──────────────────────────────────────────────────────
-function TabOverview({ setActiveTab }) {
-  const { galleryItems, calendarEvents, sponsors } = useData();
-  const stats = [
-    { icon: <Users size={22} color="#2A5C66" />, value: 248, label: 'Associados Ativos', bg: '#EAF4F6', border: '#D2ECF0' },
-    { icon: <CalendarCheck size={22} color="#3D6058" />, value: calendarEvents.length, label: 'Ações Agendadas', bg: '#F0F9F5', border: '#CBE8DF' },
-    { icon: <Images size={22} color="#7B5EA7" />, value: galleryItems.length, label: 'Lembranças no Álbum', bg: '#F5F0FB', border: '#E2D4F5' },
-    { icon: <Building2 size={22} color="#B8621A" />, value: (sponsors || []).length, label: 'Patrocinadores & Parceiros', bg: '#FDF6F0', border: '#F8DFC2' }
-  ];
 
-  const upcomingEvents = [...calendarEvents]
-    .sort((a, b) => { const da = a.year*10000+a.month*100+a.day, db = b.year*10000+b.month*100+b.day; return da-db; })
-    .slice(0, 4);
+// ── PAINEL: VISÃO GERAL ──────────────────────────────────────────────────────
+function OverviewSkeleton({ rows = 2 }) {
+  return (
+    <div className="admin-block-skeleton" aria-hidden="true">
+      {Array.from({ length: rows }).map((_, index) => (
+        <span key={index} className="admin-skeleton admin-skeleton--row" />
+      ))}
+    </div>
+  );
+}
+
+function OverviewError({ message, onRetry }) {
+  return (
+    <div className="admin-block-error" role="alert">
+      <p>{message}</p>
+      <button type="button" className="admin-inline-retry" onClick={onRetry}>
+        <RefreshCw size={15} /> Tentar novamente
+      </button>
+    </div>
+  );
+}
+
+function StatCard({ icon, value, singular, plural, actionLabel, onClick, loading, error, onRetry, tone }) {
+  if (loading) {
+    return (
+      <div className={`admin-stat-card admin-stat-card--${tone} admin-stat-card--skeleton`} aria-hidden="true">
+        <span className="admin-skeleton admin-skeleton--icon" />
+        <span className="admin-skeleton admin-skeleton--value" />
+        <span className="admin-skeleton admin-skeleton--label" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`admin-stat-card admin-stat-card--${tone} admin-stat-card--error`}>
+        <span className="admin-stat-label">Não foi possível carregar</span>
+        <button type="button" className="admin-inline-retry" onClick={onRetry}>
+          <RefreshCw size={15} /> Tentar novamente
+        </button>
+      </div>
+    );
+  }
+
+  const label = capitalize(pluralize(value, singular, plural));
 
   return (
-    <div>
-      <h2 className="admin-section-title">Visão Geral</h2>
-      <p style={{ color:'var(--text-subtle)', marginBottom:28, fontSize:'0.95rem' }}>Resumo da atividade da Associação Melhor Idade.</p>
+    <button
+      type="button"
+      className={`admin-stat-card admin-stat-card--${tone}`}
+      onClick={onClick}
+      aria-label={`${label}. ${actionLabel}`}
+    >
+      <span className="admin-stat-icon">{icon}</span>
+      <span className="admin-stat-value">{value}</span>
+      <span className="admin-stat-label">{label}</span>
+      <span className="admin-stat-cta" aria-hidden="true">
+        Abrir <ChevronRight size={15} />
+      </span>
+    </button>
+  );
+}
 
-      {/* Stats */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:32, width:'100%' }}>
-        {stats.map((s, i) => (
-          <div key={i} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius:14, padding:'20px 18px', minWidth:0 }}>
-            <div style={{ marginBottom:10 }}>{s.icon}</div>
-            <div style={{ fontSize:'2rem', fontWeight:800, color:'var(--text-main)', lineHeight:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.value}</div>
-            <div style={{ fontSize:'0.8rem', color:'var(--text-subtle)', marginTop:6, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
+function TabOverview({ onQuickAction, onEditEvent }) {
+  const {
+    galleryItems,
+    galleryLoading,
+    galleryError,
+    reloadGallery,
+    calendarEvents,
+    calendarEventsLoading,
+    calendarEventsError,
+    reloadCalendarEvents,
+    sponsors,
+    sponsorsLoading,
+    sponsorsError,
+    reloadSponsors,
+  } = useData();
+
+  const [adminName] = useState(() => {
+    try {
+      return (localStorage.getItem('ami_admin_login') || '').trim();
+    } catch (_) {
+      return '';
+    }
+  });
+
+  const now = new Date();
+  const greeting = greetingFor(now);
+  const longDate = formatLongDate(now);
+
+  const retry = (action) => () => {
+    Promise.resolve()
+      .then(action)
+      .catch(() => {});
+  };
+
+  const stats = [
+    {
+      key: 'events',
+      tone: 'blue',
+      icon: <CalendarCheck size={22} color="#0088FF" />,
+      value: calendarEvents.length,
+      singular: 'evento agendado',
+      plural: 'eventos agendados',
+      actionLabel: 'Abrir a seção de eventos',
+      onClick: () => onQuickAction('calendar'),
+      loading: calendarEventsLoading,
+      error: calendarEventsError,
+      onRetry: retry(reloadCalendarEvents),
+    },
+    {
+      key: 'gallery',
+      tone: 'blue',
+      icon: <Images size={22} color="#0066CC" />,
+      value: galleryItems.length,
+      singular: 'lembrança no álbum',
+      plural: 'lembranças no álbum',
+      actionLabel: 'Abrir o álbum de lembranças',
+      onClick: () => onQuickAction('gallery'),
+      loading: galleryLoading,
+      error: galleryError,
+      onRetry: retry(reloadGallery),
+    },
+    {
+      key: 'sponsors',
+      tone: 'pink',
+      icon: <Building2 size={22} color="#C9006E" />,
+      value: (sponsors || []).length,
+      singular: 'patrocinador & parceiro',
+      plural: 'patrocinadores & parceiros',
+      actionLabel: 'Abrir a seção de patrocinadores',
+      onClick: () => onQuickAction('sponsors'),
+      loading: sponsorsLoading,
+      error: sponsorsError,
+      onRetry: retry(reloadSponsors),
+    },
+  ];
+
+  const quickActions = [
+    { key: 'event', label: 'Novo evento', onClick: () => onQuickAction('calendar') },
+    { key: 'gallery', label: 'Nova lembrança', onClick: () => onQuickAction('gallery') },
+    { key: 'testimonial', label: 'Novo depoimento', onClick: () => onQuickAction('testimonials') },
+    { key: 'sponsor', label: 'Novo patrocinador', onClick: () => onQuickAction('sponsors') },
+  ];
+
+  const upcomingEvents = getUpcomingEvents(calendarEvents).slice(0, 5);
+  const attentionItems = getAttentionItems(calendarEvents);
+
+  return (
+    <div className="admin-overview">
+      <header className="admin-overview-head">
+        <h2 className="admin-section-title admin-greeting-title" id="overview-title">
+          {greeting}{adminName ? `, ${adminName}` : ''}!
+        </h2>
+        <p className="admin-greeting-date">{longDate}</p>
+        <p className="admin-overview-subtitle">Resumo do dia na Associação Qualidade de Vida.</p>
+      </header>
+
+      {/* Números */}
+      <section className="admin-overview-section" aria-labelledby="overview-numbers">
+        <h3 className="admin-visually-hidden" id="overview-numbers">Números do painel</h3>
+        <div className="admin-stats-grid">
+          {stats.map(({ key, ...stat }) => (
+            <StatCard key={key} {...stat} />
+          ))}
+        </div>
+      </section>
 
       {/* Atalhos rápidos */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(260px, 1fr))', gap:20, marginBottom:32, width:'100%' }}>
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24, minWidth:0 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:38, height:38, background:'#F5F0FB', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <Images size={20} color="#7B5EA7" />
-            </div>
-            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Álbum de Lembranças</h3>
-          </div>
-          <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
-            {galleryItems.length} lembranças cadastradas no álbum público.
-          </p>
-          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px', width:'100%' }} onClick={() => setActiveTab('gallery')}>
-            <Plus size={14} /> Adicionar Lembrança
-          </button>
+      <section className="admin-overview-section" aria-labelledby="overview-quick">
+        <h3 className="admin-panel-title" id="overview-quick">Atalhos rápidos</h3>
+        <div className="admin-quick-actions">
+          {quickActions.map((action) => (
+            <button key={action.key} type="button" className="admin-quick-btn" onClick={action.onClick}>
+              <span className="admin-quick-icon" aria-hidden="true"><Plus size={18} /></span>
+              <span>{action.label}</span>
+            </button>
+          ))}
         </div>
+      </section>
 
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24, minWidth:0 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:38, height:38, background:'#EAF4F6', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <CalendarDays size={20} color="#2A5C66" />
-            </div>
-            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Calendário de Ações</h3>
+      <div className="admin-overview-columns">
+        {/* Precisa de atenção */}
+        <section className="admin-panel" aria-labelledby="overview-attention">
+          <div className="admin-panel-head">
+            <h3 className="admin-panel-title" id="overview-attention">Precisa de atenção</h3>
           </div>
-          <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
-            {calendarEvents.length} ações agendadas no calendário.
-          </p>
-          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px', width:'100%' }} onClick={() => setActiveTab('calendar')}>
-            <Plus size={14} /> Agendar Ação
-          </button>
-        </div>
 
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24, minWidth:0 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
-            <div style={{ width:38, height:38, background:'#FDF6F0', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <Building2 size={20} color="#B8621A" />
+          {calendarEventsLoading ? (
+            <OverviewSkeleton rows={2} />
+          ) : calendarEventsError ? (
+            <OverviewError message={calendarEventsError} onRetry={retry(reloadCalendarEvents)} />
+          ) : attentionItems.length === 0 ? (
+            <div className="admin-empty admin-empty--ok">
+              <CheckCircle size={28} color="#0F2A66" aria-hidden="true" />
+              <p><strong>Tudo em dia!</strong><br />Nenhuma pendência com os próximos eventos.</p>
             </div>
-            <h3 style={{ fontSize:'1rem', fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>Patrocinadores & Apoio</h3>
+          ) : (
+            <ul className="admin-attention-list">
+              {attentionItems.map((item) => (
+                <li key={item.id} className={`admin-attention-item admin-attention-item--${item.tone}`}>
+                  <span className="admin-attention-icon" aria-hidden="true">
+                    <AlertTriangle size={18} />
+                  </span>
+                  <div className="admin-attention-text">
+                    <strong>{capitalize(item.text)}</strong>
+                    <span>{item.hint}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="admin-attention-action"
+                    onClick={() => (item.event ? onEditEvent(item.event) : onQuickAction('calendar'))}
+                    aria-label={`Revisar: ${item.text}`}
+                  >
+                    Revisar
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Próximos eventos */}
+        <section className="admin-panel" aria-labelledby="overview-upcoming">
+          <div className="admin-panel-head">
+            <h3 className="admin-panel-title" id="overview-upcoming">Próximos eventos</h3>
           </div>
-          <p style={{ fontSize:'0.88rem', color:'var(--text-subtle)', marginBottom:16 }}>
-            {(sponsors || []).length} empresas parceiras cadastradas no carrossel.
-          </p>
-          <button className="btn btn-primary" style={{ fontSize:'0.85rem', padding:'8px 18px', width:'100%' }} onClick={() => setActiveTab('sponsors')}>
-            <Plus size={14} /> Gerenciar Patrocinadores
-          </button>
-        </div>
+
+          {calendarEventsLoading ? (
+            <OverviewSkeleton rows={3} />
+          ) : calendarEventsError ? (
+            <OverviewError message={calendarEventsError} onRetry={retry(reloadCalendarEvents)} />
+          ) : upcomingEvents.length === 0 ? (
+            <div className="admin-empty">
+              <CalendarDays size={30} color="#64748B" aria-hidden="true" />
+              <p>Nenhum evento futuro cadastrado.</p>
+              <button type="button" className="admin-empty-action" onClick={() => onQuickAction('calendar')}>
+                <Plus size={16} /> Novo evento
+              </button>
+            </div>
+          ) : (
+            <>
+              <ul className="admin-upcoming-list">
+                {upcomingEvents.map((event) => {
+                  const diff = daysUntil(event, now);
+                  const badgeTone = diff === 0 ? 'today' : diff === 1 ? 'tomorrow' : 'later';
+                  return (
+                    <li key={event.id} className="admin-upcoming-item">
+                      <time
+                        className="admin-upcoming-date"
+                        dateTime={toISODate(parseEventDate(event))}
+                        aria-label={`${event.day} de ${MONTHS[event.month]}`}
+                      >
+                        <span className="admin-upcoming-day">{event.day}</span>
+                        <span className="admin-upcoming-month">{MONTHS[event.month]?.slice(0, 3)}</span>
+                      </time>
+                      <div className="admin-upcoming-info">
+                        <span className="admin-upcoming-title">{event.title}</span>
+                        <span className="admin-upcoming-meta">
+                          <Clock size={14} aria-hidden="true" /> {event.time}
+                          <MapPin size={14} aria-hidden="true" /> {event.location}
+                        </span>
+                      </div>
+                      <span className={`admin-upcoming-badge admin-upcoming-badge--${badgeTone}`}>
+                        {relativeDayLabel(event, now)}
+                      </span>
+                      <button
+                        type="button"
+                        className="admin-upcoming-edit"
+                        onClick={() => onEditEvent(event)}
+                        aria-label={`Editar evento ${event.title}`}
+                      >
+                        <Pencil size={15} /> Editar
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div className="admin-panel-footer">
+                <button type="button" className="admin-link-button" onClick={() => onQuickAction('calendar')}>
+                  Ver todos os eventos <ChevronRight size={15} aria-hidden="true" />
+                </button>
+              </div>
+            </>
+          )}
+        </section>
       </div>
-
-      {/* Próximas ações */}
-      {upcomingEvents.length > 0 && (
-        <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:24, width:'100%' }}>
-          <h3 style={{ fontFamily:'var(--font-sans)', fontSize:'1.1rem', marginBottom:16 }}>Próximas Ações Cadastradas</h3>
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            {upcomingEvents.map(ev => (
-              <div key={ev.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'10px 14px', background:'#F5F9F8', borderRadius:10, flexWrap:'wrap' }}>
-                              <div style={{ textAlign:'center', minWidth:44, background:'#2A5C66', borderRadius:8, padding:'6px 4px', color:'#fff', flexShrink:0 }}>
-                                <div style={{ fontSize:'1.1rem', fontWeight:800, lineHeight:1 }}>{ev.day}</div>
-                                <div style={{ fontSize:'0.65rem', textTransform:'uppercase', letterSpacing:'0.05em' }}>{MONTHS[ev.month]?.slice(0,3)}</div>
-                              </div>
-                              <div style={{ flex:1, minWidth:0 }}>
-                                <div style={{ fontWeight:700, fontSize:'0.92rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{ev.title}</div>
-                                <div style={{ fontSize:'0.78rem', color:'var(--text-subtle)' }}>{ev.time} • {ev.location}</div>
-                              </div>
-                            </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 // ── PAINEL: ÁLBUM DE LEMBRANÇAS ──────────────────────────────────────────────
-function TabGallery() {
-  const { galleryItems, addGalleryItem, updateGalleryItem, deleteGalleryItem } = useData();
+function TabGallery({ openIntent, onIntentHandled }) {
+  const { galleryItems, galleryLoading, galleryError, reloadGallery, addGalleryItem, updateGalleryItem, deleteGalleryItem } = useData();
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (openIntent?.tab !== 'gallery') return;
+    setEditingItem(null);
+    setShowForm(true);
+    onIntentHandled?.();
+  }, [openIntent?.seq, openIntent?.tab, onIntentHandled]);
 
   const filtered = galleryItems.filter(item => {
     const matchSearch = !search || item.title.toLowerCase().includes(search.toLowerCase()) || item.description?.toLowerCase().includes(search.toLowerCase());
     return matchSearch;
   });
 
-  const handleSave = (data) => {
+  const handleSave = async (data) => {
     if (editingItem) {
-      updateGalleryItem(editingItem.id, data);
+      await updateGalleryItem(editingItem.id, data);
     } else {
-      addGalleryItem(data);
+      await addGalleryItem(data);
     }
     setEditingItem(null);
     setShowForm(false);
@@ -767,7 +1005,7 @@ function TabGallery() {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
           <div>
             <h2 className="admin-section-title">Álbum de Lembranças</h2>
-            <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{galleryItems.length} lembranças cadastradas</p>
+            <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{capitalize(pluralize(galleryItems.length, 'lembrança cadastrada', 'lembranças cadastradas'))}</p>
           </div>
           <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
             <Plus size={16} /> Nova Lembrança
@@ -777,13 +1015,17 @@ function TabGallery() {
         {/* Busca */}
         <div style={{ display:'flex', gap:12, marginBottom:22, flexWrap:'wrap' }}>
           <div style={{ position:'relative', flex:'1 1 220px' }}>
-            <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
+            <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#475569' }} />
             <input className="form-input" style={{ paddingLeft:36 }} type="text"
               placeholder="Buscar por título ou descrição..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        {galleryLoading ? (
+          <OverviewSkeleton rows={3} />
+        ) : galleryError ? (
+          <OverviewError message={galleryError} onRetry={() => { reloadGallery().catch(() => {}); }} />
+        ) : filtered.length === 0 ? (
         <div style={{ textAlign:'center', padding:'48px 20px', color:'var(--text-subtle)' }}>
           <Images size={40} style={{ opacity:0.3, marginBottom:12, display:'block', margin:'0 auto 12px' }} />
           <p style={{ fontWeight:600 }}>Nenhuma lembrança encontrada.</p>
@@ -792,10 +1034,10 @@ function TabGallery() {
       ) : (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:18 }}>
           {filtered.map(item => (
-            <div key={item.id} style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:14, overflow:'hidden', boxShadow:'0 2px 8px rgba(27,37,39,0.04)', transition:'box-shadow 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow='0 8px 24px rgba(27,37,39,0.10)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow='0 2px 8px rgba(27,37,39,0.04)'}>
-              <div style={{ height:160, overflow:'hidden', background:'#EEE', position:'relative' }}>
+            <div key={item.id} style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:14, overflow:'hidden', boxShadow:'0 2px 8px rgba(11, 25, 44, 0.04)', transition:'box-shadow 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow='0 8px 24px rgba(11, 25, 44, 0.10)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow='0 2px 8px rgba(11, 25, 44, 0.04)'}>
+              <div style={{ height:160, overflow:'hidden', background:'#E2E8F0', position:'relative' }}>
                 <img src={item.image} alt={item.title}
                   style={{ width:'100%', height:'100%', objectFit:'cover', transition:'transform 0.4s' }}
                   onMouseEnter={e => e.currentTarget.style.transform='scale(1.05)'}
@@ -804,7 +1046,7 @@ function TabGallery() {
                                 </div>
                                 <div style={{ padding:'14px 16px' }}>
                 <h4 style={{ fontFamily:'var(--font-serif)', fontSize:'1rem', marginBottom:4, lineHeight:1.3 }}>{item.title}</h4>
-                {item.subtitle && <p style={{ fontSize:'0.78rem', color:'var(--text-subtle)', marginBottom:8 }}>{item.subtitle}</p>}
+                {item.subtitle && <p style={{ fontSize:'0.85rem', color:'var(--text-subtle)', marginBottom:8 }}>{item.subtitle}</p>}
                 {item.description && (
                   <p style={{ fontSize:'0.82rem', color:'var(--text-body)', lineHeight:1.55,
                     overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
@@ -816,7 +1058,7 @@ function TabGallery() {
                     onClick={() => { setEditingItem(item); setShowForm(true); }}>
                     <Pencil size={12} /> Editar
                   </button>
-                  <button className="btn" style={{ padding:'5px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }}
+                  <button className="btn" style={{ padding:'5px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FCA5A5' }}
                     onClick={() => setDeleteTarget(item)}>
                     <Trash2 size={12} /> Excluir
                   </button>
@@ -839,14 +1081,25 @@ function TabGallery() {
   );
 }
 
-// ── PAINEL: CALENDÁRIO DE ATIVIDADES ─────────────────────────────────────────
-function TabCalendar() {
-  const { calendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent } = useData();
+// ── PAINEL: EVENTOS DO CALENDÁRIO ───────────────────────────────────────
+function TabCalendar({ openIntent, onIntentHandled }) {
+  const { calendarEvents, calendarEventsLoading, calendarEventsError, reloadCalendarEvents, addCalendarEvent, updateCalendarEvent, deleteCalendarEvent } = useData();
   const [search, setSearch] = useState('');
   const [filterMonth, setFilterMonth] = useState('Todos');
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (openIntent?.tab !== 'calendar') return;
+    if (openIntent.mode === 'edit' && openIntent.event) {
+      setEditingEvent(openIntent.event);
+    } else {
+      setEditingEvent(null);
+    }
+    setShowForm(true);
+    onIntentHandled?.();
+  }, [openIntent?.seq, openIntent?.tab, openIntent?.mode, openIntent?.event, onIntentHandled]);
 
   const filtered = calendarEvents.filter(ev => {
     const matchMonth = filterMonth === 'Todos' || String(ev.month) === filterMonth;
@@ -858,11 +1111,11 @@ function TabCalendar() {
     return da - db;
   });
 
-  const handleSave = (data) => {
+  const handleSave = async (data) => {
     if (editingEvent) {
-      updateCalendarEvent(editingEvent.id, data);
+      await updateCalendarEvent(editingEvent.id, data);
     } else {
-      addCalendarEvent(data);
+      await addCalendarEvent(data);
     }
     setEditingEvent(null);
     setShowForm(false);
@@ -872,20 +1125,20 @@ function TabCalendar() {
       <div>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
           <div>
-            <h2 className="admin-section-title">Calendário de Ações</h2>
-                      <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{calendarEvents.length} ações cadastradas</p>
+            <h2 className="admin-section-title">Eventos</h2>
+                      <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{capitalize(pluralize(calendarEvents.length, 'evento cadastrado', 'eventos cadastrados'))}</p>
                     </div>
                     <button className="btn btn-primary" onClick={() => { setEditingEvent(null); setShowForm(true); }}>
-                      <Plus size={16} /> Nova Ação
+                      <Plus size={16} /> Novo Evento
           </button>
         </div>
 
         {/* Busca & Filtro de Mês */}
         <div style={{ display:'flex', gap:12, marginBottom:22, flexWrap:'wrap' }}>
           <div style={{ position:'relative', flex:'1 1 200px' }}>
-            <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#8E9696' }} />
+            <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#475569' }} />
             <input className="form-input" style={{ paddingLeft:36 }} type="text"
-              placeholder="Buscar atividade..." value={search} onChange={e => setSearch(e.target.value)} />
+              placeholder="Buscar ação..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="form-select" style={{ flex:'0 0 auto' }} value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
             <option value="Todos">Todos os Meses</option>
@@ -893,43 +1146,47 @@ function TabCalendar() {
           </select>
         </div>
 
-        {filtered.length === 0 ? (
+        {calendarEventsLoading ? (
+          <OverviewSkeleton rows={3} />
+        ) : calendarEventsError ? (
+          <OverviewError message={calendarEventsError} onRetry={() => { reloadCalendarEvents().catch(() => {}); }} />
+        ) : filtered.length === 0 ? (
         <div style={{ textAlign:'center', padding:'48px 20px', color:'var(--text-subtle)' }}>
           <CalendarDays size={40} style={{ opacity:0.3, marginBottom:12, display:'block', margin:'0 auto 12px' }} />
-          <p style={{ fontWeight:600 }}>Nenhuma atividade encontrada.</p>
-          <p style={{ fontSize:'0.85rem', marginTop:4 }}>Clique em "Nova Atividade" para agendar.</p>
+          <p style={{ fontWeight:600 }}>Nenhuma ação encontrada.</p>
+          <p style={{ fontSize:'0.85rem', marginTop:4 }}>Clique em "Novo Evento" para agendar.</p>
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
           {filtered.map(ev => (
-            <div key={ev.id} style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:14, padding:'16px 20px',
-              display:'flex', gap:16, alignItems:'flex-start', boxShadow:'0 1px 4px rgba(27,37,39,0.04)', transition:'box-shadow 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(27,37,39,0.08)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(27,37,39,0.04)'}>
+            <div key={ev.id} style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:14, padding:'16px 20px',
+              display:'flex', gap:16, alignItems:'flex-start', boxShadow:'0 1px 4px rgba(11, 25, 44, 0.04)', transition:'box-shadow 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(11, 25, 44, 0.08)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(11, 25, 44, 0.04)'}>
               {/* Data */}
               <div style={{ minWidth:52, textAlign:'center', background:'var(--primary)', color:'#fff', borderRadius:10, padding:'8px 6px' }}>
                 <div style={{ fontSize:'1.4rem', fontWeight:800, lineHeight:1 }}>{ev.day}</div>
-                <div style={{ fontSize:'0.62rem', textTransform:'uppercase', letterSpacing:'0.08em', opacity:0.85 }}>
+                <div style={{ fontSize:'0.85rem', textTransform:'uppercase', letterSpacing:'0.06em', opacity:0.95 }}>
                   {MONTHS[ev.month]?.slice(0,3)}
                 </div>
-                <div style={{ fontSize:'0.62rem', opacity:0.7, marginTop:2 }}>{ev.year}</div>
+                <div style={{ fontSize:'0.85rem', opacity:0.9, marginTop:2 }}>{ev.year}</div>
               </div>
                             {/* Conteúdo */}
                             <div style={{ flex:1, minWidth:0 }}>
                               <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginBottom:4 }}>
                                 {ev.isHighlight && (
-                                  <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:'0.7rem', fontWeight:700,
+                                  <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:'0.85rem', fontWeight:700,
                                     color:'#92660A', background:'#FEF3C7', border:'1px solid #FDE68A', borderRadius:999, padding:'2px 9px' }}>
                                     <Star size={10} fill="#92660A" /> Destaque
                                   </span>
                                 )}
                               </div>
                               <h4 style={{ fontWeight:700, fontSize:'0.97rem', marginBottom:4 }}>{ev.title}</h4>
-                <div style={{ fontSize:'0.8rem', color:'var(--text-subtle)', display:'flex', gap:14, flexWrap:'wrap' }}>
+                <div style={{ fontSize:'0.9rem', color:'var(--text-subtle)', display:'flex', gap:14, flexWrap:'wrap' }}>
                   <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Clock size={11} /> {ev.time}</span>
                   {ev.location && <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><MapPin size={11} /> {ev.location}</span>}
                 </div>
-                {ev.desc && <p style={{ fontSize:'0.83rem', color:'var(--text-body)', marginTop:6, lineHeight:1.55 }}>{ev.desc}</p>}
+                {ev.desc && <p style={{ fontSize:'0.95rem', color:'var(--text-body)', marginTop:6, lineHeight:1.55 }}>{ev.desc}</p>}
               </div>
               {/* Ações */}
               <div style={{ display:'flex', flexDirection:'column', gap:6, alignSelf:'center' }}>
@@ -937,7 +1194,7 @@ function TabCalendar() {
                   onClick={() => { setEditingEvent(ev); setShowForm(true); }}>
                   <Pencil size={12} /> Editar
                 </button>
-                <button className="btn" style={{ padding:'6px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5', whiteSpace:'nowrap' }}
+                <button className="btn" style={{ padding:'6px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FCA5A5', whiteSpace:'nowrap' }}
                   onClick={() => setDeleteTarget(ev)}>
                   <Trash2 size={12} /> Excluir
                 </button>
@@ -947,25 +1204,274 @@ function TabCalendar() {
         </div>
       )}
 
-      <CalendarFormModal isOpen={showForm} item={editingEvent}
+      <CalendarFormModal key={showForm ? (editingEvent?.id ?? 'new') : 'closed'} isOpen={showForm} item={editingEvent}
         onSave={handleSave} onClose={() => { setShowForm(false); setEditingEvent(null); }} />
 
       <ConfirmDeleteModal isOpen={!!deleteTarget}
         title={deleteTarget?.title}
-        subtitle="Esta atividade será removida do calendário público."
+        subtitle="Este evento será removido do calendário público."
         onConfirm={() => { deleteCalendarEvent(deleteTarget.id); setDeleteTarget(null); }}
         onCancel={() => setDeleteTarget(null)} />
     </div>
   );
 }
 
+function ActivityFormModal({ isOpen, item, onSave, onClose }) {
+  const { backendConnected } = useData();
+  const imageInputRef = useRef(null);
+  const [form, setForm] = useState(() => ({
+    title: item?.title || '',
+    image: item?.image || '',
+    description: item?.description || '',
+    details: item?.schedule?.details || '',
+    days: item?.schedule?.days || '',
+    startTime: item?.schedule?.time?.split(' às ')[0] || '',
+    endTime: item?.schedule?.time?.split(' às ')[1] || '',
+    location: item?.schedule?.location || '',
+    responsible: item?.schedule?.instructor || '',
+  }));
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  if (!isOpen) return null;
+  const update = (field, value) => {
+    setForm(current => ({ ...current, [field]: value }));
+    setErrors(current => ({ ...current, [field]: '' }));
+  };
+  const submit = async event => {
+    event.preventDefault();
+    const next = {};
+    if (!form.title.trim()) next.title = 'Informe o título.';
+    else if (form.title.trim().length > 200) next.title = 'Use até 200 caracteres.';
+    if (!['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'].includes(form.days)) next.days = 'Selecione um dia da semana.';
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.startTime)) next.startTime = 'Informe um horário válido.';
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.endTime)) next.endTime = 'Informe um horário válido.';
+    else if (form.startTime && form.endTime <= form.startTime) next.endTime = 'O término deve ser posterior ao início.';
+    if (!form.location.trim()) next.location = 'Informe o local.';
+    else if (form.location.trim().length > 200) next.location = 'Use até 200 caracteres.';
+    if (!form.responsible.trim()) next.responsible = 'Informe o responsável.';
+    else if (form.responsible.trim().length > 200) next.responsible = 'Use até 200 caracteres.';
+    if (form.description.trim().length > 100) next.description = 'Use até 100 caracteres.';
+    if (form.details.trim().length > 255) next.details = 'Use até 255 caracteres.';
+    setErrors(next);
+    if (Object.keys(next).length) { focusFirstError(next); return; }
+    setSaving(true);
+    try {
+      await onSave(form);
+      onClose();
+    } catch {
+      // O contexto apresenta o erro em uma notificação.
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const uploadActionImage = async event => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setErrors(current => ({ ...current, image: 'Selecione um arquivo de imagem válido.' }));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors(current => ({ ...current, image: 'A imagem deve ter no máximo 5 MB.' }));
+      return;
+    }
+    if (!backendConnected) {
+      setErrors(current => ({ ...current, image: 'Conecte o backend para enviar a imagem.' }));
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadApi.upload(file);
+      setForm(current => ({ ...current, image: resolveImageUrl(url) }));
+      setErrors(current => ({ ...current, image: '' }));
+    } catch (error) {
+      setErrors(current => ({ ...current, image: error.message || 'Não foi possível enviar a imagem.' }));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const fields = [
+    ['title', 'Título', 'Ex.: Oficina de artesanato', 'text'],
+    ['startTime', 'Horário de início', '', 'time'],
+    ['endTime', 'Horário de término', '', 'time'],
+    ['location', 'Local', 'Local dos encontros', 'text'],
+    ['responsible', 'Instrutor / Responsável', 'Nome do responsável', 'text'],
+  ];
+
+  return (
+    <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
+      <div className="modal-card" style={{ maxWidth:620, maxHeight:'90vh', overflowY:'auto' }} onClick={event => event.stopPropagation()}>
+        <button className="modal-close-btn" onClick={onClose} aria-label="Fechar"><X size={20} /></button>
+        <div className="modal-header">
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#0F2A66', marginBottom:6 }}>
+            <Activity size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Ações da Associação</span>
+          </div>
+          <h3 className="modal-title">{item ? 'Editar Ação' : 'Nova Ação'}</h3>
+          <p className="modal-subtitle">Preencha os dados disponíveis para esta ação.</p>
+        </div>
+        <form onSubmit={submit} noValidate>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))', gap:'0 16px' }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="activity-days">Dia da semana <span style={{ color:'#DC2626' }}>*</span></label>
+              <select id="activity-days" data-field="days" className="form-input" value={form.days} onChange={event => update('days', event.target.value)}>
+                <option value="">Selecione um dia</option>
+                <option value="domingo">Domingo</option>
+                <option value="segunda">Segunda-feira</option>
+                <option value="terca">Terça-feira</option>
+                <option value="quarta">Quarta-feira</option>
+                <option value="quinta">Quinta-feira</option>
+                <option value="sexta">Sexta-feira</option>
+                <option value="sabado">Sábado</option>
+              </select>
+              <FieldError>{errors.days}</FieldError>
+            </div>
+            {fields.map(([field, label, placeholder, type]) => (
+              <div className="form-group" key={field}>
+                <label className="form-label" htmlFor={`activity-${field}`}>{label}{['title', 'startTime', 'endTime', 'location', 'responsible'].includes(field) && <span style={{ color:'#DC2626' }}> *</span>}</label>
+                <input id={`activity-${field}`} data-field={field} className="form-input" type={type} placeholder={placeholder}
+                  value={form[field]} onChange={event => update(field, event.target.value)} maxLength={field === 'title' ? 250 : (['location', 'responsible'].includes(field) ? 255 : undefined)} />
+                <FieldError>{errors[field]}</FieldError>
+              </div>
+            ))}
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="activity-image">Imagem da ação</label>
+            <input ref={imageInputRef} id="activity-image" type="file" accept="image/*" style={{ display:'none' }} onChange={uploadActionImage} disabled={uploading} />
+            <div
+              onClick={() => imageInputRef.current?.click()}
+              data-field="image"
+              style={{ border:'2px dashed #0088FF', borderRadius:10, padding:'20px', textAlign:'center', cursor:'pointer', background:'#F7F9FB', transition:'all 0.2s' }}
+              onMouseEnter={event => { event.currentTarget.style.borderColor='#0F2A66'; event.currentTarget.style.background='#EBF3FC'; }}
+              onMouseLeave={event => { event.currentTarget.style.borderColor='#0088FF'; event.currentTarget.style.background='#F7F9FB'; }}
+            >
+              <Upload size={22} color="#0F2A66" style={{ marginBottom:6 }} />
+              <p style={{ fontSize:'0.88rem', color:'#0F2A66', fontWeight:700 }}>{uploading ? 'Enviando imagem...' : 'Escolher imagem do computador'}</p>
+              <p style={{ fontSize:'0.76rem', color:'#475569', marginTop:3 }}>PNG, JPG ou WEBP até 5 MB</p>
+            </div>
+            {form.image && (
+              <div style={{ marginTop:12, padding:14, background:'#F7F9FB', border:'1px solid #E2E8F0', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
+                <div style={{ width:110, height:76, background:'#fff', borderRadius:8, border:'1px solid #E2E8F0', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', padding:4 }}>
+                  <img src={form.image} alt="Prévia da imagem da ação" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                </div>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-main)' }}>Prévia da imagem</div>
+                  <div style={{ fontSize:'0.85rem', color:'var(--text-subtle)' }}>Será exibida no card da ação.</div>
+                  <button type="button" onClick={() => update('image', '')} style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.85rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}>Remover imagem</button>
+                </div>
+              </div>
+            )}
+            <FieldError>{errors.image}</FieldError>
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="activity-description">Descrição curta</label>
+            <textarea id="activity-description" className="form-input" rows={3} maxLength={100} value={form.description} onChange={event => update('description', event.target.value)} />
+            <FieldError>{errors.description}</FieldError>
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="activity-details">Orientações e participação</label>
+            <textarea id="activity-details" className="form-input" rows={4} maxLength={255} value={form.details} onChange={event => update('details', event.target.value)} />
+            <FieldError>{errors.details}</FieldError>
+          </div>
+          <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:12 }}>
+            <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn btn-primary" disabled={saving || uploading}>
+              <CheckCircle size={15} /> {uploading ? 'Enviando imagem...' : saving ? 'Salvando...' : (item ? 'Salvar Alterações' : 'Cadastrar Ação')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function TabActions() {
+  const { activities, activitiesLoading, activitiesError, reloadActivities, addActivity, updateActivity, deleteActivity } = useData();
+  const [search, setSearch] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const filtered = activities.filter(item => item.title.toLowerCase().includes(search.toLowerCase()));
+
+  const save = async data => {
+    if (editing) await updateActivity(editing.id, data);
+    else await addActivity(data);
+    setShowForm(false);
+    setEditing(null);
+  };
+
+  return (
+    <div>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:14 }}>
+        <div>
+          <h2 className="admin-section-title">Ações</h2>
+          <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{capitalize(pluralize(activities.length, 'ação cadastrada', 'ações cadastradas'))}</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => { setEditing(null); setShowForm(true); }}><Plus size={16} /> Adicionar ação</button>
+      </div>
+      <div style={{ display:'flex', gap:12, marginBottom:22 }}>
+        <div style={{ position:'relative', flex:1 }}>
+          <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#475569' }} />
+          <input className="form-input" style={{ paddingLeft:36 }} placeholder="Buscar ação..." value={search} onChange={event => setSearch(event.target.value)} />
+        </div>
+      </div>
+      {activitiesLoading ? (
+        <p role="status" style={{ textAlign:'center', padding:40, color:'var(--text-subtle)' }}>Carregando ações...</p>
+      ) : activitiesError ? (
+        <div role="alert" style={{ textAlign:'center', padding:40, color:'var(--text-subtle)' }}>
+          <p>Não foi possível carregar as ações.</p>
+          <button className="btn btn-primary" onClick={async () => { try { await reloadActivities(); } catch {} }} style={{ marginTop:14 }}>Tentar novamente</button>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign:'center', padding:48, color:'var(--text-subtle)' }}>
+          <Activity size={40} style={{ opacity:0.25, display:'block', margin:'0 auto 12px' }} />
+          <p style={{ fontWeight:600 }}>Nenhuma ação cadastrada.</p>
+          <p style={{ fontSize:'0.85rem', marginTop:4 }}>Adicione a primeira ação da Associação.</p>
+        </div>
+      ) : (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(270px, 1fr))', gap:18 }}>
+          {filtered.map(item => (
+            <article key={item.id} style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:14, padding:20, boxShadow:'0 2px 8px rgba(11, 25, 44, 0.04)' }}>
+              <h3 style={{ fontSize:'1.05rem', marginBottom:10 }}>{item.title}</h3>
+              <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:6 }}>{item.schedule.daysLabel || item.schedule.days}</p>
+              <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:6 }}>{item.schedule.time}</p>
+              <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem' }}>{item.schedule.location}</p>
+              <div style={{ display:'flex', gap:8, justifyContent:'flex-end', marginTop:18 }}>
+                <button className="btn btn-pill" style={{ padding:'6px 13px', fontSize:'0.8rem' }} onClick={() => { setEditing(item); setShowForm(true); }}><Pencil size={12} /> Editar</button>
+                <button className="btn" style={{ padding:'6px 13px', fontSize:'0.8rem', background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FCA5A5' }} onClick={() => setDeleteTarget(item)}><Trash2 size={12} /> Excluir</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+      <ActivityFormModal key={showForm ? (editing?.id ?? 'new') : 'closed'} isOpen={showForm} item={editing}
+        onSave={save} onClose={() => { setShowForm(false); setEditing(null); }} />
+      <ConfirmDeleteModal isOpen={!!deleteTarget} title={deleteTarget?.title} subtitle="Esta ação será removida da página pública."
+        onConfirm={async () => {
+          try { await deleteActivity(deleteTarget.id); setDeleteTarget(null); } catch {}
+        }} onCancel={() => setDeleteTarget(null)} />
+    </div>
+  );
+}
+
 // ── PAINEL: PATROCINADORES & PARCEIROS ───────────────────────────────────────
-function TabSponsors() {
-  const { sponsors, addSponsor, updateSponsor, deleteSponsor } = useData();
+function TabSponsors({ openIntent, onIntentHandled }) {
+  const { sponsors, sponsorsLoading, sponsorsError, reloadSponsors, addSponsor, updateSponsor, deleteSponsor } = useData();
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingSponsor, setEditingSponsor] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (openIntent?.tab !== 'sponsors') return;
+    setEditingSponsor(null);
+    setShowForm(true);
+    onIntentHandled?.();
+  }, [openIntent?.seq, openIntent?.tab, onIntentHandled]);
 
   const sponsorList = sponsors || [];
 
@@ -974,11 +1480,11 @@ function TabSponsors() {
     return matchSearch;
   });
 
-  const handleSave = (data) => {
+  const handleSave = async (data) => {
     if (editingSponsor) {
-      updateSponsor(editingSponsor.id, data);
+      await updateSponsor(editingSponsor.id, data);
     } else {
-      addSponsor(data);
+      await addSponsor(data);
     }
     setShowForm(false);
     setEditingSponsor(null);
@@ -986,73 +1492,73 @@ function TabSponsors() {
 
   return (
     <div>
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:16 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
         <div>
           <h2 className="admin-section-title">Patrocinadores & Parceiros</h2>
-          <p style={{ color:'var(--text-subtle)', fontSize:'0.95rem' }}>
-            Cadastre as empresas que apoiam a Associação. Os logos e nomes aparecerão no carrossel da página inicial.
+          <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>
+            {capitalize(pluralize(sponsorList.length, 'patrocinador cadastrado', 'patrocinadores cadastrados'))}
           </p>
         </div>
-        <button 
-          className="btn btn-primary" 
+        <button
+          className="btn btn-primary"
           onClick={() => { setEditingSponsor(null); setShowForm(true); }}
-          style={{ display:'flex', alignItems:'center', gap:8 }}
         >
           <Plus size={16} /> Novo Patrocinador
         </button>
       </div>
 
       {/* Filtros e Busca */}
-            <div style={{ display:'flex', gap:12, marginBottom:24, flexWrap:'wrap', alignItems:'center' }}>
-              <div style={{ position:'relative', flex:1, minWidth:220 }}>
-                <Search size={16} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'var(--text-subtle)' }} />
-                <input 
-                  className="form-input" 
-                  type="text" 
-                  placeholder="Buscar por nome da empresa ou descrição..."
-                  value={search} 
-                  onChange={e => setSearch(e.target.value)} 
-                  style={{ paddingLeft:38 }} 
-                />
-              </div>
-            </div>
+      <div style={{ display:'flex', gap:12, marginBottom:22, flexWrap:'wrap' }}>
+        <div style={{ position:'relative', flex:'1 1 220px' }}>
+          <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#475569' }} />
+          <input
+            className="form-input"
+            style={{ paddingLeft:36 }}
+            type="text"
+            placeholder="Buscar por nome da empresa ou descrição..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
 
             {/* Grid de Patrocinadores */}
-            {filtered.length === 0 ? (
-              <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:48, textAlign:'center' }}>
-                <Building2 size={40} style={{ opacity:0.25, display:'block', margin:'0 auto 12px' }} />
-                <h3 style={{ fontSize:'1.1rem', marginBottom:6 }}>Nenhum patrocinador encontrado</h3>
-                <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem', marginBottom:20 }}>
-                  {search ? 'Tente alterar os termos da busca.' : 'Cadastre sua primeira empresa parceira.'}
-                </p>
-                <button className="btn btn-primary" onClick={() => { setEditingSponsor(null); setShowForm(true); }}>
-                  <Plus size={15} /> Cadastrar Patrocinador
-                </button>
+            {sponsorsLoading ? (
+              <OverviewSkeleton rows={3} />
+            ) : sponsorsError ? (
+              <OverviewError message={sponsorsError} onRetry={() => { reloadSponsors().catch(() => {}); }} />
+            ) : filtered.length === 0 ? (
+              <div style={{ textAlign:'center', padding:'48px 20px', color:'var(--text-subtle)' }}>
+                <Building2 size={40} style={{ opacity:0.3, marginBottom:12, display:'block', margin:'0 auto 12px' }} />
+                <p style={{ fontWeight:600 }}>Nenhum patrocinador encontrado.</p>
+                <p style={{ fontSize:'0.85rem', marginTop:4 }}>Clique em "Novo Patrocinador" para adicionar.</p>
               </div>
             ) : (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:20 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(280px, 1fr))', gap:18 }}>
           {filtered.map(sponsor => (
-            <div 
-              key={sponsor.id} 
+            <div
+              key={sponsor.id}
               style={{
                 background: '#fff',
-                border: '1px solid #DCE7E5',
-                borderRadius: 16,
-                padding: 20,
+                border: '1px solid #E2E8F0',
+                borderRadius: 14,
+                padding: 16,
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                transition: 'all 0.2s ease'
+                boxShadow: '0 2px 8px rgba(11, 25, 44, 0.04)',
+                transition: 'box-shadow 0.2s'
               }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow='0 8px 24px rgba(11, 25, 44, 0.10)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow='0 2px 8px rgba(11, 25, 44, 0.04)'}
             >
               <div>
                               {/* Header com Badge e Status */}
                               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
                                 <span style={{
-                                  fontSize: '0.72rem',
+                                  fontSize: '0.85rem',
                                   fontWeight: 700,
-                                  padding: '2px 8px',
+                                  padding: '2px 9px',
                                   borderRadius: 99,
                                   background: sponsor.active !== false ? '#EDFAF3' : '#FEF2F2',
                                   color: sponsor.active !== false ? '#2D7A50' : '#DC2626',
@@ -1065,17 +1571,17 @@ function TabSponsors() {
                               {/* Logo Frame */}
                 <div style={{
                   height: 100,
-                  background: '#FAF7F5',
+                  background: '#F7F9FB',
                   borderRadius: 10,
-                  border: '1px solid #EAE5E1',
+                  border: '1px solid #E2E8F0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   padding: 12,
                   marginBottom: 16
                 }}>
-                  <img 
-                    src={sponsor.logo} 
+                  <img
+                    src={sponsor.logo}
                     alt={sponsor.name}
                     style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                     onError={(e) => {
@@ -1086,26 +1592,26 @@ function TabSponsors() {
                 </div>
 
                 {/* Nome e Dados */}
-                <h4 style={{ fontFamily:'var(--font-serif)', fontSize:'1.15rem', marginBottom:6, color:'var(--text-main)' }}>
+                <h4 style={{ fontFamily:'var(--font-serif)', fontSize:'1rem', marginBottom:4, color:'var(--text-main)' }}>
                   {sponsor.name}
                 </h4>
 
                 {sponsor.description && (
-                  <p style={{ fontSize:'0.83rem', color:'var(--text-subtle)', lineHeight:1.5, marginBottom:10 }}>
+                  <p style={{ fontSize:'0.82rem', color:'var(--text-subtle)', lineHeight:1.55, marginBottom:10 }}>
                     {sponsor.description}
                   </p>
                 )}
 
                 {sponsor.websiteUrl && (
-                  <a 
-                    href={sponsor.websiteUrl} 
-                    target="_blank" 
+                  <a
+                    href={sponsor.websiteUrl}
+                    target="_blank"
                     rel="noopener noreferrer"
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 4,
-                      fontSize: '0.78rem',
+                      fontSize: '0.9rem',
                       color: 'var(--primary)',
                       fontWeight: 600,
                       marginBottom: 14,
@@ -1119,17 +1625,17 @@ function TabSponsors() {
               </div>
 
               {/* Ações */}
-              <div style={{ display:'flex', gap:8, borderTop:'1px solid #F0ECE8', paddingTop:14, marginTop:8, justifyContent:'flex-end' }}>
-                <button 
-                  className="btn btn-pill" 
-                  style={{ padding:'6px 14px', fontSize:'0.8rem' }}
+              <div style={{ display:'flex', gap:8, marginTop:12, justifyContent:'flex-end' }}>
+                <button
+                  className="btn btn-pill"
+                  style={{ padding:'5px 14px', fontSize:'0.8rem' }}
                   onClick={() => { setEditingSponsor(sponsor); setShowForm(true); }}
                 >
                   <Pencil size={12} /> Editar
                 </button>
-                <button 
-                  className="btn" 
-                  style={{ padding:'6px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }}
+                <button
+                  className="btn"
+                  style={{ padding:'5px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FCA5A5' }}
                   onClick={() => setDeleteTarget(sponsor)}
                 >
                   <Trash2 size={12} /> Excluir
@@ -1141,39 +1647,61 @@ function TabSponsors() {
       )}
 
       {/* Modais */}
-      <SponsorFormModal 
-        isOpen={showForm} 
+      <SponsorFormModal
+        isOpen={showForm}
         item={editingSponsor}
-        onSave={handleSave} 
-        onClose={() => { setShowForm(false); setEditingSponsor(null); }} 
+        onSave={handleSave}
+        onClose={() => { setShowForm(false); setEditingSponsor(null); }}
       />
 
-      <ConfirmDeleteModal 
+      <ConfirmDeleteModal
         isOpen={!!deleteTarget}
         title={deleteTarget?.name}
         subtitle="Esta empresa parceira será removida e deixará de aparecer no carrossel da página inicial."
         onConfirm={() => { deleteSponsor(deleteTarget.id); setDeleteTarget(null); }}
-        onCancel={() => setDeleteTarget(null)} 
+        onCancel={() => setDeleteTarget(null)}
       />
     </div>
   );
 }
 
 // ── PAINEL: DEPOIMENTOS ───────────────────────────────────────────────────────
-function TabTestimonials() {
-  const { testimonials, addTestimonial, updateTestimonial, deleteTestimonial } = useData();
+function TabTestimonials({ openIntent, onIntentHandled }) {
+  const { testimonials, testimonialsLoading, testimonialsError, reloadTestimonials, addTestimonial, updateTestimonial, deleteTestimonial } = useData();
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const handleSave = (data) => {
-    if (editingItem) {
-      updateTestimonial(editingItem.id, data);
-    } else {
-      addTestimonial(data);
-    }
+  useEffect(() => {
+    if (openIntent?.tab !== 'testimonials') return;
     setEditingItem(null);
-    setShowForm(false);
+    setShowForm(true);
+    onIntentHandled?.();
+  }, [openIntent?.seq, openIntent?.tab, onIntentHandled]);
+
+  const handleSave = async (data) => {
+    try {
+      if (editingItem) {
+        await updateTestimonial(editingItem.id, data);
+      } else {
+        await addTestimonial(data);
+      }
+      setEditingItem(null);
+      setShowForm(false);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteTestimonial(deleteTarget.id);
+      setDeleteTarget(null);
+    } catch {
+      // O contexto já exibe o erro ao usuário.
+    }
   };
 
   return (
@@ -1181,14 +1709,18 @@ function TabTestimonials() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h2 className="admin-section-title">Depoimentos</h2>
-          <p style={{ color: 'var(--text-subtle)', fontSize: '0.9rem' }}>{testimonials.length} depoimentos cadastrados</p>
+          <p style={{ color: 'var(--text-subtle)', fontSize: '0.9rem' }}>{capitalize(pluralize(testimonials.length, 'depoimento cadastrado', 'depoimentos cadastrados'))}</p>
         </div>
         <button className="btn btn-primary" onClick={() => { setEditingItem(null); setShowForm(true); }}>
           <Plus size={16} /> Novo Depoimento
         </button>
       </div>
 
-      {testimonials.length === 0 ? (
+      {testimonialsLoading ? (
+        <OverviewSkeleton rows={3} />
+      ) : testimonialsError ? (
+        <OverviewError message={testimonialsError} onRetry={() => { reloadTestimonials().catch(() => {}); }} />
+      ) : testimonials.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 20px', color: 'var(--text-subtle)' }}>
           <HeartHandshake size={40} style={{ opacity: 0.3, marginBottom: 12, display: 'block', margin: '0 auto 12px' }} />
           <p style={{ fontWeight: 600 }}>Nenhum depoimento encontrado.</p>
@@ -1199,11 +1731,11 @@ function TabTestimonials() {
           {testimonials.map((t) => (
             <div
               key={t.id}
-              style={{ background: '#fff', border: '1px solid #DCE7E5', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(27,37,39,0.04)' }}
+              style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 14, overflow: 'hidden', boxShadow: '0 2px 8px rgba(11, 25, 44, 0.04)' }}
             >
-              <div style={{ height: 150, overflow: 'hidden', background: '#EEE' }}>
+              <div style={{ height: 150, overflow: 'hidden', background: '#E2E8F0' }}>
                 <img
-                  src={t.avatar}
+                  src={resolveImageUrl(t.avatar)}
                   alt={`Foto de ${t.name}`}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   onError={e => { e.target.style.display = 'none'; }}
@@ -1211,7 +1743,7 @@ function TabTestimonials() {
               </div>
               <div style={{ padding: '14px 16px' }}>
                 <h4 style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', marginBottom: 4, lineHeight: 1.3 }}>{t.name}</h4>
-                {t.role && <p style={{ fontSize: '0.78rem', color: 'var(--text-subtle)', marginBottom: 8 }}>{t.role}</p>}
+                {t.role && <p style={{ fontSize: '0.85rem', color: 'var(--text-subtle)', marginBottom: 8 }}>{t.role}</p>}
                 {t.text && (
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-body)', lineHeight: 1.55,
                     overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
@@ -1228,7 +1760,7 @@ function TabTestimonials() {
                   </button>
                   <button
                     className="btn"
-                    style={{ padding: '5px 14px', fontSize: '0.8rem', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5' }}
+                    style={{ padding: '5px 14px', fontSize: '0.8rem', background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FCA5A5' }}
                     onClick={() => setDeleteTarget(t)}
                   >
                     <Trash2 size={12} /> Excluir
@@ -1252,7 +1784,7 @@ function TabTestimonials() {
         isOpen={!!deleteTarget}
         title={deleteTarget?.name}
         subtitle="Este depoimento será removido permanentemente da página de Depoimentos."
-        onConfirm={() => { deleteTestimonial(deleteTarget.id); setDeleteTarget(null); }}
+        onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
       />
     </div>
@@ -1261,64 +1793,105 @@ function TabTestimonials() {
 
 // ── Modal de Depoimento ───────────────────────────────────────────────────────
 function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
+  const { backendConnected, showToast } = useData();
+  const fileRef = useRef(null);
   const [form, setForm] = useState({ name: '', role: '', avatar: '', text: '' });
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
   useEffect(() => {
+    if (!isOpen) return;
     setForm({
       name: item?.name || '',
       role: item?.role || '',
-      avatar: item?.avatar || '',
+      avatar: item?.avatar ? resolveImageUrl(item.avatar) : '',
       text: item?.text || ''
     });
+    setErrors({});
+    setUploading(false);
+    setSaving(false);
   }, [item, isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setErrors(p => ({ ...p, avatar: 'Selecione um arquivo de imagem válido.' }));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors(p => ({ ...p, avatar: 'A imagem deve ter no máximo 5 MB.' }));
+      return;
+    }
+    if (!backendConnected) {
+      showToast('Backend offline. Não é possível enviar a foto.', 'warning');
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadApi.upload(file);
+      setField('avatar', resolveImageUrl(url));
+      setErrors(p => ({ ...p, avatar: '' }));
+    } catch (error) {
+      setErrors(p => ({ ...p, avatar: error.message || 'Não foi possível enviar a foto.' }));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.text.trim()) return;
-    onSave({
-      name: form.name.trim(),
-      role: form.role.trim(),
-      avatar: form.avatar.trim(),
-      text: form.text.trim()
-    });
+    const nextErrors = {};
+    if (!form.name.trim()) nextErrors.name = 'Nome é obrigatório.';
+    if (!form.avatar.trim()) nextErrors.avatar = 'Adicione uma foto para o depoimento.';
+    if (!form.text.trim()) nextErrors.text = 'Depoimento é obrigatório.';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) { focusFirstError(nextErrors); return; }
+    setSaving(true);
+    try {
+      const saved = await onSave({
+        name: form.name.trim(),
+        role: form.role.trim(),
+        avatar: toStoredUrl(form.avatar.trim()),
+        text: form.text.trim()
+      });
+      if (saved !== false) onClose();
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="modal-card" style={{ maxWidth: 520 }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 38, height: 38, background: '#FDF6F0', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <HeartHandshake size={20} color="#2A5C66" />
-            </div>
-            <div>
-              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem' }}>
-                {item ? 'Editar Depoimento' : 'Novo Depoimento'}
-              </h3>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-subtle)' }}>
-                Depoimento exibido na página pública de Depoimentos
-              </p>
-            </div>
+      <div className="modal-card" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
+        <button className="modal-close-btn" onClick={onClose} aria-label="Fechar">
+          <X size={20} />
+        </button>
+        <div className="modal-header">
+          <div style={{ display:'inline-flex', alignItems:'center', gap:6, color:'#0F2A66', marginBottom:6 }}>
+            <HeartHandshake size={18} /><span style={{ fontWeight:700, fontSize:'0.82rem', textTransform:'uppercase', letterSpacing:'0.08em' }}>Depoimentos</span>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-subtle)' }}>
-            <X size={20} />
-          </button>
+          <h3 className="modal-title">{item ? 'Editar Depoimento' : 'Novo Depoimento'}</h3>
+          <p className="modal-subtitle">Depoimento exibido na página pública de Depoimentos.</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
             <label className="form-label">Nome <span style={{ color: '#DC2626' }}>*</span></label>
             <input
               className="form-input"
               type="text"
               placeholder="Ex: Dona Alzira, 78 anos"
-              required
+              data-field="name"
               value={form.name}
-              onChange={e => setField('name', e.target.value)}
+              onChange={e => {setField('name', e.target.value); setErrors(p => ({...p,name:''}));}}
             />
+            <FieldError>{errors.name}</FieldError>
           </div>
 
           <div className="form-group">
@@ -1333,33 +1906,77 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Foto (URL)</label>
-            <input
-              className="form-input"
-              type="url"
-              placeholder="https://exemplo.com/foto.jpg"
-              value={form.avatar}
-              onChange={e => setField('avatar', e.target.value)}
-            />
+            <label className="form-label">Foto do Depoente <span style={{ color:'#DC2626' }}>*</span></label>
+            {/* Upload Direto de Imagem */}
+            <div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                style={{ display:'none' }}
+                onChange={handleFileUpload}
+              />
+              <div
+                onClick={() => fileRef.current?.click()}
+                data-field="avatar"
+                style={{
+                  border:'2px dashed #0088FF', borderRadius:10, padding:'20px', textAlign:'center',
+                  cursor:'pointer', background:'#F7F9FB', transition:'all 0.2s', marginBottom:8 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor='#0F2A66'; e.currentTarget.style.background='#EBF3FC'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor='#0088FF'; e.currentTarget.style.background='#F7F9FB'; }}
+              >
+                <Upload size={22} color="#0F2A66" style={{ marginBottom:6 }} />
+                <p style={{ fontSize:'0.88rem', color:'#0F2A66', fontWeight:700 }}>
+                  {uploading ? 'Enviando foto...' : 'Escolher arquivo de imagem do computador'}
+                </p>
+                <p style={{ fontSize:'0.76rem', color:'#475569', marginTop:3 }}>
+                  PNG, JPG, WEBP até 5MB
+                </p>
+              </div>
+            </div>
+
+            {form.avatar && (
+              <div style={{ marginTop:12, padding:14, background:'#F7F9FB', border:'1px solid #E2E8F0', borderRadius:10, display:'flex', alignItems:'center', gap:14 }}>
+                <img
+                  src={resolveImageUrl(form.avatar)}
+                  alt="Pré-visualização da foto"
+                  style={{ width:60, height:60, objectFit:'cover', borderRadius:'50%', border:'2px solid #0F2A66' }}
+                  onError={e => { e.currentTarget.style.display = 'none'; }}
+                />
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-main)' }}>Prévia da Foto</div>
+                  <div style={{ fontSize:'0.85rem', color:'var(--text-subtle)' }}>Foto cadastrada para o depoimento.</div>
+                  <button
+                    type="button"
+                    onClick={() => setField('avatar', '')}
+                    style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.85rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}
+                  >
+                    Remover foto
+                  </button>
+                </div>
+              </div>
+            )}
+            <FieldError>{errors.avatar}</FieldError>
           </div>
 
           <div className="form-group">
             <label className="form-label">Depoimento <span style={{ color: '#DC2626' }}>*</span></label>
             <textarea
               className="form-input"
-              rows={5}
+              rows={4}
               placeholder="Conte como a associação impactou a vida desta pessoa..."
-              required
+              data-field="text"
               value={form.text}
-              onChange={e => setField('text', e.target.value)}
+              onChange={e => {setField('text', e.target.value); setErrors(p => ({...p,text:''}));}}
               style={{ resize: 'vertical', lineHeight: 1.6 }}
             />
+            <FieldError>{errors.text}</FieldError>
           </div>
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-pill" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">
-              <CheckCircle size={15} /> {item ? 'Salvar Alterações' : 'Adicionar Depoimento'}
+            <button type="submit" className="btn btn-primary" disabled={uploading || saving}>
+              <CheckCircle size={15} /> {saving ? 'Salvando...' : (item ? 'Salvar Alterações' : 'Adicionar Depoimento')}
             </button>
           </div>
         </form>
@@ -1368,40 +1985,80 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
   );
 }
 
+
 // ── PAINEL: CONFIGURAÇÕES ─────────────────────────────────────────────────────
 function TabSettings() {
-  const { brandInfo, updateBrandInfo } = useData();
+  const { brandInfo, legacyBrandInfo, brandInfoHasRecord, updateBrandInfo } = useData();
   const [form, setForm] = useState({ ...brandInfo });
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    setForm({
+      ...brandInfo,
+      ...(brandInfoHasRecord ? {} : (legacyBrandInfo || {})),
+      name: brandInfo.name || 'Qualidade de Vida',
+      subtitle: brandInfo.subtitle || '',
+      mission: brandInfo.mission || '',
+      since: brandInfo.since || '',
+    });
+    setErrors({});
+  }, [brandInfo, legacyBrandInfo, brandInfoHasRecord]);
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
+  const handleSave = async (event) => {
+    event?.preventDefault();
+    const next = {};
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email || '')) next.email = 'Informe um e-mail válido.';
+    if ((form.phone || '').replace(/\D/g, '').length < 10) next.phone = 'Informe um telefone com pelo menos 10 dígitos.';
+    if (!form.address?.trim()) next.address = 'Endereço é obrigatório.';
+    if (!form.pixKey?.trim()) next.pixKey = 'Chave PIX é obrigatória.';
+    setErrors(next);
+    if (Object.keys(next).length) { focusFirstError(next); return; }
+    setSaving(true);
+    try { await updateBrandInfo(form); } catch (_) {} finally { setSaving(false); }
+  };
 
   return (
     <div>
       <h2 className="admin-section-title">Configurações</h2>
       <p style={{ color:'var(--text-subtle)', marginBottom:28, fontSize:'0.95rem' }}>Informações da Associação.</p>
 
-      <div style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:16, padding:28, maxWidth: 640 }}>
+      <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:16, padding:28, maxWidth: 640 }}>
         <h3 style={{ fontFamily:'var(--font-serif)', fontSize:'1.1rem', marginBottom:20, display:'flex', alignItems:'center', gap:8 }}>
-          <Settings size={18} color="#2A5C66" /> Informações da Associação
+          <Settings size={18} color="#0F2A66" /> Informações da Associação
         </h3>
+        <form onSubmit={handleSave} noValidate>
+        <div className="form-group">
+          <label className="form-label">Ano de fundação</label>
+          <input data-field="since" className="form-input" type="number" min="1900" max="2100" value={form.since || ''} onChange={e => setField('since', e.target.value)} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Apresentação da Associação</label>
+          <textarea data-field="mission" className="form-textarea" rows={4} value={form.mission || ''} onChange={e => setField('mission', e.target.value)} />
+        </div>
         <div className="form-group">
           <label className="form-label">E-mail de Contato</label>
-          <input className="form-input" type="email" value={form.email || ''} onChange={e => setField('email', e.target.value)} />
+          <input data-field="email" className="form-input" type="email" value={form.email || ''} onChange={e => {setField('email', e.target.value); setErrors(p => ({...p,email:''}));}} />
+          <FieldError>{errors.email}</FieldError>
         </div>
         <div className="form-group">
           <label className="form-label">Telefone</label>
-          <input className="form-input" type="tel" value={form.phone || ''} onChange={e => setField('phone', e.target.value)} />
+          <input data-field="phone" className="form-input" type="tel" value={form.phone || ''} onChange={e => {setField('phone', e.target.value); setErrors(p => ({...p,phone:''}));}} />
+          <FieldError>{errors.phone}</FieldError>
         </div>
         <div className="form-group">
           <label className="form-label">Endereço</label>
-          <input className="form-input" type="text" value={form.address || ''} onChange={e => setField('address', e.target.value)} />
+          <input data-field="address" className="form-input" type="text" value={form.address || ''} onChange={e => {setField('address', e.target.value); setErrors(p => ({...p,address:''}));}} />
+          <FieldError>{errors.address}</FieldError>
         </div>
         <div className="form-group">
           <label className="form-label">Chave PIX para Doações</label>
-          <input className="form-input" type="text" value={form.pixKey || ''} onChange={e => setField('pixKey', e.target.value)} />
+          <input data-field="pixKey" className="form-input" type="text" value={form.pixKey || ''} onChange={e => {setField('pixKey', e.target.value); setErrors(p => ({...p,pixKey:''}));}} />
+          <FieldError>{errors.pixKey}</FieldError>
         </div>
-        <button className="btn btn-primary" onClick={() => updateBrandInfo(form)}>
-          <CheckCircle size={15} /> Salvar Informações
+        <button type="submit" className="btn btn-primary" disabled={saving}>
+          <CheckCircle size={15} /> {saving ? 'Salvando...' : 'Salvar Informações'}
         </button>
+        </form>
       </div>
     </div>
   );
@@ -1412,9 +2069,10 @@ function TabAdmins({ onNavigateToCreate }) {
   const { admins, fetchAdmins, addAdmin, updateAdmin, deleteAdmin, backendConnected } = useData();
   const [showModal, setShowModal] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState(null);
-  const [form, setForm] = useState({ username: '', cpf: '', senha: '' });
+  const [form, setForm] = useState({ username: '', cpf: '', email: '', senha: '' });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (backendConnected) {
@@ -1427,37 +2085,51 @@ function TabAdmins({ onNavigateToCreate }) {
       onNavigateToCreate();
     } else {
       setEditingAdmin(null);
-      setForm({ username: '', cpf: '', senha: '' });
+      setForm({ username: '', cpf: '', email: '', senha: '' });
+      setErrors({});
       setShowModal(true);
     }
   };
 
   const handleOpenEdit = (admin) => {
     setEditingAdmin(admin);
-    setForm({ username: admin.username, cpf: admin.cpf || '', senha: '' });
+    setForm({ username: admin.username, cpf: admin.cpf || '', email: admin.email || '', senha: '' });
+    setErrors({});
     setShowModal(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.username.trim()) return;
+    const next = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!form.username.trim()) next.username = 'Nome de usuário é obrigatório.';
+    else if (form.username.trim().length < 3 || /\s/.test(form.username.trim())) next.username = 'Informe um usuário válido, sem espaços e com 3 caracteres ou mais.';
+    if (!form.email.trim()) next.email = 'E-mail é obrigatório.';
+    else if (!emailRegex.test(form.email.trim())) next.email = 'Informe um e-mail válido. Ex: nome@dominio.com';
+    if (!editingAdmin && !validateCPF(form.cpf)) next.cpf = 'CPF inválido.';
+    if (!editingAdmin && !form.senha) next.senha = 'Senha é obrigatória.';
+    else if (!validateAdminPassword(form.senha)) next.senha = 'A senha deve ter pelo menos 6 caracteres.';
+    setErrors(next);
+    if (Object.keys(next).length) { focusFirstError(next); return; }
     setLoading(true);
     try {
       if (editingAdmin) {
         await updateAdmin(editingAdmin.id, {
           username: form.username.trim(),
+          email: form.email.trim(),
           senha: form.senha.trim() || undefined
         });
       } else {
         await addAdmin({
           username: form.username.trim(),
           cpf: form.cpf.trim(),
+          email: form.email.trim(),
           senha: form.senha.trim() || undefined
         });
       }
       setShowModal(false);
       setEditingAdmin(null);
-      setForm({ username: '', cpf: '', senha: '' });
+      setForm({ username: '', cpf: '', email: '', senha: '' });
     } catch (_) {}
     finally {
       setLoading(false);
@@ -1486,8 +2158,8 @@ function TabAdmins({ onNavigateToCreate }) {
       </div>
 
       {admins.length === 0 ? (
-        <div style={{ textAlign:'center', padding:'48px 20px', background:'#fff', border:'1px solid #DCE7E5', borderRadius:14 }}>
-          <UserCheck size={36} color="#8E9696" style={{ margin:'0 auto 12px', display:'block' }} />
+        <div style={{ textAlign:'center', padding:'48px 20px', background:'#fff', border:'1px solid #E2E8F0', borderRadius:14 }}>
+          <UserCheck size={36} color="#475569" style={{ margin:'0 auto 12px', display:'block' }} />
           <h4 style={{ fontWeight:700, fontSize:'1rem', marginBottom:6 }}>Nenhum administrador listado no momento</h4>
           <p style={{ fontSize:'0.85rem', color:'var(--text-subtle)', marginBottom:0 }}>
             {backendConnected ? 'Você pode cadastrar o primeiro administrador da associação clicando no botão acima.' : 'Conecte o backend para carregar os administradores do banco de dados.'}
@@ -1496,23 +2168,24 @@ function TabAdmins({ onNavigateToCreate }) {
       ) : (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(300px, 1fr))', gap:14 }}>
           {admins.map(adm => (
-            <div key={adm.id} style={{ background:'#fff', border:'1px solid #DCE7E5', borderRadius:14, padding:'18px 20px', boxShadow:'0 1px 4px rgba(27,37,39,0.04)' }}>
+            <div key={adm.id} style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:14, padding:'18px 20px', boxShadow:'0 1px 4px rgba(11, 25, 44, 0.04)' }}>
               <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
-                <div style={{ width:40, height:40, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700 }}>
+                <div style={{ width:40, height:40, background:'linear-gradient(135deg, #0F2A66, #0088FF)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:700 }}>
                   {adm.username.slice(0, 2).toUpperCase()}
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontWeight:700, fontSize:'0.98rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{adm.username}</div>
-                  <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)' }}>CPF: {adm.cpf || 'Não informado'}</div>
+                  <div style={{ fontWeight:700, fontSize:'0.98rem', overflowWrap:'anywhere', wordBreak:'break-word' }}>{adm.username}</div>
+                  <div style={{ fontSize:'0.85rem', color:'var(--text-subtle)' }}>CPF: {adm.cpf || 'Não informado'}</div>
+                  <div style={{ fontSize:'0.85rem', color:'var(--text-subtle)', overflowWrap:'anywhere', wordBreak:'break-word' }}>E-mail: {adm.email || 'Não informado'}</div>
                 </div>
               </div>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderTop:'1px solid #F0F4F3', paddingTop:12 }}>
-                <span style={{ fontSize:'0.72rem', background:'#F5F9F8', padding:'3px 8px', borderRadius:6, color:'var(--text-subtle)' }}>ID #{adm.id}</span>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderTop:'1px solid #F0F4F8', paddingTop:12 }}>
+                <span style={{ fontSize:'0.82rem', background:'#F7F9FB', padding:'4px 9px', borderRadius:6, color:'var(--text-subtle)' }}>ID #{adm.id}</span>
                 <div style={{ display:'flex', gap:6 }}>
-                  <button className="btn btn-pill" style={{ padding:'5px 12px', fontSize:'0.75rem' }} onClick={() => handleOpenEdit(adm)}>
+                  <button className="btn btn-pill" style={{ padding:'6px 14px', fontSize:'0.85rem' }} onClick={() => handleOpenEdit(adm)}>
                     <Pencil size={12} /> Editar
                   </button>
-                  <button className="btn" style={{ padding:'5px 12px', fontSize:'0.75rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }} onClick={() => setDeleteTarget(adm)}>
+                  <button className="btn" style={{ padding:'6px 14px', fontSize:'0.85rem', background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FCA5A5' }} onClick={() => setDeleteTarget(adm)}>
                     <Trash2 size={12} /> Excluir
                   </button>
                 </div>
@@ -1531,20 +2204,28 @@ function TabAdmins({ onNavigateToCreate }) {
               </h3>
               <button onClick={() => setShowModal(false)} style={{ background:'none', border:'none', cursor:'pointer' }}><X size={18} /></button>
             </div>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <div className="form-group">
                 <label className="form-label">Nome de Usuário / Login *</label>
-                <input className="form-input" type="text" placeholder="Ex: coord.maria" required value={form.username} onChange={e => setForm(p => ({ ...p, username: e.target.value }))} autoFocus />
+                <input data-field="username" className="form-input" type="text" placeholder="Ex: coord.maria" value={form.username} onChange={e => {setForm(p => ({ ...p, username: e.target.value })); setErrors(p => ({...p,username:''}));}} autoFocus />
+                <FieldError>{errors.username}</FieldError>
+              </div>
+              <div className="form-group">
+                <label className="form-label">E-mail *</label>
+                <input data-field="email" className="form-input" type="email" placeholder="Ex: nome@dominio.com" value={form.email} onChange={e => {setForm(p => ({ ...p, email: e.target.value })); setErrors(p => ({...p,email:''}));}} autoComplete="email" />
+                <FieldError>{errors.email}</FieldError>
               </div>
               {!editingAdmin && (
                 <div className="form-group">
                   <label className="form-label">CPF (com ou sem pontuação) *</label>
-                  <input className="form-input" type="text" placeholder="Ex: 123.456.789-00" required value={form.cpf} onChange={e => setForm(p => ({ ...p, cpf: e.target.value }))} />
+                  <input data-field="cpf" className="form-input" type="text" placeholder="Ex: 123.456.789-00" value={form.cpf} onChange={e => {setForm(p => ({ ...p, cpf: e.target.value })); setErrors(p => ({...p,cpf:''}));}} />
+                  <FieldError>{errors.cpf}</FieldError>
                 </div>
               )}
               <div className="form-group">
                 <label className="form-label">{editingAdmin ? 'Nova Senha (deixe em branco para manter a atual)' : 'Senha de Acesso (opcional - padrão: 8 primeiros dígitos do CPF)'}</label>
-                <input className="form-input" type="password" placeholder="Mínimo 6 caracteres" minLength={6} value={form.senha} onChange={e => setForm(p => ({ ...p, senha: e.target.value }))} />
+                <input data-field="senha" className="form-input" type="password" placeholder="Mínimo 6 caracteres" value={form.senha} onChange={e => {setForm(p => ({ ...p, senha: e.target.value })); setErrors(p => ({...p,senha:''}));}} />
+                <FieldError>{errors.senha}</FieldError>
               </div>
               <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:20 }}>
                 <button type="button" className="btn btn-pill" onClick={() => setShowModal(false)}>Cancelar</button>
@@ -1564,14 +2245,78 @@ function TabAdmins({ onNavigateToCreate }) {
 
 // ── PÁGINA PRINCIPAL DO ADMIN ─────────────────────────────────────────────────
 export default function AdminPage({ onClose }) {
-  const { backendConnected, backendLoading, checkBackendConnection, fetchAdmins } = useData();
+  const { backendConnected, backendLoading, checkBackendConnection, fetchAdmins, galleryItems, sponsors } = useData();
   const [isLoggedIn, setIsLoggedIn] = useState(() => adminApi.isAuthenticated());
-  const [username, setUsername] = useState('admin');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [submittingLogin, setSubmittingLogin] = useState(false);
+  const [authView, setAuthView] = useState('login'); // 'login' | 'forgot_password'
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryError, setRecoveryError] = useState('');
+  const [recoverySuccess, setRecoverySuccess] = useState(false);
+  const [submittingRecovery, setSubmittingRecovery] = useState(false);
+
+  useEffect(() => {
+    const handleSessaoExpirada = () => {
+      setIsLoggedIn(false);
+      setAuthView('login');
+      setLoginError('Sessão expirada. Entre novamente.');
+    };
+
+    window.addEventListener('admin-sessao-expirada', handleSessaoExpirada);
+    return () => window.removeEventListener('admin-sessao-expirada', handleSessaoExpirada);
+  }, []);
+
+  const handleRecoverySubmit = async (e) => {
+    e.preventDefault();
+    setRecoveryError('');
+
+    const trimmed = recoveryEmail.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmed) {
+      setRecoveryError('Por favor, informe seu e-mail cadastrado.');
+      return;
+    }
+    if (!emailRegex.test(trimmed)) {
+      setRecoveryError('Por favor, informe um endereço de e-mail válido.');
+      return;
+    }
+
+    setSubmittingRecovery(true);
+    try {
+      // Simulação da chamada de recuperação (o backend será conectado posteriormente)
+      await new Promise(resolve => setTimeout(resolve, 800));
+      setRecoverySuccess(true);
+    } catch (_) {
+      setRecoveryError('Ocorreu um erro ao processar o pedido. Tente novamente mais tarde.');
+    } finally {
+      setSubmittingRecovery(false);
+    }
+  };
   const [activeTab, setActiveTab] = useState('overview');
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+    const [openIntent, setOpenIntent] = useState(null);
+    const menuButtonRef = useRef(null);
+
+    const closeDrawer = useCallback(() => {
+      setMobileDrawerOpen(false);
+      menuButtonRef.current?.focus?.();
+    }, []);
+
+    const openSection = (tab, intent = {}) => {
+      setOpenIntent({
+        tab,
+        mode: intent.mode || 'create',
+        event: intent.event || null,
+        seq: Date.now(),
+      });
+      setActiveTab(tab);
+      setMobileDrawerOpen(false);
+    };
+
+    const editEvent = (event) => openSection('calendar', { mode: 'edit', event });
+    const clearIntent = useCallback(() => setOpenIntent(null), []);
 
     // Lock body scroll when drawer is open
     useEffect(() => {
@@ -1583,21 +2328,44 @@ export default function AdminPage({ onClose }) {
       return () => { document.body.style.overflow = ''; };
     }, [mobileDrawerOpen]);
 
-    // Close drawer on ESC key
+    // Close drawer on ESC and keep Tab focus inside it
     useEffect(() => {
       const handleKeyDown = (e) => {
-        if (e.key === 'Escape') setMobileDrawerOpen(false);
+        if (!mobileDrawerOpen) return;
+        if (e.key === 'Escape') {
+          closeDrawer();
+          return;
+        }
+        if (e.key !== 'Tab') return;
+        const drawer = document.getElementById('admin-mobile-drawer');
+        if (!drawer) return;
+        const items = Array.from(
+          drawer.querySelectorAll(
+            'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter((el) => el.getClientRects().length > 0);
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [closeDrawer, mobileDrawerOpen]);
 
     const navItems = [
           { id: 'overview',        label: 'Visão Geral',         icon: LayoutGrid,    badge: null },
-          { id: 'gallery',         label: 'Álbum de Lembranças', icon: Image,         badge: { text: '5 fotos', type: 'purple' } },
-          { id: 'calendar',        label: 'Calendário & Ações',  icon: Calendar,      badge: { text: '10', type: 'gray' } },
+          { id: 'gallery',         label: 'Álbum de Lembranças', icon: Image,         badge: !backendLoading && backendConnected && galleryItems.length > 0 ? { text: String(galleryItems.length), type: 'purple', ariaLabel: `${galleryItems.length} ${galleryItems.length === 1 ? 'lembrança' : 'lembranças'}` } : null },
+          { id: 'calendar',        label: 'Eventos',             icon: Calendar,      badge: null },
+          { id: 'actions',         label: 'Ações',                icon: Activity,      badge: null },
           { id: 'admins',          label: 'Administradores',     icon: Users,         badge: null },
-          { id: 'sponsors',        label: 'Patrocinadores & Apoio', icon: Building2,   badge: { text: '6', type: 'gray' } },
+          { id: 'sponsors',        label: 'Patrocinadores & Parceiros', icon: Building2,   badge: !backendLoading && backendConnected && (sponsors || []).length > 0 ? { text: String(sponsors.length), type: 'gray', ariaLabel: `${sponsors.length} ${sponsors.length === 1 ? 'patrocinador' : 'patrocinadores'}` } : null },
           { id: 'testimonials',    label: 'Depoimentos',         icon: Heart,         badge: null },
           { id: 'settings',        label: 'Configurações',       icon: Settings,      badge: null },
         ];
@@ -1605,9 +2373,10 @@ export default function AdminPage({ onClose }) {
     const tabs = [
         { id: 'overview',        label: 'Visão Geral',              icon: <LayoutDashboard size={17} /> },
         { id: 'gallery',         label: 'Álbum de Lembranças',      icon: <Images size={17} /> },
-        { id: 'calendar',        label: 'Calendário & Ações',       icon: <CalendarDays size={17} /> },
+        { id: 'calendar',        label: 'Eventos',                  icon: <CalendarDays size={17} /> },
+        { id: 'actions',         label: 'Ações',                    icon: <Activity size={17} /> },
         { id: 'admins',          label: 'Administradores',          icon: <UserCheck size={17} /> },
-        { id: 'sponsors',        label: 'Patrocinadores & Apoio',   icon: <Building2 size={17} /> },
+        { id: 'sponsors',        label: 'Patrocinadores & Parceiros',   icon: <Building2 size={17} /> },
         { id: 'testimonials',    label: 'Depoimentos',              icon: <HeartHandshake size={17} /> },
         { id: 'settings',        label: 'Configurações',            icon: <Settings size={17} /> },
       ];
@@ -1618,14 +2387,15 @@ export default function AdminPage({ onClose }) {
     setSubmittingLogin(true);
 
     try {
-      if (backendConnected) {
-        await adminApi.login(username, password);
-        await fetchAdmins();
-        setIsLoggedIn(true);
-      } else {
-        // Modo demonstração quando offline
-        setIsLoggedIn(true);
+      if (!backendConnected || backendLoading) {
+        throw new Error('O backend precisa estar conectado para autenticar e cadastrar dados.');
       }
+      await adminApi.login(username, password);
+      try {
+        localStorage.setItem('ami_admin_login', username.trim());
+      } catch (_) {}
+      await fetchAdmins();
+      setIsLoggedIn(true);
     } catch (err) {
       setLoginError(err.message || 'Usuário ou senha inválidos no backend.');
     } finally {
@@ -1635,41 +2405,148 @@ export default function AdminPage({ onClose }) {
 
   const handleLogout = () => {
     adminApi.logout();
+    try {
+      localStorage.removeItem('ami_admin_login');
+    } catch (_) {}
     setIsLoggedIn(false);
   };
 
-  // ── Tela de Login ──────────────────────────────────────────────────
+  // ── Tela de Login / Recuperação de Senha ──────────────────────────
   if (!isLoggedIn) {
+    if (authView === 'forgot_password') {
+      return (
+        <div className="admin-page auth-page">
+          <div className="auth-card">
+            {recoverySuccess ? (
+              <div>
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                  <div className="auth-success-icon">
+                    <CheckCircle size={36} color="#fff" />
+                  </div>
+                  <h1 className="auth-success-title">E-mail Enviado!</h1>
+                  <p className="auth-success-text">
+                    Se o e-mail <strong>{recoveryEmail}</strong> estiver cadastrado em nossa base, você receberá em instantes as instruções e o link seguro para redefinir sua senha.
+                  </p>
+                </div>
+
+                <div className="auth-tip-box">
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <Mail size={18} style={{ flexShrink: 0, marginTop: 2 }} />
+                    <div>
+                      <strong>Dica:</strong> Se não encontrar a mensagem na caixa de entrada em até 5 minutos, confira sua pasta de <em>Spam</em> ou <em>Lixo Eletrônico</em>.
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn btn-primary auth-button"
+                  onClick={() => {
+                    setAuthView('login');
+                    setRecoverySuccess(false);
+                    setRecoveryEmail('');
+                  }}
+                >
+                  <ArrowLeft size={18} />
+                  <span>Voltar para o Login</span>
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                  <div className="auth-icon">
+                    <KeyRound size={30} color="#fff" />
+                  </div>
+                  <h1 className="auth-title">Recuperar Senha</h1>
+                  <p className="auth-subtitle">
+                    Digite seu e-mail cadastrado. Enviaremos um link seguro para você redefinir sua senha de acesso.
+                  </p>
+                </div>
+
+                <form onSubmit={handleRecoverySubmit}>
+                  <div className="auth-form-group">
+                    <label className="form-label" htmlFor="admin-recovery-email">E-mail Cadastrado</label>
+                    <div className="auth-input-wrapper">
+                      <input
+                        id="admin-recovery-email"
+                        className="form-input"
+                        type="email"
+                        placeholder="admin@associacaomelhoridade.org"
+                        value={recoveryEmail}
+                        onChange={e => setRecoveryEmail(e.target.value)}
+                        autoComplete="email"
+                        required
+                        autoFocus
+                      />
+                      <Mail size={18} color="var(--text-subtle, #475569)" />
+                    </div>
+                  </div>
+
+                  {recoveryError && (
+                    <div className="auth-error">
+                      <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                      <span>{recoveryError}</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary auth-button"
+                    disabled={submittingRecovery}
+                  >
+                    {submittingRecovery ? 'Enviando link...' : 'Enviar Link de Recuperação'}
+                  </button>
+                </form>
+
+                <div className="auth-divider">
+                  <button
+                    type="button"
+                    className="auth-link"
+                    onClick={() => {
+                      setAuthView('login');
+                      setRecoveryError('');
+                    }}
+                  >
+                    <ArrowLeft size={16} />
+                    <span>Lembrou a senha? Fazer login</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="admin-page admin-login-page">
-        <div className="admin-login-card">
-          <div style={{ textAlign:'center', marginBottom:28 }}>
-            <div style={{ width:64, height:64, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:18, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px', boxShadow:'0 8px 24px rgba(42,92,102,0.25)' }}>
+      <div className="admin-page auth-page">
+        <div className="auth-card">
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <div className="auth-icon">
               <Shield size={30} color="#fff" />
             </div>
-            <h1 style={{ fontFamily:'var(--font-serif)', fontSize:'1.8rem', color:'var(--text-main)', marginBottom:6 }}>
-              Área do Administrador
-            </h1>
-            <p style={{ color:'var(--text-subtle)', fontSize:'0.92rem' }}>
+            <h1 className="auth-title">Área do Administrador</h1>
+            <p className="auth-subtitle">
               Acesso restrito à diretoria e equipe de coordenação.
             </p>
           </div>
 
           <div style={{
-            display:'flex', alignItems:'center', justifyContent:'space-between',
-            padding:'8px 14px', borderRadius:10, marginBottom:20,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '8px 14px', borderRadius: 10, marginBottom: 20,
             background: backendConnected ? '#ECFDF5' : '#FFFBEB',
             border: `1px solid ${backendConnected ? '#A7F3D0' : '#FDE68A'}`,
-            fontSize:'0.82rem',
+            fontSize: '0.82rem',
             color: backendConnected ? '#065F46' : '#92400E'
           }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <span style={{ width:8, height:8, borderRadius:'50%', background: backendConnected ? '#10B981' : '#F59E0B' }} />
-              <span>{backendConnected ? 'Backend Conectado (Porta 3000)' : 'Backend Offline (Modo Local)'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: backendConnected ? '#10B981' : '#F59E0B' }} />
+              <span>{backendConnected ? 'Backend Conectado (Porta 3000)' : 'Backend Offline'}</span>
             </div>
-            <button 
+            <button
               onClick={() => checkBackendConnection(false)}
-              style={{ background:'none', border:'none', cursor:'pointer', padding:2, color:'inherit', display:'flex', alignItems:'center', gap:4, textDecoration:'underline' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: 'inherit', display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'underline' }}
               title="Testar conexão com backend"
             >
               <RefreshCw size={12} className={backendLoading ? 'spin' : ''} />
@@ -1678,34 +2555,46 @@ export default function AdminPage({ onClose }) {
           </div>
 
           <form onSubmit={handleLogin}>
-            <div className="form-group">
+            <div className="auth-form-group">
               <label className="form-label">Usuário / CPF</label>
               <input className="form-input" type="text" placeholder="Nome de usuário ou CPF"
                 value={username} onChange={e => setUsername(e.target.value)} autoComplete="username" required />
             </div>
-            <div className="form-group">
+            <div className="auth-form-group">
               <label className="form-label">Senha</label>
               <input className="form-input" type="password" placeholder="••••••••"
                 value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" required />
+              <button
+                type="button"
+                className="auth-link"
+                style={{ marginTop: 8, display: 'block', textDecoration: 'underline' }}
+                onClick={() => {
+                  setAuthView('forgot_password');
+                  setRecoveryError('');
+                  setRecoverySuccess(false);
+                }}
+              >
+                Esqueceu a senha?
+              </button>
             </div>
             {loginError && (
-              <div style={{ background:'#FEF2F2', border:'1px solid #FCA5A5', color:'#DC2626', borderRadius:8, padding:'10px 14px', fontSize:'0.85rem', marginBottom:14, display:'flex', alignItems:'center', gap:8 }}>
+              <div className="auth-error">
                 <AlertTriangle size={15} /> {loginError}
               </div>
             )}
 
-            {!backendConnected && (
-              <p style={{ fontSize:'0.82rem', color:'var(--text-subtle)', marginBottom:16, background:'#F5F9F8', padding:'10px 14px', borderRadius:8 }}>
-                💡 <strong>Demonstração Local:</strong> Como o backend não foi detectado na porta 3000, você pode clicar em <em>Entrar no Painel</em> para acessar o modo local.
+            {(!backendConnected || backendLoading) && (
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-subtle)', marginBottom: 16, background: '#F7F9FB', padding: '10px 14px', borderRadius: 8 }}>
+                💡 O painel precisa do backend conectado na porta 3000 para autenticar e salvar os dados.
               </p>
             )}
 
-            <button type="submit" className="btn btn-primary" disabled={submittingLogin} style={{ width:'100%', padding:'13px 20px', fontSize:'1rem' }}>
+            <button type="submit" className="btn btn-primary auth-button" disabled={submittingLogin || backendLoading || !backendConnected}>
               {submittingLogin ? 'Autenticando...' : 'Entrar no Painel'}
             </button>
           </form>
 
-          <button onClick={onClose} style={{ display:'block', textAlign:'center', margin:'16px auto 0', background:'none', border:'none', cursor:'pointer', color:'var(--text-subtle)', fontSize:'0.88rem', textDecoration:'underline' }}>
+          <button onClick={onClose} className="auth-footer-link">
             ← Voltar ao site
           </button>
         </div>
@@ -1719,55 +2608,70 @@ export default function AdminPage({ onClose }) {
       {/* Topbar */}
       <header className="admin-topbar">
               <div style={{ display:'flex', alignItems:'center', gap:12, flex:1, minWidth:0 }}>
-                <div style={{ width:36, height:36, background:'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <div style={{ width:36, height:36, background:'linear-gradient(135deg, #0F2A66, #0088FF)', borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                   <Shield size={18} color="#fff" />
                 </div>
                 <div style={{ minWidth:0 }}>
-                  <div style={{ fontWeight:700, fontSize:'0.9rem', color:'var(--text-main)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Painel Administrativo</div>
-                  <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Associação Melhor Idade</div>
+                  <div style={{ fontWeight:700, fontSize:'0.95rem', color:'var(--text-main)' }}>Painel Administrativo</div>
+                  <div style={{ fontSize:'0.8rem', color:'var(--text-subtle)' }}>Associação Qualidade de Vida</div>
                 </div>
               </div>
 
               <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap', justifyContent:'flex-end' }}>
-                {/* Badge de status do backend */}
-                          <div style={{
-                            display:'inline-flex', alignItems:'center', gap:6, fontSize:'0.75rem', fontWeight:600,
-                            padding:'4px 10px', borderRadius:99,
-                            background: backendConnected ? '#ECFDF5' : '#FFFBEB',
-                            color: backendConnected ? '#065F46' : '#92400E',
-                            border: `1px solid ${backendConnected ? '#A7F3D0' : '#FDE68A'}`
-                          }}>
-                            <span style={{ width:8, height:8, borderRadius:'50%', background: backendConnected ? '#10B981' : '#F59E0B' }} />
-                            <span>{backendConnected ? 'Backend Conectado' : 'Modo Local'}</span>
-                            <button
-                              onClick={() => checkBackendConnection(false)}
-                              style={{ background:'none', border:'none', cursor:'pointer', padding:0, display:'flex', alignItems:'center', color:'inherit' }}
-                              title="Recarregar status de conexão com backend"
-                            >
-                              <RefreshCw size={11} className={backendLoading ? 'spin' : ''} />
-                            </button>
-                          </div>
+                {/* Indicador único de sistema */}
+                <div
+                  className="admin-system-status"
+                  data-state={backendLoading ? 'checking' : backendConnected ? 'online' : 'offline'}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className="admin-system-dot" aria-hidden="true" />
+                  <span className="admin-system-label">
+                    {backendLoading ? 'Verificando sistema...' : backendConnected ? 'Sistema online' : 'Sistema offline'}
+                  </span>
+                  {!backendLoading && !backendConnected && (
+                    <span className="admin-system-detail">Backend na porta 3000</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => checkBackendConnection(false)}
+                    className="admin-system-refresh"
+                    aria-label="Verificar conexão novamente"
+                    title="Verificar conexão novamente"
+                  >
+                    <RefreshCw size={13} className={backendLoading ? 'spin' : ''} />
+                  </button>
+                </div>
 
-                          {/* Mobile menu button - hamburger */}
-                          <button
-                            className="admin-mobile-menu-btn"
-                            onClick={() => setMobileDrawerOpen(true)}
-                            style={{ display:'none', background:'none', border:'none', cursor:'pointer', padding:8, color:'var(--text-main)' }}
-                            aria-label="Abrir menu de navegação"
-                          >
-                            <Menu size={22} />
-                          </button>
+                {/* Mobile menu button - hamburger */}
+                <button
+                  ref={menuButtonRef}
+                  className="admin-mobile-menu-btn"
+                  onClick={() => setMobileDrawerOpen(true)}
+                  style={{ display:'none', background:'none', border:'none', cursor:'pointer', padding:13, minWidth:48, minHeight:48, color:'var(--text-main)' }}
+                  aria-label="Abrir menu de navegação"
+                  aria-expanded={mobileDrawerOpen}
+                  aria-controls="admin-mobile-drawer"
+                >
+                  <Menu size={22} />
+                </button>
 
-                          {/* Desktop only: Ver Site and Sair buttons */}
-                          <div className="admin-topbar-desktop-actions">
-                            <button className="btn btn-pill" style={{ fontSize:'0.78rem', padding:'6px 12px' }} onClick={onClose}>
-                              <ChevronRight size={12} /> Ver Site
-                            </button>
-                            <button className="btn" style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5', fontSize:'0.78rem', padding:'6px 12px' }}
-                              onClick={handleLogout}>
-                              <LogOut size={12} /> Sair
-                            </button>
-                          </div>
+                {/* Desktop only: Ver Site and Sair buttons */}
+                <div className="admin-topbar-desktop-actions">
+                  <a
+                    className="btn btn-pill"
+                    style={{ fontSize:'0.82rem', padding:'8px 14px', textDecoration:'none' }}
+                    href="/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink size={14} /> Ver Site
+                  </a>
+                  <button className="btn" style={{ background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FCA5A5', fontSize:'0.82rem', padding:'8px 14px' }}
+                    onClick={handleLogout}>
+                    <LogOut size={14} /> Sair
+                  </button>
+                </div>
               </div>
             </header>
 
@@ -1778,49 +2682,51 @@ export default function AdminPage({ onClose }) {
             {tabs.map(tab => (
               <button key={tab.id} className={`admin-nav-item ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
+                aria-current={activeTab === tab.id ? 'page' : undefined}
                 style={{ textAlign: 'left', padding: '12px 16px', fontSize: '0.9rem', gap: 12, justifyContent: 'flex-start', borderRadius: 10 }}>
                 {tab.icon}
                 <span>{tab.label}</span>
               </button>
             ))}
           </nav>
-          <div style={{ marginTop:'auto', padding:'16px 12px', borderTop:'1px solid #DCE7E5', width:'100%' }}>
-            <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', lineHeight:1.6, textAlign:'center' }}>
-              <strong style={{ display:'block', marginBottom:4 }}>Status da Integração:</strong>
-              {backendConnected ? '🟢 Rotas do Backend Ativas (porta 3000)' : '🟠 Modo Armazenamento Local Ativo'}
-            </div>
-          </div>
         </aside>
 
         {/* Conteúdo Principal */}
                 <main className="admin-content">
-                  {activeTab === 'overview' && <TabOverview setActiveTab={setActiveTab} />}
-                  {activeTab === 'gallery' && <TabGallery />}
-                  {activeTab === 'calendar' && <TabCalendar />}
+                  {activeTab === 'overview' && <TabOverview onQuickAction={openSection} onEditEvent={editEvent} />}
+                  {activeTab === 'gallery' && <TabGallery openIntent={openIntent} onIntentHandled={clearIntent} />}
+                  {activeTab === 'calendar' && <TabCalendar openIntent={openIntent} onIntentHandled={clearIntent} />}
+                  {activeTab === 'actions' && <TabActions />}
                   {activeTab === 'admins' && <TabAdmins onNavigateToCreate={() => setActiveTab('cadastrar-admin')} />}
                   {activeTab === 'cadastrar-admin' && (
                     <CadastroAdminPage onVoltar={() => setActiveTab('admins')} />
                   )}
-                  {activeTab === 'sponsors' && <TabSponsors />}
-                  {activeTab === 'testimonials' && <TabTestimonials />}
+                  {activeTab === 'sponsors' && <TabSponsors openIntent={openIntent} onIntentHandled={clearIntent} />}
+                  {activeTab === 'testimonials' && <TabTestimonials openIntent={openIntent} onIntentHandled={clearIntent} />}
                   {activeTab === 'settings' && <TabSettings />}
                                   </main>
                         </div>
 
                         {/* Mobile Drawer Navigation */}
                                                 {mobileDrawerOpen && (
-                                                  <div className="admin-mobile-drawer-overlay" onClick={() => setMobileDrawerOpen(false)} aria-hidden="true">
-                                                    <div className="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu de navegação">
+                                                  <div className="admin-mobile-drawer-overlay" onClick={closeDrawer}>
+                                                    <div id="admin-mobile-drawer" className="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Menu de navegação" onClick={(e) => e.stopPropagation()}>
                                                       {/* Header do Drawer */}
                                                       <div className="admin-mobile-drawer-header">
                                                         <div className="admin-mobile-drawer-brand">
-                                                          <div className="admin-mobile-drawer-brand-badge">M</div>
+                                                          <img
+                                                            src="/imgagens/logo.png"
+                                                            alt=""
+                                                            className="admin-mobile-drawer-brand-badge"
+                                                            width="36"
+                                                            height="36"
+                                                          />
                                                           <div className="admin-mobile-drawer-brand-text">
-                                                            <span className="admin-mobile-drawer-brand-title">Melhor Idade</span>
+                                                            <span className="admin-mobile-drawer-brand-title">Qualidade de Vida</span>
                                                             <span className="admin-mobile-drawer-brand-subtitle">PAINEL ADMINISTRATIVO</span>
                                                           </div>
                                                         </div>
-                                                        <button className="admin-mobile-drawer-close" onClick={() => setMobileDrawerOpen(false)} aria-label="Fechar menu">
+                                                        <button className="admin-mobile-drawer-close" onClick={closeDrawer} aria-label="Fechar menu" autoFocus>
                                                           <X size={24} />
                                                         </button>
                                                       </div>
@@ -1834,12 +2740,13 @@ export default function AdminPage({ onClose }) {
                                                             <button
                                                               key={item.id}
                                                               className={`admin-mobile-nav-item ${isActive ? 'active' : ''}`}
-                                                              onClick={() => { setActiveTab(item.id); setMobileDrawerOpen(false); }}
+                                                              onClick={() => { setActiveTab(item.id); closeDrawer(); }}
+                                                              aria-current={isActive ? 'page' : undefined}
                                                             >
                                                               <Icon className="nav-icon" size={20} />
                                                               <span>{item.label}</span>
                                                               {item.badge && (
-                                                                <span className={`nav-badge ${item.badge.type}`}>{item.badge.text}</span>
+                                                                <span className={`nav-badge ${item.badge.type}`} aria-label={item.badge.ariaLabel}>{item.badge.text}</span>
                                                               )}
                                                             </button>
                                                           );
@@ -1849,18 +2756,25 @@ export default function AdminPage({ onClose }) {
                                                       <hr className="admin-mobile-drawer-divider" />
 
                                                       <div className="admin-mobile-drawer-footer">
-                                                        <button 
+                                                        <a
                                                           className="admin-mobile-drawer-view-site"
-                                                          onClick={() => { setMobileDrawerOpen(false); onClose(); }}
+                                                          href="/"
+                                                          target="_blank"
+                                                          rel="noopener noreferrer"
+                                                          onClick={closeDrawer}
                                                         >
                                                           <ExternalLink size={18} /> Ver Site Público
-                                                        </button>
+                                                        </a>
                                                         <div className="admin-mobile-drawer-status-row">
                                                           <div className="admin-mobile-drawer-status">
-                                                            <span className="admin-mobile-drawer-status-dot" aria-hidden="true"></span>
-                                                            <span>Modo Local Ativo</span>
+                                                            <span
+                                                              className="admin-mobile-drawer-status-dot"
+                                                              aria-hidden="true"
+                                                              style={{ background: backendConnected ? '#22c55e' : '#f59e0b' }}
+                                                            ></span>
+                                                            <span>{backendConnected ? 'Sistema online' : 'Sistema offline'}</span>
                                                           </div>
-                                                          <button 
+                                                          <button
                                                             className="admin-mobile-drawer-logout"
                                                             onClick={handleLogout}
                                                           >

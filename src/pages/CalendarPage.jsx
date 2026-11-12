@@ -17,14 +17,40 @@ function getStartDayOffset(year, month) {
   return new Date(year, month, 1).getDay();
 }
 
-export default function CalendarPage() {
-  const { calendar } = siteData;
-  const { calendarEvents, calendarHighlights } = useData();
+function parseCalendarDate(value) {
+  if (typeof value !== 'string') return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return null;
 
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  if (month < 0 || month > 11 || day < 1) return null;
+
+  const date = new Date(year, month, day);
+  const isValid = date.getFullYear() === year
+    && date.getMonth() === month
+    && date.getDate() === day;
+  return isValid ? { year, month, day } : null;
+}
+
+function getCalendarDateFromUrl() {
+  try {
+    return parseCalendarDate(new URLSearchParams(window.location.search).get('data'));
+  } catch {
+    return null;
+  }
+}
+
+export default function CalendarPage({ initialDate = null }) {
+  const { calendar } = siteData;
+  const { calendarEvents } = useData();
+
+  const initial = parseCalendarDate(initialDate) || getCalendarDateFromUrl();
   const today = new Date();
-  const [selectedDay, setSelectedDay] = useState(today.getDate());
-  const [currentYear, setCurrentYear] = useState(2026);
-  const [currentMonthIndex, setCurrentMonthIndex] = useState(9); // Outubro
+  const [selectedDay, setSelectedDay] = useState(initial?.day ?? today.getDate());
+  const [currentYear, setCurrentYear] = useState(initial?.year ?? today.getFullYear());
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(initial?.month ?? today.getMonth());
 
   const handlePrevMonth = () => {
     if (currentMonthIndex === 0) {
@@ -48,16 +74,28 @@ export default function CalendarPage() {
 
   // Eventos do mês/ano atual
   const filteredEvents = calendarEvents.filter(ev => {
-    return ev.year === currentYear && ev.month === currentMonthIndex;
+    return ev.year === currentYear && ev.month === currentMonthIndex && ev.status !== 'cancelado';
   });
 
-  const eventsForSelectedDay = filteredEvents.filter(e => e.day === selectedDay);
+  const eventsForSelectedDay = filteredEvents
+    .filter(e => e.day === selectedDay)
+    .sort((a, b) => a.time.localeCompare(b.time));
 
   const startDayOffset = getStartDayOffset(currentYear, currentMonthIndex);
   const totalDays = getDaysInMonth(currentYear, currentMonthIndex);
 
   // Destaques dinâmicos: máx. 3 mostrados
-  const highlights = calendarHighlights.slice(0, 3);
+  const weekdays = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const highlights = filteredEvents
+    .filter(event => event.isHighlight === true)
+    .sort((a, b) => a.day - b.day || a.time.localeCompare(b.time))
+    .slice(0, 3)
+    .map((event, index) => ({
+      dateLabel: `${weekdays[new Date(event.year, event.month, event.day).getDay()]}, ${String(event.day).padStart(2, '0')} - ${event.time}`,
+      title: event.title,
+      description: event.desc,
+      color: ['#0F2A66', '#E6007E', '#0066CC'][index]
+    }));
 
   return (
     <div className="calendar-page">
@@ -128,7 +166,7 @@ export default function CalendarPage() {
             {/* Detalhes do Dia Selecionado */}
             <div className="selected-day-events">
               <h3 className="selected-day-title">
-                              <CalendarIcon size={18} color="#2A5C66" />
+                              <CalendarIcon size={18} color="#0F2A66" />
                               <span>Ações no Dia {selectedDay} de {MONTHS[currentMonthIndex]}</span>
                             </h3>
 
@@ -137,20 +175,20 @@ export default function CalendarPage() {
                                 {eventsForSelectedDay.map((ev, idx) => (
                                   <div key={idx} className="day-event-item">
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#2A5C66' }}>
+                                      <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F2A66' }}>
                                         {ev.time}
                                       </span>
                                     </div>
-                                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1B2527', marginBottom: '4px' }}>{ev.title}</h4>
+                                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0B192C', marginBottom: '4px' }}>{ev.title}</h4>
                       {ev.location && (
-                        <p style={{ fontSize: '0.78rem', color: '#6E6E6E', marginBottom: '4px' }}>📍 {ev.location}</p>
+                        <p style={{ fontSize: '1rem', color: '#475569', marginBottom: '4px' }}>📍 {ev.location}</p>
                       )}
-                      <p style={{ fontSize: '0.88rem', color: '#4D4D4D' }}>{ev.desc}</p>
+                      <p style={{ fontSize: '1rem', color: '#475569' }}>{ev.desc}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p style={{ fontSize: '0.9rem', color: '#6E6E6E', fontStyle: 'italic', padding: '10px 0' }}>
+                <p style={{ fontSize: '0.9rem', color: '#475569', fontStyle: 'italic', padding: '10px 0' }}>
                   Nenhum encontro especial cadastrado para este dia. Nossa sede está aberta para convivência livre e jogos de tabuleiro!
                 </p>
               )}
@@ -168,7 +206,7 @@ export default function CalendarPage() {
                 <div className="highlight-list">
                   {highlights.map((item, idx) => (
                     <div key={idx} className="highlight-item">
-                      <div className="highlight-date" style={{ color: item.color || '#2A5C66' }}>
+                      <div className="highlight-date" style={{ color: item.color || '#0F2A66' }}>
                         {item.dateLabel}
                       </div>
                       <h4 className="highlight-title">{item.title}</h4>

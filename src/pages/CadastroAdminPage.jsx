@@ -3,6 +3,7 @@ import {
   Shield, Eye, EyeOff, CheckCircle, AlertTriangle, ArrowLeft, Plus, Lock
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { validateCPF, validateAdminPassword } from '../utils/adminValidation';
 
 // ── Máscara de CPF ──────────────────────────────────────────────────────
 function formatCPF(value) {
@@ -13,27 +14,11 @@ function formatCPF(value) {
   return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 }
 
-function validateCPF(cpf) {
-  const digits = cpf.replace(/\D/g, '');
-  if (digits.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(digits)) return false;
-  let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
-  let remainder = (sum * 10) % 11;
-  if (remainder === 10 || remainder === 11) remainder = 0;
-  if (remainder !== parseInt(digits[9])) return false;
-  sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
-  remainder = (sum * 10) % 11;
-  if (remainder === 10 || remainder === 11) remainder = 0;
-  return remainder === parseInt(digits[10]);
-}
-
 // ── Componente principal ────────────────────────────────────────────────
 export default function CadastroAdminPage({ onVoltar }) {
   const { addAdmin, backendConnected } = useData();
 
-  const [form, setForm] = useState({ username: '', cpf: '', senha: '', confirmarSenha: '' });
+  const [form, setForm] = useState({ username: '', cpf: '', email: '', senha: '', confirmarSenha: '' });
   const [errors, setErrors] = useState({});
   const [showSenha, setShowSenha] = useState(false);
   const [showConfirmar, setShowConfirmar] = useState(false);
@@ -67,7 +52,15 @@ export default function CadastroAdminPage({ onVoltar }) {
       newErrors.cpf = 'CPF inválido. Verifique os dígitos.';
     }
 
-    if (form.senha && form.senha.length < 6) {
+    if (!form.email.trim()) {
+      newErrors.email = 'E-mail é obrigatório.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      newErrors.email = 'Informe um e-mail válido. Ex: nome@dominio.com';
+    }
+
+    if (!form.senha) {
+      newErrors.senha = 'Senha é obrigatória.';
+    } else if (!validateAdminPassword(form.senha)) {
       newErrors.senha = 'A senha deve ter pelo menos 6 caracteres.';
     }
 
@@ -76,6 +69,8 @@ export default function CadastroAdminPage({ onVoltar }) {
     }
 
     setErrors(newErrors);
+    const firstInvalid = Object.keys(newErrors)[0];
+    if (firstInvalid) document.getElementById(`cadastro-${firstInvalid}`)?.focus();
     return Object.keys(newErrors).length === 0;
   };
 
@@ -90,10 +85,11 @@ export default function CadastroAdminPage({ onVoltar }) {
       await addAdmin({
         username: form.username.trim(),
         cpf: form.cpf.replace(/\D/g, ''),
+        email: form.email.trim(),
         senha: form.senha.trim() || undefined,
       });
       setStatus('success');
-      setForm({ username: '', cpf: '', senha: '', confirmarSenha: '' });
+      setForm({ username: '', cpf: '', email: '', senha: '', confirmarSenha: '' });
     } catch (err) {
       setStatus('error');
       setErrorMsg(err?.message || 'Não foi possível cadastrar o administrador. Tente novamente.');
@@ -104,7 +100,7 @@ export default function CadastroAdminPage({ onVoltar }) {
     setStatus(null);
     setErrorMsg('');
     setErrors({});
-    setForm({ username: '', cpf: '', senha: '', confirmarSenha: '' });
+    setForm({ username: '', cpf: '', email: '', senha: '', confirmarSenha: '' });
   };
 
   // ── Tela de Sucesso ─────────────────────────────────────────────────
@@ -125,8 +121,8 @@ export default function CadastroAdminPage({ onVoltar }) {
           )}
         </div>
 
-        <div style={{ background: '#fff', border: '1px solid #DCE7E5', borderRadius: 16, padding: '40px 24px', maxWidth: 680, textAlign: 'center', boxShadow: '0 1px 4px rgba(27,37,39,0.04)' }}>
-          <div style={{ width: 64, height: 64, background: 'linear-gradient(135deg, #2A5C66, #3D8A9A)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#fff', boxShadow: '0 8px 24px rgba(42,92,102,0.2)' }}>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '40px 24px', maxWidth: 680, textAlign: 'center', boxShadow: '0 1px 4px rgba(11, 25, 44, 0.04)' }}>
+          <div style={{ width: 64, height: 64, background: 'linear-gradient(135deg, #0F2A66, #0088FF)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#fff', boxShadow: '0 8px 24px rgba(15, 42, 102, 0.2)' }}>
             <CheckCircle size={32} />
           </div>
           <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.35rem', color: 'var(--text-main)', marginBottom: 8 }}>
@@ -186,9 +182,9 @@ export default function CadastroAdminPage({ onVoltar }) {
       </div>
 
       {/* Card Principal do Formulário */}
-      <div style={{ background: '#fff', border: '1px solid #DCE7E5', borderRadius: 16, padding: 28, maxWidth: 680, boxShadow: '0 1px 4px rgba(27,37,39,0.04)' }}>
+      <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: 28, maxWidth: 680, boxShadow: '0 1px 4px rgba(11, 25, 44, 0.04)' }}>
         <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.15rem', color: 'var(--text-main)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Shield size={18} color="#2A5C66" /> Dados de Acesso do Administrador
+          <Shield size={18} color="#0F2A66" /> Dados de Acesso do Administrador
         </h3>
 
         {status === 'error' && (
@@ -254,8 +250,35 @@ export default function CadastroAdminPage({ onVoltar }) {
             )}
           </div>
 
+          {/* E-mail */}
+          <div className="form-group" style={{ marginBottom: 20 }}>
+            <label className="form-label" htmlFor="cadastro-email">
+              E-mail <span style={{ color: '#DC2626' }}>*</span>
+            </label>
+            <input
+              id="cadastro-email"
+              type="email"
+              className="form-input"
+              placeholder="Ex: nome@dominio.com"
+              value={form.email}
+              onChange={handleChange('email')}
+              inputMode="email"
+              autoComplete="email"
+              disabled={!backendConnected || status === 'loading'}
+            />
+            {errors.email ? (
+              <p style={{ fontSize: '0.78rem', color: '#DC2626', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <AlertTriangle size={12} /> {errors.email}
+              </p>
+            ) : (
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-subtle)', marginTop: 5 }}>
+                Usado para recuperação de senha e comunicações do sistema.
+              </p>
+            )}
+          </div>
+
           {/* Bloco de Senha */}
-          <div style={{ borderTop: '1px solid #F0F4F3', margin: '22px 0 18px', paddingTop: 18 }}>
+          <div style={{ borderTop: '1px solid #F0F4F8', margin: '22px 0 18px', paddingTop: 18 }}>
             <h4 style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', color: 'var(--text-main)', marginBottom: 4 }}>
               Senha de Acesso (Opcional)
             </h4>
@@ -332,13 +355,13 @@ export default function CadastroAdminPage({ onVoltar }) {
           </div>
 
           {/* Dica do Sistema */}
-          <div style={{ background: '#F5F9F8', border: '1px solid #DCE7E5', borderRadius: 12, padding: '14px 16px', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ background: '#F7F9FB', border: '1px solid #E2E8F0', borderRadius: 12, padding: '14px 16px', marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.83rem', color: 'var(--text-body)' }}>
-              <Shield size={14} color="#2A5C66" />
+              <Shield size={14} color="#0F2A66" />
               <span>O administrador terá acesso a <strong>todas as funcionalidades</strong> do painel administrativo.</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.83rem', color: 'var(--text-body)' }}>
-              <Lock size={14} color="#2A5C66" />
+              <Lock size={14} color="#0F2A66" />
               <span>A autenticação utiliza <strong>JWT</strong> com senhas criptografadas no MySQL.</span>
             </div>
           </div>

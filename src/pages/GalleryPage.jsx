@@ -66,6 +66,7 @@ function MemoryDetailModal({ memory, onClose }) {
                 src={photos[currentPhotoIdx]}
                 alt={`${memory.title} — foto ${currentPhotoIdx + 1} de ${photos.length}`}
                 className="memory-main-img"
+                loading="eager"
                 onError={e => { e.target.src = 'https://images.unsplash.com/photo-1516307365426-bea591f05011?q=80&w=900'; }}
               />
             ) : (
@@ -118,7 +119,7 @@ function MemoryDetailModal({ memory, onClose }) {
                   <img
                     src={src}
                     alt={`Miniatura ${idx + 1}`}
-                    onError={e => { e.target.style.background = '#DDD'; }}
+                    onError={e => { e.target.style.background = '#E2E8F0'; }}
                   />
                 </button>
               ))}
@@ -160,9 +161,10 @@ function MemoryDetailModal({ memory, onClose }) {
 }
 
 // ── Página de Galeria ─────────────────────────────────────────────────────────
-export default function GalleryPage({ onSelectPhoto }) {
+export default function GalleryPage() {
   const { gallery } = siteData;
   const { galleryItems } = useData();
+  const publicGalleryItems = galleryItems.filter(item => item.photos?.length > 0);
   const [selectedMemory, setSelectedMemory] = useState(null);
 
   return (
@@ -175,41 +177,44 @@ export default function GalleryPage({ onSelectPhoto }) {
           <p className="page-subtitle">{gallery.subtitle}</p>
         </div>
 
-        {/* Contador */}
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-subtle)', marginBottom: 20 }}>
-          {galleryItems.length} {galleryItems.length === 1 ? 'lembrança' : 'lembranças'}
-        </p>
-
         {/* Photos Grid */}
-        {galleryItems.length === 0 ? (
+        {publicGalleryItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-subtle)' }}>
-            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Nenhuma lembrança cadastrada ainda.</p>
-            <p style={{ fontSize: '0.9rem', marginTop: 8 }}>O administrador pode adicionar fotos no painel de gestão.</p>
+            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Em breve, novas lembranças estarão por aqui.</p>
           </div>
         ) : (
           <div className="gallery-grid">
-            {galleryItems.map((photo) => {
+            {publicGalleryItems.map((photo) => {
               const photoCount = photo.photos?.length || (photo.image ? 1 : 0);
               return (
                 <div
                   key={photo.id}
                   className="gallery-card"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Abrir lembrança ${photo.title}${photoCount > 1 ? `, ${photoCount} fotos` : ''}`}
                   onClick={() => setSelectedMemory(photo)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setSelectedMemory(photo);
+                    }
+                  }}
                   title="Clique para ver as fotos desta lembrança"
                   style={{ cursor: 'pointer' }}
                 >
                   <div className="gallery-img-wrap">
-                    <img src={photo.image} alt={photo.title} className="gallery-img" />
+                    <img src={photo.image} alt={photo.title} className="gallery-img" width="400" height="300" loading="lazy" />
                     {/* Badge de múltiplas fotos */}
                     {photoCount > 1 && (
                       <div style={{
                         position: 'absolute', top: 10, right: 10,
-                        background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+                        background: '#1F2937', backdropFilter: 'blur(4px)',
                         color: '#fff', borderRadius: 999,
-                        padding: '3px 10px', fontSize: '0.72rem', fontWeight: 700,
+                        padding: '4px 11px', fontSize: '0.85rem', fontWeight: 700,
                         display: 'flex', alignItems: 'center', gap: 4
                       }}>
-                        <Images size={11} /> {photoCount} fotos
+                        <Images size={14} /> {photoCount} fotos
                       </div>
                     )}
                   </div>

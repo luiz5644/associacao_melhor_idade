@@ -3,7 +3,7 @@ import { ExternalLink, HeartHandshake } from 'lucide-react';
 import { useData } from '../context/DataContext';
 
 export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation }) {
-  const { sponsors } = useData();
+  const { sponsors, backendLoading } = useData();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -116,7 +116,7 @@ export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation })
     clearTimeout(releaseTimer.current);
   };
 
-  if (!activeSponsors || activeSponsors.length === 0) {
+  if (backendLoading) {
     return null;
   }
 
@@ -137,20 +137,23 @@ export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation })
             </span>
             <h2 className="page-title">Empresas que Abraçam a Nossa Causa</h2>
             <p className="page-subtitle">
-              Agradecemos de coração às empresas e comércios amigos que investem no bem-estar, 
-              alimentação e atividades culturais dos nossos idosos.
-            </p>
+                          Agradecemos de coração às empresas e comércios amigos que investem no bem-estar, 
+                          alimentação e ações culturais dos nossos idosos.
+                        </p>
           </div>
         </div>
 
         {/* Trilho do Carrossel — rolagem nativa com snap */}
-        <div 
-          className="sponsors-carousel-wrapper"
-          ref={scrollRef}
-          onPointerDown={handleUserGrab}
-          onTouchStart={handleUserGrab}
-        >
-          {activeSponsors.map((sponsor, index) => (
+        {activeSponsors.length === 0 ? (
+          <p className="page-subtitle">Ainda não temos empresas parceiras cadastradas. Seja a primeira a apoiar a nossa causa!</p>
+        ) : (
+          <div
+            className="sponsors-carousel-wrapper"
+            ref={scrollRef}
+            onPointerDown={handleUserGrab}
+            onTouchStart={handleUserGrab}
+          >
+            {activeSponsors.map((sponsor, index) => (
             <div 
               key={sponsor.id || index}
               className={`sponsor-card ${index === currentIndex ? 'sponsor-card-focused' : ''}`}
@@ -188,8 +191,9 @@ export default function SponsorsCarousel({ onOpenSponsorModal, onOpenDonation })
                 )}
               </div>
             </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* CTA fora do carrossel */}
         <div className="sponsors-cta">

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DataProvider } from './context/DataContext';
+import AccessibilityWidget from './components/AccessibilityWidget';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -12,23 +13,83 @@ import AdminPage from './pages/AdminPage';
 import DonationModal from './components/DonationModal';
 import ScheduleModal from './components/ScheduleModal';
 import ImageLightbox from './components/ImageLightbox';
+import { useData } from './context/DataContext';
+import DonationBanner from './components/DonationBanner';
 import { siteData } from './data/mockData';
+import useGlobalModalA11y from './hooks/useGlobalModalA11y';
+
+const donationBanners = {
+  home: {
+    title: siteData.home.cta.title,
+    description: siteData.home.cta.description
+  },
+  activities: {
+    title: 'Ajude a manter as oficinas funcionando',
+    description: 'Sua doação ou seu trabalho voluntário ajudam a manter e ampliar nossas oficinas e atividades.'
+  },
+  gallery: {
+    title: 'Esses sorrisos dependem de você',
+    description: 'Cada momento feliz acontece com o apoio de quem doa ou oferece seu tempo como voluntário.'
+  },
+  calendar: {
+    title: 'Ajude a organizar o próximo passeio',
+    description: 'Sua contribuição ajuda a realizar passeios, encontros e eventos da nossa programação.'
+  },
+  testimonials: {
+    title: 'Faça parte dessa história',
+    description: 'Contribua para que mais idosos vivam experiências especiais como as que você conheceu aqui.'
+  }
+};
+
+function getCalendarDateFromUrl() {
+  try {
+    const value = new URLSearchParams(window.location.search).get('data');
+    return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
 
 function AppContent() {
-  const [activePage, setActivePage] = useState('home');
+  const initialCalendarDate = getCalendarDateFromUrl();
+  const [activePage, setActivePage] = useState(initialCalendarDate ? 'calendar' : 'home');
+  const [calendarDate, setCalendarDate] = useState(initialCalendarDate);
+  const { galleryItems, activities } = useData();
 
   // Modals state
   const [donationModal, setDonationModal] = useState({ isOpen: false, mode: 'pix' });
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
 
+  // Acessibilidade compartilhada por todos os modais (público e admin)
+  useGlobalModalA11y();
+
   const handleOpenPixDonation = () => setDonationModal({ isOpen: true, mode: 'pix' });
   const handleOpenSponsorModal = () => setDonationModal({ isOpen: true, mode: 'sponsor' });
   const handleCloseDonationModal = () => setDonationModal(prev => ({ ...prev, isOpen: false }));
 
   // Função centralizada para mudar de página e zerar o scroll de todos os possíveis containers
-  const handleNavigate = (page) => {
+  const handleNavigate = (page, options = {}) => {
     setActivePage(page);
+
+    if (page === 'calendar') {
+      setCalendarDate(options?.date || null);
+    } else {
+      setCalendarDate(null);
+    }
+
+    try {
+      const url = new URL(window.location.href);
+      if (page === 'calendar' && options?.date) {
+        url.searchParams.set('data', options.date);
+      } else {
+        url.searchParams.delete('data');
+      }
+      window.history.replaceState({}, '', url);
+    } catch {
+      // Ambiente sem History API: a navegação por estado continua funcionando.
+    }
+
     window.scrollTo(0, 0);
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
@@ -41,7 +102,7 @@ function AppContent() {
   };
 
   const handleSelectActivityFromFooter = (actId) => {
-    const act = siteData.activities.items.find(item => item.id === actId);
+    const act = activities.find(item => item.id === actId);
     if (act) {
       setSelectedActivity(act);
     }
@@ -56,6 +117,9 @@ function AppContent() {
 
   return (
     <div className="app-container">
+      {/* 1. Botão flutuante de acessibilidade */}
+      <AccessibilityWidget />
+
       {/* 2. Header de Navegação */}
       <Header 
         activePage={activePage}
@@ -68,8 +132,6 @@ function AppContent() {
         {activePage === 'home' && (
           <HomePage 
             onNavigate={handleNavigate}
-            onOpenDonation={handleOpenPixDonation}
-            onOpenSponsorModal={handleOpenSponsorModal}
             onSelectPhoto={setSelectedPhoto}
           />
         )}
@@ -77,7 +139,7 @@ function AppContent() {
         {activePage === 'history' && (
           <HistoryPage 
             onSelectPhoto={setSelectedPhoto}
-            onOpenDonation={handleOpenPixDonation}
+            onOpenSponsorModal={handleOpenSponsorModal}
           />
         )}
 
@@ -88,19 +150,24 @@ function AppContent() {
         )}
 
         {activePage === 'calendar' && (
-          <CalendarPage />
+          <CalendarPage initialDate={calendarDate} />
         )}
 
         {activePage === 'gallery' && (
-                  <GalleryPage 
-                    onSelectPhoto={setSelectedPhoto}
-                  />
-                )}
+          <GalleryPage />
+        )}
 
                 {activePage === 'testimonials' && (
-                  <TestimonialsPage />
-                )}
-              </main>
+          <TestimonialsPage />
+        )}
+      </main>
+
+      {donationBanners[activePage] && (
+        <DonationBanner
+          {...donationBanners[activePage]}
+          onOpenDonation={handleOpenPixDonation}
+        />
+      )}
 
       {/* 4. Rodapé Global */}
       <Footer 
@@ -122,7 +189,7 @@ function AppContent() {
 
       <ImageLightbox 
         photo={selectedPhoto}
-        photosList={siteData.gallery.items}
+        photosList={galleryItems}
         onClose={() => setSelectedPhoto(null)}
         onSelectPhoto={setSelectedPhoto}
       />
