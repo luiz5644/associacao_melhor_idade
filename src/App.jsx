@@ -16,6 +16,7 @@ import ImageLightbox from './components/ImageLightbox';
 import { useData } from './context/DataContext';
 import DonationBanner from './components/DonationBanner';
 import { siteData } from './data/mockData';
+import useGlobalModalA11y from './hooks/useGlobalModalA11y';
 
 const donationBanners = {
   home: {
@@ -59,6 +60,9 @@ function AppContent() {
   const [donationModal, setDonationModal] = useState({ isOpen: false, mode: 'pix' });
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+
+  // Acessibilidade compartilhada por todos os modais (público e admin)
+  useGlobalModalA11y();
 
   const handleOpenPixDonation = () => setDonationModal({ isOpen: true, mode: 'pix' });
   const handleOpenSponsorModal = () => setDonationModal({ isOpen: true, mode: 'sponsor' });
