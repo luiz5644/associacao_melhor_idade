@@ -141,6 +141,10 @@ export default function HomePage({ onNavigate, onSelectPhoto }) {
                 src={home.hero.image} 
                 alt="Idosos da comunidade celebrando com alegria e pétalas ao sol" 
                 className="hero-image"
+                width="600"
+                height="380"
+                loading="eager"
+                fetchPriority="high"
               />
             </div>
           </div>
@@ -255,6 +259,9 @@ export default function HomePage({ onNavigate, onSelectPhoto }) {
                 src={home.historyTeaser.image} 
                 alt="Pessoas idosas reunidas em um momento de convivência" 
                 className="history-teaser-img" 
+                width="600"
+                height="360"
+                loading="lazy"
               />
             </div>
             <div className="history-teaser-content">
@@ -291,9 +298,18 @@ export default function HomePage({ onNavigate, onSelectPhoto }) {
               <div 
                 key={item.id} 
                 className="moment-card"
+                role="button"
+                tabIndex={0}
+                aria-label={`Ver detalhes de ${item.title}`}
                 onClick={() => onSelectPhoto(item)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onSelectPhoto(item);
+                  }
+                }}
               >
-                <img src={item.image} alt={item.title} className="moment-img" />
+                <img src={item.image} alt={item.title} className="moment-img" width="400" height="200" loading="lazy" />
                 <div className="moment-info">
                   <h3 className="moment-title">{item.title}</h3>
                   <p className="moment-subtitle">{item.subtitle}</p>

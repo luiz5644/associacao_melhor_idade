@@ -46,18 +46,10 @@ export default function ActivitiesPage({ onOpenSchedule }) {
             <div
               key={act.id}
               className="activity-card"
-              style={{ cursor:'pointer' }}
+              style={{ cursor: 'pointer' }}
               onClick={() => onOpenSchedule(act)}
-              onKeyDown={event => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  onOpenSchedule(act);
-                }
-              }}
-              role="button"
-              tabIndex={0}
             >
-              {act.image && <img src={act.image} alt={act.title} className="activity-img" />}
+              {act.image && <img src={act.image} alt={act.title} className="activity-img" width="400" height="200" loading="lazy" />}
               <div className="activity-body">
                 <h2 className="activity-title">{act.title}</h2>
                 {act.description && <p className="activity-desc">{act.description}</p>}
