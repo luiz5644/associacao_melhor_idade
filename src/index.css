@@ -137,7 +137,7 @@ h1, h2, h3, h4, .font-serif {
   gap: 6px;
   background-color: var(--bg-pill);
   color: #0F2A66;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -178,6 +178,7 @@ h1, h2, h3, h4, .font-serif {
   font-size: 0.95rem;
   font-weight: 600;
   padding: 10px 22px;
+  min-height: 44px;
   border-radius: var(--radius-sm);
   border: none;
   cursor: pointer;
@@ -211,9 +212,10 @@ h1, h2, h3, h4, .font-serif {
   background-color: var(--bg-pill);
   color: var(--text-main);
   border-radius: var(--radius-pill);
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   font-weight: 600;
   padding: 8px 18px;
+  min-height: 44px;
 }
 
 .btn-pill:hover {
@@ -278,7 +280,7 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .brand-subtitle {
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--text-subtle);
@@ -292,6 +294,7 @@ h1, h2, h3, h4, .font-serif {
   font-size: 0.9rem;
   font-weight: 500;
   padding: 8px 14px;
+  min-height: 44px;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -340,6 +343,7 @@ h1, h2, h3, h4, .font-serif {
   font-size: 0.82rem;
   font-weight: 500;
   padding: 8px 12px;
+  min-height: 44px;
   border: 1px solid var(--border-light);
   border-radius: 6px;
   cursor: pointer;
@@ -749,7 +753,7 @@ h1, h2, h3, h4, .font-serif {
 
   .upcoming-date-month {
     margin-top: 2px;
-    font-size: 0.75rem; /* 12px */
+    font-size: 0.9rem;
     letter-spacing: 0.06em;
   }
 
@@ -762,7 +766,7 @@ h1, h2, h3, h4, .font-serif {
   .upcoming-weekday {
     font-size: 1rem;
     line-height: 1.2;
-    white-space: nowrap;
+    white-space: normal;
   }
 
   .upcoming-proximity {
@@ -801,7 +805,7 @@ h1, h2, h3, h4, .font-serif {
 
   .upcoming-desc {
     margin-bottom: 6px;
-    font-size: 0.9375rem; /* 15px */
+    font-size: 1rem;
     line-height: 1.35;
     -webkit-line-clamp: 2;
   }
@@ -890,7 +894,8 @@ h1, h2, h3, h4, .font-serif {
   cursor: pointer;
   background: none;
   border: none;
-  padding: 0;
+  padding: 10px 0;
+  min-height: 44px;
   margin-top: 10px;
   transition: var(--transition);
 }
@@ -938,7 +943,7 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .moment-subtitle {
-  font-size: 0.88rem;
+  font-size: 1rem;
   color: var(--text-subtle);
 }
 
@@ -983,7 +988,9 @@ h1, h2, h3, h4, .font-serif {
   border-radius: var(--radius-sm);
   border: none;
   cursor: pointer;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
+  text-align: center;
   box-shadow: 0 4px 14px rgba(230, 0, 126, 0.3);
   transition: var(--transition);
 }
@@ -1099,7 +1106,7 @@ h1, h2, h3, h4, .font-serif {
 
 .activity-tag {
   color: var(--primary);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1113,7 +1120,7 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .activity-desc {
-  font-size: 0.92rem;
+  font-size: 1rem;
   color: var(--text-body);
   line-height: 1.5;
   margin-bottom: 22px;
@@ -1125,8 +1132,9 @@ h1, h2, h3, h4, .font-serif {
   color: #FFFFFF;
   border: none;
   border-radius: var(--radius-sm);
-  padding: 9px 18px;
-  font-size: 0.9rem;
+  padding: 11px 18px;
+  min-height: 44px;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   width: fit-content;
@@ -1349,7 +1357,7 @@ h1, h2, h3, h4, .font-serif {
 
 .highlight-date {
   color: var(--primary);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 700;
   margin-bottom: 4px;
 }
@@ -1425,7 +1433,7 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .gallery-date {
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--text-subtle);
 }
 
@@ -1468,7 +1476,7 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .footer-desc {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--text-footer-muted);
   line-height: 1.6;
   max-width: 360px;
@@ -1492,9 +1500,12 @@ h1, h2, h3, h4, .font-serif {
   background: none;
   border: none;
   color: var(--text-footer-muted);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   cursor: pointer;
-  padding: 0;
+  padding: 4px 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
   text-align: left;
   transition: var(--transition);
 }
@@ -1505,7 +1516,7 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .footer-address {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--text-footer-muted);
   line-height: 1.6;
   margin-bottom: 12px;
@@ -1514,9 +1525,12 @@ h1, h2, h3, h4, .font-serif {
 .footer-email-link {
   color: var(--text-footer-muted);
   font-weight: 700;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   text-decoration: none;
   word-break: break-all;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .footer-email-link:hover {
@@ -1529,7 +1543,7 @@ h1, h2, h3, h4, .font-serif {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   color: #E2E8F0;
 }
 
@@ -1574,8 +1588,8 @@ h1, h2, h3, h4, .font-serif {
   right: 20px;
   background: var(--bg-pill);
   border: none;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1620,6 +1634,7 @@ h1, h2, h3, h4, .font-serif {
 
 .form-input, .form-textarea, .form-select {
   width: 100%;
+  min-height: 44px;
   padding: 10px 14px;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
@@ -2109,6 +2124,7 @@ h1, h2, h3, h4, .font-serif {
   color: var(--text-main);
   text-align: left;
   width: 100%;
+  min-height: 44px;
   transition: color 0.2s ease, background-color 0.2s ease;
   border-radius: 6px;
   margin-bottom: 2px;
@@ -2297,7 +2313,8 @@ h1, h2, h3, h4, .font-serif {
   .admin-nav-item {
     padding: 8px 12px;
     min-width: 90px;
-    font-size: 0.72rem;
+    min-height: 44px;
+    font-size: 0.85rem;
   }
 
   .admin-nav-item svg {
@@ -2395,7 +2412,8 @@ h1, h2, h3, h4, .font-serif {
     max-width: none;
   }
 
-  /* Justificar textos no mobile para melhor leitura */
+  /* Texto alinhado à esquerda no mobile: justificar cria rios de espaço
+     em telas estreitas e prejudica a leitura de pessoas idosas. */
   .hero-desc,
   .admin-content .page-subtitle,
   .timeline-text,
@@ -2404,8 +2422,8 @@ h1, h2, h3, h4, .font-serif {
   .activity-description,
   .gallery-item-description,
   p {
-    text-align: justify;
-    hyphens: auto;
+    text-align: left;
+    hyphens: manual;
   }
 
   /* Botões do header do modal */
@@ -2429,8 +2447,8 @@ h1, h2, h3, h4, .font-serif {
     .modal-close-btn {
       top: 12px !important;
       right: 12px !important;
-      width: 32px !important;
-      height: 32px !important;
+      width: 44px !important;
+      height: 44px !important;
       background: rgba(255,255,255,0.9) !important;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
       border: 1px solid #E2E8F0 !important;
@@ -2458,8 +2476,8 @@ h1, h2, h3, h4, .font-serif {
     .admin-content h3, .admin-content h4 {
       font-size: 0.95rem !important;
     }
-    .admin-content p, .admin-content span, .admin-content label, .admin-content .form-label {
-      font-size: 0.82rem !important;
+    .admin-content p, .admin-content label, .admin-content .form-label {
+      font-size: 0.95rem !important;
     }
     .admin-content .form-input, .admin-content .form-select, .admin-content .form-group input, .admin-content .form-group select, .admin-content .form-group textarea {
       font-size: 0.85rem !important;
@@ -2621,8 +2639,8 @@ h1, h2, h3, h4, .font-serif {
         }
 
         .admin-mobile-drawer-close {
-          width: 40px;
-          height: 40px;
+          width: 44px;
+          height: 44px;
           border-radius: 8px;
           background: #f1f5f9;
           border: none;
@@ -2933,8 +2951,8 @@ h1, h2, h3, h4, .font-serif {
   top: 16px;
   right: 16px;
   z-index: 20;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   background: rgba(255,255,255,0.12);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,0.2);
@@ -3320,7 +3338,7 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .sponsor-desc {
-  font-size: 0.83rem;
+  font-size: 1rem;
   color: var(--text-body);
   line-height: 1.5;
   margin-bottom: 14px;
@@ -3332,9 +3350,10 @@ h1, h2, h3, h4, .font-serif {
   align-items: center;
   gap: 5px;
   color: #0066CC;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 700;
   text-decoration: none;
+  min-height: 44px;
   transition: gap 0.2s;
 }
 
@@ -3377,17 +3396,35 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .sponsor-dot {
-  width: 10px;
-  height: 10px;
+  position: relative;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: #0066CC;
+  background: transparent;
   border: none;
   cursor: pointer;
   transition: all 0.25s ease;
   padding: 0;
 }
 
+.sponsor-dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #0066CC;
+}
+
 .sponsor-dot.active {
+  width: 44px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.sponsor-dot.active::before {
   width: 26px;
   border-radius: 99px;
   background: var(--primary);
@@ -3635,7 +3672,7 @@ h1, h2, h3, h4, .font-serif {
   background: transparent;
   border: 0;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -3819,7 +3856,7 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .testimonial-role {
-  font-size: 0.82rem;
+  font-size: 1rem;
   color: var(--text-subtle);
   font-weight: 500;
 }
@@ -3923,11 +3960,11 @@ h1, h2, h3, h4, .font-serif {
   }
 
   .brand-subtitle {
-    font-size: 0.58rem;
+    font-size: 0.8rem;
   }
 
   .admin-link-btn {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     padding: 7px 14px;
   }
 }
@@ -3951,7 +3988,7 @@ h1, h2, h3, h4, .font-serif {
   }
 
   .admin-content .page-subtitle {
-    font-size: 0.92rem;
+    font-size: 1rem;
   }
 
   .history-teaser-title {
@@ -3959,7 +3996,7 @@ h1, h2, h3, h4, .font-serif {
   }
 
   .history-teaser-text {
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 
   .history-teaser-img {
@@ -3976,7 +4013,7 @@ h1, h2, h3, h4, .font-serif {
   }
 
   .timeline-text {
-    font-size: 0.95rem;
+    font-size: 1rem;
   }
 
   .timeline-image {
@@ -3988,7 +4025,7 @@ h1, h2, h3, h4, .font-serif {
   }
 
   .cta-desc {
-    font-size: 0.92rem;
+    font-size: 1rem;
   }
 }
 
@@ -4000,14 +4037,14 @@ h1, h2, h3, h4, .font-serif {
   }
 
   .cta-btn {
-    font-size: 0.92rem;
+    font-size: 1rem;
     padding: 12px 20px;
     width: 100%;
   }
 
   .activity-btn {
-    font-size: 0.85rem;
-    padding: 8px 16px;
+    font-size: 1rem;
+    padding: 11px 16px;
   }
 }
 
@@ -4047,8 +4084,8 @@ h1, h2, h3, h4, .font-serif {
   .modal-close-btn {
     top: 14px;
     right: 14px;
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
   }
 }
 
@@ -4073,11 +4110,11 @@ h1, h2, h3, h4, .font-serif {
 
   .cal-day-cell {
     min-height: 44px;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
   }
 
   .cal-weekdays {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
   }
 }
 
@@ -4224,7 +4261,7 @@ h1, h2, h3, h4, .font-serif {
  
   .admin-mobile-drawer-brand-badge { width: 32px; height: 32px; font-size: 1rem; }
  
-  .admin-mobile-drawer-close { width: 36px; height: 36px; }
+  .admin-mobile-drawer-close { width: 44px; height: 44px; }
  
   /* só a lista de itens rola; cabeçalho e rodapé ficam fixos */
   .admin-mobile-drawer-nav {
@@ -5743,7 +5780,7 @@ html.high-contrast *:focus-visible {
 }
 
 .admin-upcoming-month {
-  font-size: 0.65rem;
+  font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -5779,7 +5816,7 @@ html.high-contrast *:focus-visible {
   flex-shrink: 0;
   padding: 4px 10px;
   border-radius: var(--radius-pill);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
   border: 1px solid var(--primary-subtle);
   background: var(--bg-surface);
@@ -6114,3 +6151,222 @@ html.high-contrast *:focus-visible {
  
 
  
+
+/* =========================================================
+   AUDITORIA DE ACESSIBILIDADE E RESPONSIVIDADE
+   Ajustes finais (mobile, leitura e alvos de toque)
+   ========================================================= */
+
+/* 1. Bloqueia a rolagem do fundo enquanto um modal está aberto */
+body.has-open-modal {
+  overflow: hidden;
+}
+
+/* 2. Modais: conteúdo role sempre com foco visível */
+.modal-overlay[role="dialog"]:focus {
+  outline: none;
+}
+
+.modal-overlay[role="dialog"]:focus-visible {
+  outline: 3px solid var(--secondary);
+  outline-offset: -3px;
+}
+
+/* 3. Sugestões de doação: 3 colunas no desktop, 1 no celular */
+.donation-tiers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .donation-tiers {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 4. Foco visível nos cartões que abrem detalhes */
+.moment-card:focus-visible,
+.gallery-card:focus-visible {
+  outline: 3px solid var(--secondary);
+  outline-offset: 3px;
+}
+
+/* 5. Alvos de toque mínimos de 44x44 px */
+.mobile-menu-btn,
+.admin-system-refresh,
+.admin-mobile-drawer-view-site,
+.admin-mobile-drawer-logout {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.admin-mobile-drawer-view-site,
+.admin-mobile-drawer-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 6. Admin no celular: desfaz a miniaturização exagerada */
+@media (max-width: 640px) {
+  .admin-content h3,
+  .admin-content h4 {
+    font-size: 1.05rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .admin-content p,
+  .admin-content label,
+  .admin-content .form-label {
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+  }
+
+  .admin-content .form-input,
+  .admin-content .form-select,
+  .admin-content .form-group input,
+  .admin-content .form-group select,
+  .admin-content .form-group textarea {
+    font-size: 1rem !important;
+    min-height: 44px;
+  }
+
+  .admin-content button.btn,
+  .admin-content button[class*="btn"] {
+    font-size: 0.95rem !important;
+    padding: 11px 16px !important;
+    min-height: 44px;
+  }
+
+  .admin-content .btn-pill {
+    font-size: 0.9rem !important;
+    padding: 9px 14px !important;
+  }
+
+  .admin-content > div[style*="gridTemplateColumns"] > div > div:last-child {
+    font-size: 0.9rem !important;
+  }
+
+  .admin-content > div[style*="auto-fit"] > div h3 {
+    font-size: 1rem !important;
+  }
+
+  .admin-content > div[style*="auto-fit"] > div p,
+  .admin-content > div[style*="repeat(auto-fill"] > div p,
+  .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div p {
+    font-size: 0.92rem !important;
+  }
+
+  .admin-content > div[style*="repeat(auto-fill"] > div h4,
+  .admin-content > div[style*="flexDirection.*column"] > div[style*="flex.*gap.*16"] > div h4 {
+    font-size: 1rem !important;
+  }
+
+  .admin-nav-item {
+    font-size: 0.9rem !important;
+    min-height: 48px;
+  }
+
+  .admin-mobile-drawer-brand-subtitle {
+    font-size: 0.72rem !important;
+  }
+
+  .admin-mobile-nav-item {
+    font-size: 0.95rem !important;
+    min-height: 48px;
+  }
+
+  .admin-mobile-drawer-close {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .admin-mobile-drawer-view-site,
+  .admin-mobile-drawer-logout {
+    font-size: 0.92rem !important;
+    padding: 10px 12px !important;
+    min-height: 44px;
+  }
+
+  /* Topbar em duas linhas: o título deixa de ser espremido */
+  .admin-topbar {
+    align-items: flex-start;
+    row-gap: 8px;
+  }
+
+  .admin-topbar > div:first-child {
+    flex: 1 0 100%;
+  }
+
+  .admin-topbar > div:last-child {
+    width: 100%;
+    justify-content: space-between !important;
+  }
+}
+
+/* 7. Botão "Ver mais" da linha do tempo */
+.history-more-btn {
+  min-height: 44px;
+  padding: 10px 16px;
+}
+
+/* 8. Texto de leitura no site público: corpo em 1rem */
+.upcoming-desc,
+.footer-link-btn,
+.footer-email-link,
+.testimonial-name {
+  font-size: 1rem;
+}
+
+.gallery-date,
+.sponsor-link,
+.highlight-desc {
+  font-size: 1rem;
+}
+
+.day-event-item p,
+.day-event-item span {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* 9. Alvos de toque restantes */
+.brand-link,
+.cta-btn,
+.cal-nav-btn {
+  min-height: 44px;
+}
+
+.cal-nav-btn {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+}
+
+.admin-content a[target="_blank"] {
+  min-height: 44px;
+}
+
+/* 10. Admin: topbar e textos auxiliares legíveis */
+@media (max-width: 640px) {
+  .admin-topbar > div:first-child > div > div:first-child {
+    font-size: 1rem !important;
+  }
+
+  .admin-topbar > div:first-child > div > div:last-child {
+    font-size: 0.85rem !important;
+  }
+
+  .admin-system-label {
+    font-size: 0.9rem;
+  }
+
+  .admin-content p {
+    font-size: 1rem !important;
+  }
+
+  .admin-stat-label {
+    font-size: 1rem !important;
+  }
+}
