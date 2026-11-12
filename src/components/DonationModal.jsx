@@ -95,28 +95,29 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
           <div>
             {/* Sugestões de Impacto */}
             <div style={{ marginBottom: 18 }}>
-              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>
                 Escolha uma sugestão de impacto:
               </span>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+              <div className="donation-tiers">
                 {DONATION_TIERS.map(tier => (
                   <button
                     key={tier.value}
                     type="button"
                     onClick={() => setSelectedTier(tier.value)}
+                    aria-pressed={selectedTier === tier.value}
                     style={{
                       background: selectedTier === tier.value ? 'var(--primary)' : '#F7F9FB',
                       color: selectedTier === tier.value ? '#FFFFFF' : 'var(--text-main)',
                       border: `2px solid ${selectedTier === tier.value ? 'var(--primary)' : '#E2E8F0'}`,
                       borderRadius: 12,
-                      padding: '12px 8px',
+                      padding: '12px 10px',
                       cursor: 'pointer',
                       textAlign: 'center',
                       transition: 'all 0.2s',
                     }}
                   >
-                    <div style={{ fontSize: '1.15rem', fontWeight: 800 }}>{tier.label}</div>
-                    <div style={{ fontSize: '0.72rem', opacity: selectedTier === tier.value ? 0.92 : 0.7, marginTop: 4, lineHeight: 1.3 }}>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{tier.label}</div>
+                    <div style={{ fontSize: '0.9rem', opacity: selectedTier === tier.value ? 0.95 : 0.78, marginTop: 4, lineHeight: 1.35 }}>
                       {tier.impact}
                     </div>
                   </button>
@@ -128,7 +129,7 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
             <div className="pix-box">
               <QrCode size={44} color="#0F2A66" style={{ margin: '0 auto 8px' }} />
               <h4 style={{ fontSize: '1.05rem', marginBottom: '4px' }}>Chave PIX Oficial (E-mail)</h4>
-              <p style={{ fontSize: '0.83rem', color: '#475569', marginBottom: 12 }}>
+              <p style={{ fontSize: '0.92rem', color: '#475569', marginBottom: 12 }}>
                 Abra o aplicativo do seu banco, escolha PIX e transfira qualquer valor com amor:
               </p>
 
@@ -144,8 +145,8 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
                     color: '#FFF',
                     border: 'none',
                     borderRadius: '6px',
-                    padding: '6px 12px',
-                    fontSize: '0.8rem',
+                    padding: '9px 14px',
+                    fontSize: '0.9rem',
                     fontWeight: 600,
                     cursor: 'pointer',
                     display: 'flex',
@@ -161,7 +162,7 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
             </div>
 
             <div style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, background: '#F7F9FB', padding: '12px 14px', borderRadius: '10px', fontSize: '0.8rem', color: '#475569', border: '1px solid #E2E8F0' }}>
+              <div style={{ flex: 1, background: '#F7F9FB', padding: '12px 14px', borderRadius: '10px', fontSize: '0.9rem', color: '#475569', border: '1px solid #E2E8F0' }}>
                 <strong>Associação Comunitária Qualidade de Vida</strong><br />
                 CNPJ: 12.345.678/0001-90<br />
                 Banco Comunitário (001) | Agência: 1234 | C/C: 56789-0
@@ -179,7 +180,7 @@ export default function DonationModal({ isOpen, onClose, mode = 'pix' }) {
                   textDecoration: 'none',
                   padding: '12px 16px',
                   borderRadius: 10,
-                  fontSize: '0.85rem',
+                  fontSize: '0.92rem',
                   fontWeight: 700,
                   alignSelf: 'center',
                   whiteSpace: 'nowrap'

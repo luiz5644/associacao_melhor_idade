@@ -175,15 +175,15 @@ export default function CalendarPage({ initialDate = null }) {
                                 {eventsForSelectedDay.map((ev, idx) => (
                                   <div key={idx} className="day-event-item">
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0F2A66' }}>
+                                      <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F2A66' }}>
                                         {ev.time}
                                       </span>
                                     </div>
                                     <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0B192C', marginBottom: '4px' }}>{ev.title}</h4>
                       {ev.location && (
-                        <p style={{ fontSize: '0.78rem', color: '#475569', marginBottom: '4px' }}>📍 {ev.location}</p>
+                        <p style={{ fontSize: '1rem', color: '#475569', marginBottom: '4px' }}>📍 {ev.location}</p>
                       )}
-                      <p style={{ fontSize: '0.88rem', color: '#475569' }}>{ev.desc}</p>
+                      <p style={{ fontSize: '1rem', color: '#475569' }}>{ev.desc}</p>
                     </div>
                   ))}
                 </div>

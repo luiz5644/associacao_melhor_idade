@@ -26,7 +26,7 @@ import {
   daysUntil,
 } from '../utils/adminDashboard';
 
-const FieldError = ({ children }) => children ? <p style={{ color:'#DC2626', fontSize:'0.78rem', marginTop:5 }}>{children}</p> : null;
+const FieldError = ({ children }) => children ? <p style={{ color:'#DC2626', fontSize:'0.85rem', marginTop:5 }}>{children}</p> : null;
 const focusFirstError = (errors) => {
   const field = Object.keys(errors)[0];
   if (field) Array.from(document.querySelectorAll(`[data-field="${field}"]`))
@@ -211,14 +211,14 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
               <label className="form-label" style={{ margin:0 }}>
                 <Camera size={14} style={{ verticalAlign:'middle', marginRight:5 }} />
                 Fotos da Lembrança
-                <span style={{ marginLeft:8, fontWeight:400, color:'var(--text-subtle)', fontSize:'0.78rem' }}>
+                <span style={{ marginLeft:8, fontWeight:400, color:'var(--text-subtle)', fontSize:'0.85rem' }}>
                   ({form.photos.length} {form.photos.length === 1 ? 'foto' : 'fotos'} • primeira = capa)
                 </span>
               </label>
               <button
                 type="button"
                 className="btn btn-pill"
-                style={{ padding:'6px 14px', fontSize:'0.78rem' }}
+                style={{ padding:'6px 14px', fontSize:'0.85rem' }}
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
               >
@@ -430,7 +430,7 @@ function CalendarFormModal({ isOpen, item, onSave, onClose }) {
             <span style={{ fontSize:'0.9rem', fontWeight:600, color: form.isHighlight ? '#0B192C' : '#475569' }}>
               Marcar como Destaque do Mês
             </span>
-            <span style={{ fontSize:'0.78rem', color:'#475569', marginLeft:'auto' }}>Aparece na sidebar do calendário</span>
+            <span style={{ fontSize:'0.85rem', color:'#475569', marginLeft:'auto' }}>Aparece na sidebar do calendário</span>
           </div>
 
           <div style={{ display:'flex', gap:12, justifyContent:'flex-end' }}>
@@ -627,11 +627,11 @@ function SponsorFormModal({ isOpen, item, onSave, onClose }) {
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-main)' }}>Prévia do Logo</div>
-                  <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)' }}>Esta imagem será exibida no carrossel da página inicial.</div>
+                  <div style={{ fontSize:'0.85rem', color:'var(--text-subtle)' }}>Esta imagem será exibida no carrossel da página inicial.</div>
                   <button
                     type="button"
                     onClick={() => setField('logo', '')}
-                    style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.75rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}
+                    style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.85rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}
                   >
                     Remover logo
                   </button>
@@ -1046,7 +1046,7 @@ function TabGallery({ openIntent, onIntentHandled }) {
                                 </div>
                                 <div style={{ padding:'14px 16px' }}>
                 <h4 style={{ fontFamily:'var(--font-serif)', fontSize:'1rem', marginBottom:4, lineHeight:1.3 }}>{item.title}</h4>
-                {item.subtitle && <p style={{ fontSize:'0.78rem', color:'var(--text-subtle)', marginBottom:8 }}>{item.subtitle}</p>}
+                {item.subtitle && <p style={{ fontSize:'0.85rem', color:'var(--text-subtle)', marginBottom:8 }}>{item.subtitle}</p>}
                 {item.description && (
                   <p style={{ fontSize:'0.82rem', color:'var(--text-body)', lineHeight:1.55,
                     overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
@@ -1058,7 +1058,7 @@ function TabGallery({ openIntent, onIntentHandled }) {
                     onClick={() => { setEditingItem(item); setShowForm(true); }}>
                     <Pencil size={12} /> Editar
                   </button>
-                  <button className="btn" style={{ padding:'5px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }}
+                  <button className="btn" style={{ padding:'5px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FCA5A5' }}
                     onClick={() => setDeleteTarget(item)}>
                     <Trash2 size={12} /> Excluir
                   </button>
@@ -1166,27 +1166,27 @@ function TabCalendar({ openIntent, onIntentHandled }) {
               {/* Data */}
               <div style={{ minWidth:52, textAlign:'center', background:'var(--primary)', color:'#fff', borderRadius:10, padding:'8px 6px' }}>
                 <div style={{ fontSize:'1.4rem', fontWeight:800, lineHeight:1 }}>{ev.day}</div>
-                <div style={{ fontSize:'0.62rem', textTransform:'uppercase', letterSpacing:'0.08em', opacity:0.85 }}>
+                <div style={{ fontSize:'0.85rem', textTransform:'uppercase', letterSpacing:'0.06em', opacity:0.95 }}>
                   {MONTHS[ev.month]?.slice(0,3)}
                 </div>
-                <div style={{ fontSize:'0.62rem', opacity:0.7, marginTop:2 }}>{ev.year}</div>
+                <div style={{ fontSize:'0.85rem', opacity:0.9, marginTop:2 }}>{ev.year}</div>
               </div>
                             {/* Conteúdo */}
                             <div style={{ flex:1, minWidth:0 }}>
                               <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginBottom:4 }}>
                                 {ev.isHighlight && (
-                                  <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:'0.7rem', fontWeight:700,
+                                  <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:'0.85rem', fontWeight:700,
                                     color:'#92660A', background:'#FEF3C7', border:'1px solid #FDE68A', borderRadius:999, padding:'2px 9px' }}>
                                     <Star size={10} fill="#92660A" /> Destaque
                                   </span>
                                 )}
                               </div>
                               <h4 style={{ fontWeight:700, fontSize:'0.97rem', marginBottom:4 }}>{ev.title}</h4>
-                <div style={{ fontSize:'0.8rem', color:'var(--text-subtle)', display:'flex', gap:14, flexWrap:'wrap' }}>
+                <div style={{ fontSize:'0.9rem', color:'var(--text-subtle)', display:'flex', gap:14, flexWrap:'wrap' }}>
                   <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Clock size={11} /> {ev.time}</span>
                   {ev.location && <span style={{ display:'inline-flex', alignItems:'center', gap:3 }}><MapPin size={11} /> {ev.location}</span>}
                 </div>
-                {ev.desc && <p style={{ fontSize:'0.83rem', color:'var(--text-body)', marginTop:6, lineHeight:1.55 }}>{ev.desc}</p>}
+                {ev.desc && <p style={{ fontSize:'0.95rem', color:'var(--text-body)', marginTop:6, lineHeight:1.55 }}>{ev.desc}</p>}
               </div>
               {/* Ações */}
               <div style={{ display:'flex', flexDirection:'column', gap:6, alignSelf:'center' }}>
@@ -1194,7 +1194,7 @@ function TabCalendar({ openIntent, onIntentHandled }) {
                   onClick={() => { setEditingEvent(ev); setShowForm(true); }}>
                   <Pencil size={12} /> Editar
                 </button>
-                <button className="btn" style={{ padding:'6px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5', whiteSpace:'nowrap' }}
+                <button className="btn" style={{ padding:'6px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FCA5A5', whiteSpace:'nowrap' }}
                   onClick={() => setDeleteTarget(ev)}>
                   <Trash2 size={12} /> Excluir
                 </button>
@@ -1360,8 +1360,8 @@ function ActivityFormModal({ isOpen, item, onSave, onClose }) {
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-main)' }}>Prévia da imagem</div>
-                  <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)' }}>Será exibida no card da ação.</div>
-                  <button type="button" onClick={() => update('image', '')} style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.75rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}>Remover imagem</button>
+                  <div style={{ fontSize:'0.85rem', color:'var(--text-subtle)' }}>Será exibida no card da ação.</div>
+                  <button type="button" onClick={() => update('image', '')} style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.85rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}>Remover imagem</button>
                 </div>
               </div>
             )}
@@ -1442,7 +1442,7 @@ function TabActions() {
               <p style={{ color:'var(--text-subtle)', fontSize:'0.88rem' }}>{item.schedule.location}</p>
               <div style={{ display:'flex', gap:8, justifyContent:'flex-end', marginTop:18 }}>
                 <button className="btn btn-pill" style={{ padding:'6px 13px', fontSize:'0.8rem' }} onClick={() => { setEditing(item); setShowForm(true); }}><Pencil size={12} /> Editar</button>
-                <button className="btn" style={{ padding:'6px 13px', fontSize:'0.8rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }} onClick={() => setDeleteTarget(item)}><Trash2 size={12} /> Excluir</button>
+                <button className="btn" style={{ padding:'6px 13px', fontSize:'0.8rem', background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FCA5A5' }} onClick={() => setDeleteTarget(item)}><Trash2 size={12} /> Excluir</button>
               </div>
             </article>
           ))}
@@ -1556,9 +1556,9 @@ function TabSponsors({ openIntent, onIntentHandled }) {
                               {/* Header com Badge e Status */}
                               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
                                 <span style={{
-                                  fontSize: '0.72rem',
+                                  fontSize: '0.85rem',
                                   fontWeight: 700,
-                                  padding: '2px 8px',
+                                  padding: '2px 9px',
                                   borderRadius: 99,
                                   background: sponsor.active !== false ? '#EDFAF3' : '#FEF2F2',
                                   color: sponsor.active !== false ? '#2D7A50' : '#DC2626',
@@ -1611,7 +1611,7 @@ function TabSponsors({ openIntent, onIntentHandled }) {
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 4,
-                      fontSize: '0.78rem',
+                      fontSize: '0.9rem',
                       color: 'var(--primary)',
                       fontWeight: 600,
                       marginBottom: 14,
@@ -1635,7 +1635,7 @@ function TabSponsors({ openIntent, onIntentHandled }) {
                 </button>
                 <button
                   className="btn"
-                  style={{ padding:'5px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }}
+                  style={{ padding:'5px 14px', fontSize:'0.8rem', background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FCA5A5' }}
                   onClick={() => setDeleteTarget(sponsor)}
                 >
                   <Trash2 size={12} /> Excluir
@@ -1743,7 +1743,7 @@ function TabTestimonials({ openIntent, onIntentHandled }) {
               </div>
               <div style={{ padding: '14px 16px' }}>
                 <h4 style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', marginBottom: 4, lineHeight: 1.3 }}>{t.name}</h4>
-                {t.role && <p style={{ fontSize: '0.78rem', color: 'var(--text-subtle)', marginBottom: 8 }}>{t.role}</p>}
+                {t.role && <p style={{ fontSize: '0.85rem', color: 'var(--text-subtle)', marginBottom: 8 }}>{t.role}</p>}
                 {t.text && (
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-body)', lineHeight: 1.55,
                     overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
@@ -1760,7 +1760,7 @@ function TabTestimonials({ openIntent, onIntentHandled }) {
                   </button>
                   <button
                     className="btn"
-                    style={{ padding: '5px 14px', fontSize: '0.8rem', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5' }}
+                    style={{ padding: '5px 14px', fontSize: '0.8rem', background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FCA5A5' }}
                     onClick={() => setDeleteTarget(t)}
                   >
                     <Trash2 size={12} /> Excluir
@@ -1945,11 +1945,11 @@ function TestimonialFormModal({ isOpen, item, onSave, onClose }) {
                 />
                 <div style={{ flex:1 }}>
                   <div style={{ fontSize:'0.82rem', fontWeight:700, color:'var(--text-main)' }}>Prévia da Foto</div>
-                  <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)' }}>Foto cadastrada para o depoimento.</div>
+                  <div style={{ fontSize:'0.85rem', color:'var(--text-subtle)' }}>Foto cadastrada para o depoimento.</div>
                   <button
                     type="button"
                     onClick={() => setField('avatar', '')}
-                    style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.75rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}
+                    style={{ background:'none', border:'none', color:'#DC2626', fontSize:'0.85rem', cursor:'pointer', marginTop:4, padding:0, textDecoration:'underline' }}
                   >
                     Remover foto
                   </button>
@@ -2174,18 +2174,18 @@ function TabAdmins({ onNavigateToCreate }) {
                   {adm.username.slice(0, 2).toUpperCase()}
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontWeight:700, fontSize:'0.98rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{adm.username}</div>
-                  <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)' }}>CPF: {adm.cpf || 'Não informado'}</div>
-                  <div style={{ fontSize:'0.75rem', color:'var(--text-subtle)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>E-mail: {adm.email || 'Não informado'}</div>
+                  <div style={{ fontWeight:700, fontSize:'0.98rem', overflowWrap:'anywhere', wordBreak:'break-word' }}>{adm.username}</div>
+                  <div style={{ fontSize:'0.85rem', color:'var(--text-subtle)' }}>CPF: {adm.cpf || 'Não informado'}</div>
+                  <div style={{ fontSize:'0.85rem', color:'var(--text-subtle)', overflowWrap:'anywhere', wordBreak:'break-word' }}>E-mail: {adm.email || 'Não informado'}</div>
                 </div>
               </div>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', borderTop:'1px solid #F0F4F8', paddingTop:12 }}>
-                <span style={{ fontSize:'0.72rem', background:'#F7F9FB', padding:'3px 8px', borderRadius:6, color:'var(--text-subtle)' }}>ID #{adm.id}</span>
+                <span style={{ fontSize:'0.82rem', background:'#F7F9FB', padding:'4px 9px', borderRadius:6, color:'var(--text-subtle)' }}>ID #{adm.id}</span>
                 <div style={{ display:'flex', gap:6 }}>
-                  <button className="btn btn-pill" style={{ padding:'5px 12px', fontSize:'0.75rem' }} onClick={() => handleOpenEdit(adm)}>
+                  <button className="btn btn-pill" style={{ padding:'6px 14px', fontSize:'0.85rem' }} onClick={() => handleOpenEdit(adm)}>
                     <Pencil size={12} /> Editar
                   </button>
-                  <button className="btn" style={{ padding:'5px 12px', fontSize:'0.75rem', background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5' }} onClick={() => setDeleteTarget(adm)}>
+                  <button className="btn" style={{ padding:'6px 14px', fontSize:'0.85rem', background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FCA5A5' }} onClick={() => setDeleteTarget(adm)}>
                     <Trash2 size={12} /> Excluir
                   </button>
                 </div>
@@ -2328,10 +2328,32 @@ export default function AdminPage({ onClose }) {
       return () => { document.body.style.overflow = ''; };
     }, [mobileDrawerOpen]);
 
-    // Close drawer on ESC key
+    // Close drawer on ESC and keep Tab focus inside it
     useEffect(() => {
       const handleKeyDown = (e) => {
-        if (e.key === 'Escape' && mobileDrawerOpen) closeDrawer();
+        if (!mobileDrawerOpen) return;
+        if (e.key === 'Escape') {
+          closeDrawer();
+          return;
+        }
+        if (e.key !== 'Tab') return;
+        const drawer = document.getElementById('admin-mobile-drawer');
+        if (!drawer) return;
+        const items = Array.from(
+          drawer.querySelectorAll(
+            'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter((el) => el.getClientRects().length > 0);
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       };
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
@@ -2590,8 +2612,8 @@ export default function AdminPage({ onClose }) {
                   <Shield size={18} color="#fff" />
                 </div>
                 <div style={{ minWidth:0 }}>
-                  <div style={{ fontWeight:700, fontSize:'0.9rem', color:'var(--text-main)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Painel Administrativo</div>
-                  <div style={{ fontSize:'0.7rem', color:'var(--text-subtle)', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>Associação Qualidade de Vida</div>
+                  <div style={{ fontWeight:700, fontSize:'0.95rem', color:'var(--text-main)' }}>Painel Administrativo</div>
+                  <div style={{ fontSize:'0.8rem', color:'var(--text-subtle)' }}>Associação Qualidade de Vida</div>
                 </div>
               </div>
 
@@ -2645,7 +2667,7 @@ export default function AdminPage({ onClose }) {
                   >
                     <ExternalLink size={14} /> Ver Site
                   </a>
-                  <button className="btn" style={{ background:'#FEF2F2', color:'#DC2626', border:'1px solid #FCA5A5', fontSize:'0.82rem', padding:'8px 14px' }}
+                  <button className="btn" style={{ background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FCA5A5', fontSize:'0.82rem', padding:'8px 14px' }}
                     onClick={handleLogout}>
                     <LogOut size={14} /> Sair
                   </button>
