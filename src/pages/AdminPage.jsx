@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+﻿import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Shield, LogOut, LayoutDashboard, Images, CalendarDays, Settings,
   Plus, Pencil, Trash2, X, CheckCircle, Users, CalendarCheck,
@@ -25,6 +25,13 @@ import {
   getAttentionItems,
   daysUntil,
 } from '../utils/adminDashboard';
+import {
+  getTitleSuggestions,
+  getAlbumYear,
+  getAlbumYearLabel,
+  formatYearList,
+  getSameEventAlbums,
+} from '../utils/gallery.js';
 
 const FieldError = ({ children }) => children ? <p style={{ color:'#DC2626', fontSize:'0.85rem', marginTop:5 }}>{children}</p> : null;
 const focusFirstError = (errors) => {
@@ -64,7 +71,7 @@ function ConfirmDeleteModal({ isOpen, onConfirm, onCancel, title, subtitle }) {
 // ── Formulário de Lembrança (Álbum) — upload direto e data padronizada ───────
 function GalleryFormModal({ isOpen, item, onSave, onClose }) {
   const fileRef = useRef(null);
-  const { backendConnected, showToast } = useData();
+  const { backendConnected, showToast, galleryItems } = useData();
   const [form, setForm] = useState({
     title: item?.title || '',
     description: item?.description || '',
@@ -75,6 +82,9 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [dateParts, setDateParts] = useState({ day: '', month: '', year: '' });
+  const [titleSuggestions, setTitleSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [sameEventWarning, setSameEventWarning] = useState(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -88,9 +98,39 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
     setUploading(false);
     setSaving(false);
     setErrors({});
+    setTitleSuggestions([]);
+    setShowSuggestions(false);
+    setSameEventWarning(null);
   }, [item, isOpen]);
 
   const setField = (key, val) => setForm(p => ({ ...p, [key]: val }));
+
+  // Sugestão de títulos ao digitar
+  const handleTitleChange = (val) => {
+    setField('title', val);
+    setErrors(p => ({ ...p, title: '' }));
+    if (val.trim().length >= 2) {
+      const suggestions = getTitleSuggestions(galleryItems, val, item?.apiId);
+      setTitleSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+      // Avisa se já existe uma lembrança com mesmo evento
+      const conflicts = getSameEventAlbums(galleryItems, val, item?.apiId);
+      setSameEventWarning(conflicts.length > 0 ? { title: conflicts[0].title, years: formatYearList(conflicts) } : null);
+    } else {
+      setTitleSuggestions([]);
+      setShowSuggestions(false);
+      setSameEventWarning(null);
+    }
+  };
+
+  const applySuggestion = (suggestion) => {
+    const newTitle = suggestion.title;
+    setField('title', newTitle);
+    setShowSuggestions(false);
+    setTitleSuggestions([]);
+    const conflicts = getSameEventAlbums(galleryItems, newTitle, item?.apiId);
+    setSameEventWarning(conflicts.length > 0 ? { title: conflicts[0].title, years: formatYearList(conflicts) } : null);
+  };
 
   // Adiciona uma ou várias fotos por upload de arquivo(s)
   const handleFilesChange = async (e) => {
@@ -141,8 +181,9 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
     e.preventDefault();
     const nextErrors = {};
     if (!form.title.trim()) nextErrors.title = 'Título é obrigatório.';
-    const dateErr = validateDateValue(form.date, false);
+    const dateErr = validateDateValue(form.date, true);
     if (dateErr) nextErrors.date = dateErr;
+    if (!form.date) nextErrors.date = 'Informe a data do evento.';
     if (!form.photos.length) nextErrors.photos = 'Adicione pelo menos uma foto.';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) { focusFirstError(nextErrors); return; }
@@ -176,17 +217,82 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} noValidate>
-          {/* Dados da Lembrança */}
-          <div className="form-group">
-            <label className="form-label">Título <span style={{ color:'#DC2626' }}>*</span></label>
-            <input data-field="title" className="form-input" type="text" placeholder="Ex.: Quadrilha da Melhor Idade no Limoeiro Junino"
-              value={form.title} onChange={e => { setField('title', e.target.value); setErrors(p => ({...p, title:''})); }} />
+          {/* ─── Título com sugestões ───────────────────────────────── */}
+          <div className="form-group" style={{ position: 'relative' }}>
+            <label className="form-label">
+              Título <span style={{ color:'#DC2626' }}>*</span>
+            </label>
+            <input
+              data-field="title"
+              className="form-input"
+              type="text"
+              autoComplete="off"
+              placeholder="Ex.: Festa de Natal 2026"
+              value={form.title}
+              onChange={e => handleTitleChange(e.target.value)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 180)}
+              onFocus={() => titleSuggestions.length > 0 && setShowSuggestions(true)}
+            />
             <FieldError>{errors.title}</FieldError>
+
+            {/* Lista de sugestões */}
+            {showSuggestions && (
+              <ul
+                role="listbox"
+                aria-label="Sugestões de títulos existentes"
+                style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+                  background: '#fff', border: '1.5px solid #0F2A66', borderRadius: 10,
+                  boxShadow: '0 8px 24px rgba(15,42,102,0.13)', margin: 0, padding: '6px 0',
+                  listStyle: 'none',
+                }}
+              >
+                {titleSuggestions.map(s => (
+                  <li key={s.key} role="option" aria-selected="false">
+                    <button
+                      type="button"
+                      style={{
+                        width: '100%', background: 'none', border: 'none', textAlign: 'left',
+                        padding: '10px 16px', cursor: 'pointer', fontSize: '0.95rem',
+                        display: 'flex', flexDirection: 'column', gap: 2,
+                      }}
+                      onMouseDown={() => applySuggestion(s)}
+                    >
+                      <span style={{ fontWeight: 700, color: '#0F2A66' }}>{s.title}</span>
+                      <span style={{ fontSize: '0.78rem', color: '#475569' }}>
+                        Já cadastrado em: {s.years.join(', ')}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* Aviso de evento repetido */}
+            {sameEventWarning && (
+              <div
+                role="alert"
+                style={{
+                  marginTop: 8, padding: '10px 14px', borderRadius: 8,
+                  background: '#FFF7ED', border: '1.5px solid #F59E0B',
+                  fontSize: '0.88rem', color: '#92400E', display: 'flex', gap: 8,
+                }}
+              >
+                <span aria-hidden="true">⚠️</span>
+                <span>
+                  Já existe uma lembrança com título parecido (
+                  <strong>"{sameEventWarning.title}"</strong>) cadastrada em{' '}
+                  <strong>{sameEventWarning.years}</strong>. Use o mesmo título para que apareçam
+                  juntas em "Outros anos deste evento".
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Campo de Data Padronizado */}
+          {/* ─── Campo de Data Obrigatório ───────────────────────────── */}
           <DateField
             label="Data do Evento"
+            required
             value={dateParts}
             onChange={({ day, month, year, isoString }) => {
               setDateParts({ day, month, year });
@@ -197,6 +303,23 @@ function GalleryFormModal({ isOpen, item, onSave, onClose }) {
             dataField="date"
             idPrefix="gallery-date"
           />
+
+          {/* Aviso visual quando data está vazia */}
+          {!form.date && !errors.date && (
+            <div
+              role="note"
+              style={{
+                marginTop: -8, marginBottom: 16, padding: '10px 14px', borderRadius: 8,
+                background: '#FEF9C3', border: '1.5px solid #EAB308',
+                fontSize: '0.88rem', color: '#713F12', display: 'flex', gap: 8,
+              }}
+            >
+              <span aria-hidden="true">📅</span>
+              <span>
+                <strong>Sem data:</strong> esta lembrança não aparecerá em nenhum ano no filtro da galeria.
+              </span>
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Sobre / Descrição</label>
@@ -985,6 +1108,9 @@ function TabGallery({ openIntent, onIntentHandled }) {
     onIntentHandled?.();
   }, [openIntent?.seq, openIntent?.tab, onIntentHandled]);
 
+  // Lembranças sem data válida
+  const undatedCount = galleryItems.filter(item => !getAlbumYear(item)).length;
+
   const filtered = galleryItems.filter(item => {
     const matchSearch = !search || item.title.toLowerCase().includes(search.toLowerCase()) || item.description?.toLowerCase().includes(search.toLowerCase());
     return matchSearch;
@@ -1002,7 +1128,7 @@ function TabGallery({ openIntent, onIntentHandled }) {
 
   return (
       <div>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
           <div>
             <h2 className="admin-section-title">Álbum de Lembranças</h2>
             <p style={{ color:'var(--text-subtle)', fontSize:'0.9rem' }}>{capitalize(pluralize(galleryItems.length, 'lembrança cadastrada', 'lembranças cadastradas'))}</p>
@@ -1011,6 +1137,24 @@ function TabGallery({ openIntent, onIntentHandled }) {
             <Plus size={16} /> Nova Lembrança
           </button>
         </div>
+
+        {/* Aviso de lembranças sem data */}
+        {!galleryLoading && undatedCount > 0 && (
+          <div
+            role="alert"
+            style={{
+              marginBottom: 20, padding: '12px 16px', borderRadius: 10,
+              background: '#FFF7ED', border: '1.5px solid #F59E0B',
+              display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+            }}
+          >
+            <AlertTriangle size={18} color="#D97706" aria-hidden="true" />
+            <span style={{ flex: 1, fontSize: '0.92rem', color: '#92400E' }}>
+              <strong>{undatedCount} {undatedCount === 1 ? 'lembrança' : 'lembranças'} sem data</strong> — não
+              {undatedCount === 1 ? ' aparece' : ' aparecem'} no filtro por ano da galeria pública.
+            </span>
+          </div>
+        )}
 
         {/* Busca */}
         <div style={{ display:'flex', gap:12, marginBottom:22, flexWrap:'wrap' }}>

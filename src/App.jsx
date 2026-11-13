@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DataProvider } from './context/DataContext';
 import AccessibilityWidget from './components/AccessibilityWidget';
 import Header from './components/Header';
@@ -41,20 +41,47 @@ const donationBanners = {
   }
 };
 
-function getCalendarDateFromUrl() {
+function getInitialUrlState() {
   try {
-    const value = new URLSearchParams(window.location.search).get('data');
-    return value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+    const params = new URLSearchParams(window.location.search);
+    const calendarDate = params.get('data');
+
+    if (calendarDate && /^\d{4}-\d{2}-\d{2}$/.test(calendarDate)) {
+      return { page: 'calendar', calendarDate };
+    }
+
+    // ?pagina=galeria ou apenas ?ano=2025 abrem a galeria (link compartilhável).
+    if (params.get('pagina') === 'galeria' || params.has('ano')) {
+      return { page: 'gallery', calendarDate: null };
+    }
+
+    return { page: 'home', calendarDate: null };
   } catch {
-    return null;
+    return { page: 'home', calendarDate: null };
   }
 }
 
 function AppContent() {
-  const initialCalendarDate = getCalendarDateFromUrl();
-  const [activePage, setActivePage] = useState(initialCalendarDate ? 'calendar' : 'home');
-  const [calendarDate, setCalendarDate] = useState(initialCalendarDate);
+  const initialUrlState = getInitialUrlState();
+  const [activePage, setActivePage] = useState(initialUrlState.page);
+  const [calendarDate, setCalendarDate] = useState(initialUrlState.calendarDate);
   const { galleryItems, activities } = useData();
+
+  // Botão "voltar" do navegador: relê o ano da URL para a galeria
+  useEffect(() => {
+    const handlePopState = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('pagina') === 'galeria' || params.has('ano')) {
+          setActivePage('gallery');
+        }
+      } catch {
+        // Sem History API: ignora.
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Modals state
   const [donationModal, setDonationModal] = useState({ isOpen: false, mode: 'pix' });
@@ -80,12 +107,29 @@ function AppContent() {
 
     try {
       const url = new URL(window.location.href);
+      const isGallery = page === 'gallery';
+      const enteringGallery = isGallery && activePage !== 'gallery';
+
+      if (isGallery) {
+        url.searchParams.set('pagina', 'galeria');
+        if (enteringGallery) url.searchParams.delete('ano');
+      } else {
+        url.searchParams.delete('pagina');
+        url.searchParams.delete('ano');
+      }
+
       if (page === 'calendar' && options?.date) {
         url.searchParams.set('data', options.date);
       } else {
         url.searchParams.delete('data');
       }
-      window.history.replaceState({}, '', url);
+
+      // Entrar na galeria cria uma entrada no histórico para o botão "voltar".
+      if (enteringGallery) {
+        window.history.pushState({}, '', url);
+      } else {
+        window.history.replaceState({}, '', url);
+      }
     } catch {
       // Ambiente sem History API: a navegação por estado continua funcionando.
     }
