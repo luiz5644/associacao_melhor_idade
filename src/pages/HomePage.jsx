@@ -139,10 +139,10 @@ export default function HomePage({ onNavigate, onSelectPhoto }) {
             <div className="hero-image-wrapper">
               <img 
                 src={home.hero.image} 
-                alt="Idosos da comunidade celebrando com alegria e pétalas ao sol" 
+                alt="Grupo de idosos sorrindo e participando de atividade comunitária em ambiente acolhedor" 
                 className="hero-image"
-                width="600"
-                height="380"
+                width="886"
+                height="591"
                 loading="eager"
                 fetchPriority="high"
               />
@@ -257,11 +257,12 @@ export default function HomePage({ onNavigate, onSelectPhoto }) {
             <div className="history-teaser-img-wrap">
               <img 
                 src={home.historyTeaser.image} 
-                alt="Pessoas idosas reunidas em um momento de convivência" 
+                alt="Maria Saraiva de Santiago, fundadora da Associação, ao lado da equipe inicial em momento de fundação" 
                 className="history-teaser-img" 
-                width="600"
-                height="360"
+                width="886"
+                height="546"
                 loading="lazy"
+                decoding="async"
               />
             </div>
             <div className="history-teaser-content">

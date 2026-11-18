@@ -1,0 +1,7 @@
+[System.Reflection.Assembly]::LoadWithPartialName('System.Drawing')
+$i1=[System.Drawing.Image]::FromFile('public/imagens/fotoinicio1.png')
+$i2=[System.Drawing.Image]::FromFile('public/imagens/logo.png')
+Write-Host ("fotoinicio1.png: {0}x{1}px" -f $i1.Width, $i1.Height)
+Write-Host ("logo.png: {0}x{1}px" -f $i2.Width, $i2.Height)
+$i1.Dispose()
+$i2.Dispose()

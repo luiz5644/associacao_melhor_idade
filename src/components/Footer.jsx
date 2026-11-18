@@ -12,8 +12,8 @@ export default function Footer({ onNavigatePage, onSelectActivity }) {
           <div className="footer-brand">
             <div className="footer-brand-header">
               <img
-                src="/imgagens/logo.png"
-                alt=""
+                src="/imagens/logo.png"
+                alt="Qualidade de Vida – Associação Comunitária"
                 className="brand-badge"
                 style={{ width: '38px', height: '38px' }}
               />

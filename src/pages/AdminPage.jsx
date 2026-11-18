@@ -2859,8 +2859,8 @@ export default function AdminPage({ onClose }) {
                                                       <div className="admin-mobile-drawer-header">
                                                         <div className="admin-mobile-drawer-brand">
                                                           <img
-                                                            src="/imgagens/logo.png"
-                                                            alt=""
+                                                            src="/imagens/logo.png"
+                                                            alt="Qualidade de Vida – Associação Comunitária"
                                                             className="admin-mobile-drawer-brand-badge"
                                                             width="36"
                                                             height="36"

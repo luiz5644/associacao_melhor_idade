@@ -74,8 +74,8 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
           onClick={(e) => { e.preventDefault(); handleNavClick('home'); }}
         >
           <img
-            src="/imgagens/logo.png"
-            alt=""
+            src="/imagens/logo.png"
+            alt="Qualidade de Vida – Associação Comunitária"
             className="brand-badge"
             width="44"
             height="44"
@@ -142,8 +142,8 @@ export default function Header({ activePage, setActivePage, onOpenAdmin }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <div className="brand-link">
               <img
-                src="/imgagens/logo.png"
-                alt=""
+                src="/imagens/logo.png"
+                alt="Qualidade de Vida – Associação Comunitária"
                 className="brand-badge"
                 style={{ width: '36px', height: '36px' }}
               />

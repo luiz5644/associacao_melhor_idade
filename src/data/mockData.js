@@ -18,7 +18,7 @@ export const siteData = {
         tag: "SEJA BEM-VINDO(A) À NOSSA CASA",
         title: "A vida recomeça todos os dias com afeto e amizade.",
         description: "A Associação Qualidade de Vida é um espaço acolhedor e vibrante em nossa comunidade, promovendo encontros, atividades saudáveis e resgatando histórias de vida.",
-        image: "https://images.unsplash.com/photo-1516307365426-bea591f05011?q=80&w=1200&auto=format&fit=crop" // Idosos felizes em parque celebrando
+        image: "/imagens/fotoinicio1.png" // Nova imagem do hero - idosos em atividade comunitária
       },
       upcoming: {
         tag: "CALENDÁRIO DO IDOSO",
@@ -28,7 +28,7 @@ export const siteData = {
     historyTeaser: {
       tag: "HISTÓRIA",
       title: "Nossa Caminhada",
-      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1000&auto=format&fit=crop", // Foto comunitária nostálgica / vintage
+      image: "/imagens/fotoinicio2.png", // Foto da história da associação - fundadora e equipe
       paragraphs: [
         "Idealizado por Maria Saraiva de Santiago, com o apoio de Arnóbio Santiago de Freitas e de um grupo de idosas, o projeto nasceu para ampliar o bem-estar, a convivência e a valorização da pessoa idosa.",
         "Desde 2011, a Associação promove atividades culturais e de lazer, como Forró, Quadrilha, Reisado, Coral, eventos comemorativos e viagens."
