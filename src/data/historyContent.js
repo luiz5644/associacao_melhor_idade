@@ -8,6 +8,12 @@ export const historyHighlights = [
 // Informe o caminho da foto para exibi-la ao lado do texto de criação.
 export const foundingPhoto = null;
 
+export const historyIntroImage = {
+  src: '/imagens/nossa%20historia/foto1.png',
+  alt: 'Maria Saraiva de Santiago, fundadora, em momento de fundação da associação',
+  caption: 'Maria Saraiva de Santiago, idealizadora do Projeto Melhor Idade'
+};
+
 export const historyMilestones = [
   {
     year: '2011',
@@ -26,15 +32,30 @@ export const historyMilestones = [
       },
       {
         heading: 'Forró da Melhor Idade',
-        text: 'Teve início no espaço da Academia Limoeirense de Letras (ALL). Ao longo dos anos passou por outros espaços, como o Núcleo de Informação Tecnológica (NIT) e a APAE, mantendo-se como importante atividade de lazer, convivência e valorização da cultura para a população idosa.'
+        text: 'Teve início no espaço da Academia Limoeirense de Letras (ALL). Ao longo dos anos passou por outros espaços, como o Núcleo de Informação Tecnológica (NIT) e a APAE, mantendo-se como importante atividade de lazer, convivência e valorização da cultura para a população idosa.',
+        image: {
+          src: '/imagens/nossa%20historia/forromelhoridade.png',
+          alt: 'Grupo de idosos dançando forró em roda, com sorrisos e alegria',
+          caption: 'Forró da Melhor Idade — tradição que anima as quartas-feiras'
+        }
       },
       {
         heading: 'Quadrilha da Melhor Idade',
-        text: 'Primeira apresentação do grupo, que se consolidou como importante atividade cultural e de integração da Associação. Atualmente conta com 16 pares, incluindo o tradicional casal de noivos.'
+        text: 'Primeira apresentação do grupo, que se consolidou como importante atividade cultural e de integração da Associação. Atualmente conta com 16 pares, incluindo o tradicional casal de noivos.',
+        image: {
+          src: '/imagens/nossa%20historia/quadrilha.png',
+          alt: 'Apresentação da Quadrilha da Melhor Idade com casal de noivos e 16 pares em trajes juninos',
+          caption: 'Quadrilha da Melhor Idade — 16 pares, incluindo o tradicional casal de noivos'
+        }
       },
       {
         heading: 'Reisado da Melhor Idade',
-        text: 'Início das apresentações, fortalecendo a valorização da cultura popular. As primeiras apresentações contaram com sanfoneiro e os participantes usavam trajes confeccionados em TNT.'
+        text: 'Início das apresentações, fortalecendo a valorização da cultura popular. As primeiras apresentações contaram com sanfoneiro e os participantes usavam trajes confeccionados em TNT.',
+        image: {
+          src: '/imagens/nossa%20historia/reisado.png',
+          alt: 'Grupo de idosos encenando o Reisado, com trajes coloridos e instrumentos tradicionais',
+          caption: 'Reisado da Melhor Idade — tradição nordestina viva'
+        }
       },
       {
         heading: 'Coral da Melhor Idade',
@@ -46,13 +67,23 @@ export const historyMilestones = [
     year: '2013',
     title: 'Primeira Festa da Rainha da Melhor Idade',
     summary: 'Eleita a primeira Rainha da Melhor Idade.',
-    details: 'Realização da 1ª edição, que elegeu a primeira Rainha da Melhor Idade. O evento se consolidou como importante celebração de valorização e integração da pessoa idosa e conta atualmente com cinco edições realizadas.'
+    details: 'Realização da 1ª edição, que elegeu a primeira Rainha da Melhor Idade. O evento se consolidou como importante celebração de valorização e integração da pessoa idosa e conta atualmente com cinco edições realizadas.',
+    image: {
+      src: '/imagens/nossa%20historia/festadarainha.png',
+      alt: 'Rainha da Melhor Idade coroada, cercada pela corte e público aplaudindo',
+      caption: 'Festa da Rainha da Melhor Idade — celebração da beleza e vitalidade na terceira idade'
+    }
   },
   {
     year: '2016',
     title: 'Dança do Pau de Fitas',
     summary: 'Apresentações de danças tradicionais da cultura popular.',
-    details: 'Apresentações culturais com a \'Dança do Pau de Fitas\' e a tradicional \'Pisa o Milho e Penera o Xerém\', valorizando as manifestações da cultura popular e promovendo a integração dos participantes.'
+    details: 'Apresentações culturais com a \'Dança do Pau de Fitas\' e a tradicional \'Pisa o Milho e Penera o Xerém\', valorizando as manifestações da cultura popular e promovendo a integração dos participantes.',
+    image: {
+      src: '/imagens/nossa%20historia/paudefitas.png',
+      alt: 'Grupo de idosos dançando a Dança do Pau de Fitas, segurando fitas coloridas em roda',
+      caption: 'Dança do Pau de Fitas — apresentação cultural da associação'
+    }
   },
   {
     year: '2017',
@@ -64,15 +95,31 @@ export const historyMilestones = [
     year: '2021',
     title: 'Forró toda quarta-feira',
     summary: 'O Forró passa a acontecer toda quarta-feira, no Patronato.',
-    details: 'O Forró da Melhor Idade passou a ser realizado todas as quartas-feiras, na quadra da Escola São Vicente de Paula – Patronato, onde permanece até os dias atuais.'
+    details: 'O Forró da Melhor Idade passou a ser realizado todas as quartas-feiras, na quadra da Escola São Vicente de Paula – Patronato, onde permanece até os dias atuais.',
+    image: {
+      src: '/imagens/nossa%20historia/forromelhoridade.png',
+      alt: 'Grupo de idosos dançando forró em roda, com sorrisos e alegria',
+      caption: 'Forró da Melhor Idade — toda quarta-feira no Patronato'
+    }
   },
   {
     year: '2024',
     title: 'Novas danças e reconhecimento',
     summary: 'Resgate das danças Araruna e Pássaro Preto, e a Presidente recebe a Medalha Maria de Lourdes Pinheiro.',
     details: [
-      'Resgate de outras danças culturais tradicionais: Araruna e Pássaro Preto, fortalecendo a valorização da cultura popular e a participação ativa dos integrantes.',
-      'A Presidente, Sra. Maria Saraiva de Santiago, recebeu a Medalha Maria de Lourdes Pinheiro, concedida pela Câmara Municipal de Limoeiro do Norte, em reconhecimento à sua trajetória e contribuição como mulher de destaque no município.'
+      {
+        heading: 'Resgate da Araruna',
+        text: 'Resgate da dança cultural tradicional Araruna, fortalecendo a valorização da cultura popular e a participação ativa dos integrantes.',
+        image: {
+          src: '/imagens/nossa%20historia/aruana.png',
+          alt: 'Grupo de idosos dançando a Araruna, com movimentos coreografados e trajes típicos',
+          caption: 'Dança da Araruna — resgate cultural da associação'
+        }
+      },
+      {
+        heading: 'Medalha Maria de Lourdes Pinheiro',
+        text: 'A Presidente, Sra. Maria Saraiva de Santiago, recebeu a Medalha Maria de Lourdes Pinheiro, concedida pela Câmara Municipal de Limoeiro do Norte, em reconhecimento à sua trajetória e contribuição como mulher de destaque no município.'
+      }
     ]
   },
   {

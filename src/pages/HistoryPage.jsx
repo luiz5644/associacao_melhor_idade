@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import SponsorsCarousel from '../components/SponsorsCarousel';
-import { foundingPhoto, historyHighlights, historyMilestones } from '../data/historyContent';
+import { foundingPhoto, historyHighlights, historyMilestones, historyIntroImage } from '../data/historyContent';
 
 const originStory = 'A Associação Qualidade de Vida Projeto Melhor Idade foi idealizada pela Sra. Maria Saraiva de Santiago, com o apoio de seu marido, Sr. Arnóbio Santiago de Freitas (in memoriam), e de um grupo de idosas que já participava de atividades de lazer e interação social. Nasceu da vontade de ampliar ações de bem-estar, socialização e valorização da pessoa idosa, com momentos de convivência, alegria e participação.';
 const foundingStory = 'A Sra. Maria Saraiva de Santiago, Presidente da Associação, e seu marido, Sr. Arnóbio Santiago de Freitas (in memoriam), elaboraram o projeto de criação da entidade e o seu Estatuto Social. Participaram também a Sra. Maria Estácio, Tesoureira, a Sra. Maria de Lourdes Nogueira e demais integrantes do grupo de idosas que ajudaram a consolidar a iniciativa.';
@@ -31,10 +31,28 @@ function Reveal({ children, className = '' }) {
 function MilestoneDetails({ details }) {
   if (typeof details === 'string') return <p>{details}</p>;
   if (details.some(item => typeof item !== 'string')) {
-    return details.map(item => (
-      <p key={item.heading}>
-        <strong>{item.heading}: </strong>{item.text}
-      </p>
+    return details.map((item, idx) => (
+      <React.Fragment key={idx}>
+        <p>
+          <strong>{item.heading}: </strong>{item.text}
+        </p>
+        {item.image && (
+          <div className="historia-detalhe-foto">
+            <img
+              src={item.image.src}
+              alt={item.image.alt}
+              width={item.image.width || 886}
+              height={item.image.height || 886}
+              loading="lazy"
+              decoding="async"
+              className={item.image.height === item.image.width ? 'historia-detalhe-foto-quadrada-img' : 'historia-detalhe-foto-img'}
+            />
+            {item.image.caption && (
+              <p className="historia-foto-legenda">{item.image.caption}</p>
+            )}
+          </div>
+        )}
+      </React.Fragment>
     ));
   }
   return <ul>{details.map(item => <li key={item}>{item}</li>)}</ul>;
@@ -50,16 +68,31 @@ function TimelineItem({ item }) {
         <div className="history-timeline-year">{item.year}</div>
         <div className="history-timeline-marker" aria-hidden="true" />
         <div className="history-timeline-card">
-          <h3>{item.title}</h3>
-          <p>{item.summary}</p>
-          {expanded && (
-            <div className="history-timeline-details">
-              <MilestoneDetails details={item.details} />
-              {item.image && (
-                <img className="history-milestone-image" src={item.image} alt={item.imageAlt || itemLabel} loading="lazy" />
-              )}
-            </div>
-          )}
+          <div className="history-card-content">
+            <h3>{item.title}</h3>
+            <p>{item.summary}</p>
+            {expanded && (
+              <div className="history-timeline-details">
+                <MilestoneDetails details={item.details} />
+                {item.image && (
+                  <div className="historia-detalhe-foto">
+                    <img
+                      src={item.image.src}
+                      alt={item.image.alt}
+                      width={item.image.width || 940}
+                      height={item.image.height || 933}
+                      loading="lazy"
+                      decoding="async"
+                      className="historia-detalhe-foto-img"
+                    />
+                    {item.image.caption && (
+                      <p className="historia-foto-legenda">{item.image.caption}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <button
             className="history-more-btn"
             type="button"
@@ -83,7 +116,28 @@ export default function HistoryPage({ onOpenSponsorModal }) {
           <section className="history-intro" aria-labelledby="history-intro-title">
             <span className="section-tag">NOSSA TRAJETÓRIA</span>
             <h1 id="history-intro-title" className="page-title">Como começou o Projeto Melhor Idade?</h1>
-            <p>{originStory}</p>
+            <div className="historia-intro-grid">
+              <div className="historia-intro-copy">
+                <p>{originStory}</p>
+              </div>
+              {historyIntroImage && (
+                <figure className="historia-intro-figure">
+                  <img
+                    src={historyIntroImage.src}
+                    alt={historyIntroImage.alt}
+                    width="886"
+                    height="546"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
+                    className="historia-intro-foto"
+                  />
+                  {historyIntroImage.caption && (
+                    <figcaption className="historia-foto-legenda">{historyIntroImage.caption}</figcaption>
+                  )}
+                </figure>
+              )}
+            </div>
           </section>
         </Reveal>
 

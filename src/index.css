@@ -3792,6 +3792,42 @@ h1, h2, h3, h4, .font-serif {
   line-height: 1.75;
 }
 
+/* Grid de duas colunas para introdução com imagem - CLASSE EXCLUSIVA */
+.historia-intro-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: start;
+  max-width: 1040px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.historia-intro-copy {
+  padding-top: 8px;
+}
+
+.historia-intro-copy p {
+  color: var(--text-body);
+  font-size: clamp(1.08rem, 1.65vw, 1.25rem);
+  line-height: 1.75;
+}
+
+.historia-intro-figure {
+  margin: 0;
+  display: block;
+}
+
+/* Classe legada não usada - mantida para compatibilidade */
+.historia-intro-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
 .history-highlights {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3983,6 +4019,44 @@ h1, h2, h3, h4, .font-serif {
   max-width: 520px;
 }
 
+/* Card com imagem no nível do milestone - COMPACTO quando fechado, foto só no expandido */
+/* A classe .historia-card-foto é usada apenas dentro dos detalhes expandidos */
+
+.historia-detalhe-foto {
+  margin: 16px 0 0;
+}
+
+/* Imagens nos detalhes expandidos - sem moldura, proporção natural */
+.historia-detalhe-foto-img,
+.historia-detalhe-foto-quadrada-img {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Legenda das imagens - classe exclusiva */
+.historia-foto-legenda {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: var(--text-subtle);
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* Foto da introdução - sem moldura, proporção natural da imagem */
+.historia-intro-foto {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
 @media (max-width: 700px) {
   .history-intro {
     padding-bottom: 38px;
@@ -4051,6 +4125,26 @@ h1, h2, h3, h4, .font-serif {
     grid-column: 2;
     grid-row: 2;
     padding: 19px 18px;
+  }
+
+  /* Intro com imagem no mobile */
+  .historia-intro-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    text-align: center;
+  }
+  .historia-intro-copy {
+    text-align: center;
+  }
+  .historia-intro-copy p {
+    text-align: left;
+  }
+  .historia-intro-figure {
+    max-width: 100%;
+  }
+  .historia-intro-foto {
+    max-height: 70vh;
+    object-fit: cover;
   }
 }
 

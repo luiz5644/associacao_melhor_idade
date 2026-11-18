@@ -259,8 +259,8 @@ export default function HomePage({ onNavigate, onSelectPhoto }) {
                 src={home.historyTeaser.image} 
                 alt="Maria Saraiva de Santiago, fundadora da Associação, ao lado da equipe inicial em momento de fundação" 
                 className="history-teaser-img" 
-                width="886"
-                height="546"
+                width="770"
+                height="1011"
                 loading="lazy"
                 decoding="async"
               />
